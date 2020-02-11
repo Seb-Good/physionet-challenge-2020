@@ -7,7 +7,7 @@ https://storage.cloud.google.com/physionet-challenge-2020-12-lead-ecg-public/Phy
 
 2. Place ```PhysioNetChallenge2020_Training_CPSC.tar.gz``` in path ```physionet-challenge-2020/data/raw```
 
-3. Run Notebooks 1, 2, and 3 in order: ```physionet-challenge-2020/notebooks```
+3. Run Notebooks 1, and 2 in order: ```physionet-challenge-2020/notebooks```
 
 4. Good luck!
 
