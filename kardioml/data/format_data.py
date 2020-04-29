@@ -11,9 +11,10 @@ import json
 import shutil
 import numpy as np
 import scipy.io as sio
+from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from src import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, AMP_CONVERSION
+from kardioml import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, AMP_CONVERSION, LABELS_LOOKUP, LABELS_COUNT
 
 
 class FormatData(object):
@@ -65,7 +66,10 @@ class FormatData(object):
         # Save meta data JSON
         with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
             json.dump({'filename': filename, 'channel_order': channel_order, 'age': age, 'sex': sex,
-                       'labels': labels, 'shape': data.shape}, file, sort_keys=True)
+                       'labels': labels, 'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
+                       'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
+                       'label_train': self._get_training_label(labels=labels), 'shape': data.shape},
+                      file, sort_keys=True)
 
     def _extract_data(self):
         """Extract the raw dataset file."""
@@ -90,3 +94,11 @@ class FormatData(object):
         labels = [label for label in content[15].split(':')[-1].strip().split(',')]
 
         return channel_order, age, sex, labels
+
+    @staticmethod
+    def _get_training_label(labels):
+        """Return one-hot training label."""
+        # Initialize binarizer
+        mlb = MultiLabelBinarizer(classes=np.arange(LABELS_COUNT).tolist())
+
+        return mlb.fit_transform([[LABELS_LOOKUP[label]['label_int'] for label in labels]])[0].tolist()

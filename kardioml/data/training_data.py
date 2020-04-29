@@ -11,7 +11,7 @@ import json
 
 
 # Local imports
-from src import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, LABELS_LOOKUP, FS
+from kardioml import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, LABELS_LOOKUP, FS
 
 
 class TrainingData(object):

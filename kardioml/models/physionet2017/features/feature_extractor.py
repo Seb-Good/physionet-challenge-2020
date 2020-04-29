@@ -6,110 +6,80 @@ extraction libraries.
 By: Sebastian D. Goodfellow, Ph.D., 2017
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import os
 import time
-import pandas as pd
-import scipy.io as sio
+import numpy as np
+import simplejson as json
 from biosppy.signals import ecg
 from biosppy.signals.tools import filter_signal
 
 # Local imports
-# from features.rri_features import *
-# from features.template_features import *
-from features.full_waveform_features import *
+from kardioml import DATA_PATH, FS, ECG_LEADS
+from kardioml.models.physionet2017.features.rri_features import RRIFeatures
+from kardioml.models.physionet2017.features.template_features import TemplateFeatures
+from kardioml.models.physionet2017.features.full_waveform_features import FullWaveformFeatures
 
 
 class Features:
 
-    def __init__(self, file_path, fs, feature_groups, labels=None):
+    def __init__(self, filename):
 
         # Set parameters
-        self.file_path = file_path
-        self.fs = fs
-        self.feature_groups = feature_groups
-        self.labels = labels
+        self.filename = filename
 
         # Set attributes
+        self.meta_data = self._import_meta_data()
         self.features = None
 
-    def get_features(self):
-        return self.features
+    def save_features(self, lead):
+        """Save features as JSON."""
+        # Create directory for formatted data
+        os.makedirs(os.path.join(DATA_PATH, 'physionet_2017', 'features', lead), exist_ok=True)
 
-    def extract_features(self, filter_bandwidth, n_signals=None, show=False, labels=None,
-                         normalize=True, polarity_check=True, template_before=0.2, template_after=0.4):
+        # Save meta data JSON
+        with open(os.path.join(DATA_PATH, 'physionet_2017', 'features', lead, '{}.json'.format(self.filename)), 'w') as file:
+            json.dump(self.features, file, ignore_nan=True)
 
-        # Create empty features DataFrame
-        self.features = pd.DataFrame()
+    def extract_features(self, lead, feature_groups, filter_bandwidth, normalize=True, polarity_check=True,
+                         template_before=0.2, template_after=0.4, show=False):
 
-        # Get list of .mat files
-        file_names = self._get_file_names(n_signals=n_signals)
+        # Get start time
+        t_start = time.time()
 
-        # Loop through .mat files
-        for file_name in file_names:
+        # Load .mat file
+        signal_raw = self._load_waveform_file(lead=lead)
 
-            try:
+        # Preprocess signal
+        ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates = self._preprocess_signal(
+            signal_raw=signal_raw, filter_bandwidth=filter_bandwidth, normalize=normalize,
+            polarity_check=polarity_check, template_before=template_before, template_after=template_after
+        )
 
-                # Get start time
-                t_start = time.time()
+        # Extract features from waveform
+        self.features = self._group_features(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
+                                             rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
+                                             template_before=template_before, template_after=template_after,
+                                             feature_groups=feature_groups)
 
-                # Load .mat file
-                signal_raw = self._load_mat_file(file_name=file_name)
+        # Get end time
+        t_end = time.time()
 
-                # Preprocess signal
-                ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates = self._preprocess_signal(
-                    signal_raw=signal_raw, filter_bandwidth=filter_bandwidth, normalize=normalize,
-                    polarity_check=polarity_check, template_before=template_before, template_after=template_after
-                )
+        # Print progress
+        if show:
+            print('Finished extracting features from ' + self.meta_data['filename'] + ' | Extraction time: ' +
+                  str(np.round((t_end - t_start) / 60, 3)) + ' minutes')
 
-                # Extract features from waveform
-                features = self._group_features(file_name=file_name, ts=ts, signal_raw=signal_raw,
-                                                signal_filtered=signal_filtered, rpeaks=rpeaks,
-                                                templates_ts=templates_ts, templates=templates,
-                                                template_before=template_before, template_after=template_after)
+    def _import_meta_data(self):
+        """Import meta data JSON files."""
+        return json.load(open(os.path.join(DATA_PATH, 'formatted', '{}.json'.format(self.filename))))
 
-                # Append feature vector
-                self.features = self.features.append(features, ignore_index=True)
-
-                # Get end time
-                t_end = time.time()
-
-                # Print progress
-                if show:
-                    print('Finished extracting features from ' + file_name + '.mat | Extraction time: ' +
-                          str(np.round((t_end - t_start) / 60, 3)) + ' minutes')
-
-            except ValueError:
-                print('Error loading ' + file_name + '.mat')
-
-        # Add labels
-        self._add_labels(labels=labels)
-
-    def _add_labels(self, labels):
-        """Add label to feature DataFrame."""
-        if labels is not None:
-            self.features = pd.merge(labels, self.features, on='file_name')
-
-    def _get_file_names(self, n_signals):
-        """Get list of .mat file names in file path."""
-        file_names = [file.split('.')[0] for file in os.listdir(self.file_path) if file.endswith('.mat')]
-
-        return self._get_n_signals(file_names=file_names, n_signals=n_signals)
-
-    @staticmethod
-    def _get_n_signals(file_names, n_signals):
-        """Get list of file names equal to n_signals."""
-        if n_signals is not None:
-            return file_names[0:n_signals]
-        else:
-            return file_names
-
-    def _load_mat_file(self, file_name):
+    def _load_waveform_file(self, lead):
         """Loads ECG signal to numpy array from .mat file."""
-        return sio.loadmat(os.path.join(self.file_path, file_name))['val'][0].astype('float')
+        # Get 12 leads
+        waveforms = np.load(os.path.join(DATA_PATH, 'formatted', '{}.npy'.format(self.filename)))
+
+        return waveforms[ECG_LEADS.index(lead), :].flatten()
 
     def _preprocess_signal(self, signal_raw, filter_bandwidth, normalize, polarity_check,
                            template_before, template_after):
@@ -118,7 +88,7 @@ class Features:
         signal_filtered = self._apply_filter(signal_raw, filter_bandwidth)
 
         # Get BioSPPy ECG object
-        ecg_object = ecg.ecg(signal=signal_raw, sampling_rate=self.fs, show=False)
+        ecg_object = ecg.ecg(signal=signal_raw, sampling_rate=FS, show=False)
 
         # Get BioSPPy output
         ts = ecg_object['ts']          # Signal time array
@@ -168,8 +138,8 @@ class Features:
     def _extract_templates(self, signal_filtered, rpeaks, before, after):
 
         # convert delimiters to samples
-        before = int(before * self.fs)
-        after = int(after * self.fs)
+        before = int(before * FS)
+        after = int(after * FS)
 
         # Sort R-Peaks in ascending order
         rpeaks = np.sort(rpeaks)
@@ -210,23 +180,21 @@ class Features:
     def _apply_filter(self, signal_raw, filter_bandwidth):
         """Apply FIR bandpass filter to waveform."""
         signal_filtered, _, _ = filter_signal(signal=signal_raw, ftype='FIR', band='bandpass',
-                                              order=int(0.3 * self.fs), frequency=filter_bandwidth,
-                                              sampling_rate=self.fs)
+                                              order=int(0.3 * FS), frequency=filter_bandwidth,
+                                              sampling_rate=FS)
         return signal_filtered
 
-    def _group_features(self, file_name, ts, signal_raw, signal_filtered, rpeaks,
-                        templates_ts, templates, template_before, template_after):
+    @staticmethod
+    def _group_features(ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
+                        template_before, template_after, feature_groups):
 
         """Get a dictionary of all ECG features"""
 
         # Empty features dictionary
         features = dict()
 
-        # Set ECG file name
-        features['file_name'] = file_name
-
         # Loop through feature groups
-        for feature_group in self.feature_groups:
+        for feature_group in feature_groups:
 
             # Full waveform features
             if feature_group == 'full_waveform_features':
@@ -235,10 +203,33 @@ class Features:
                 full_waveform_features = FullWaveformFeatures(ts=ts, signal_raw=signal_raw,
                                                               signal_filtered=signal_filtered, rpeaks=rpeaks,
                                                               templates_ts=templates_ts, templates=templates,
-                                                              fs=self.fs)
+                                                              fs=FS)
                 full_waveform_features.extract_full_waveform_features()
 
                 # Update feature dictionary
                 features.update(full_waveform_features.get_full_waveform_features())
 
-        return pd.Series(data=features)
+            # RRI waveform features
+            if feature_group == 'rri_features':
+                # Extract features
+                rri_features = RRIFeatures(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
+                                           rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
+                                           fs=FS, template_before=template_before, template_after=template_after)
+                rri_features.extract_rri_features()
+
+                # Update feature dictionary
+                features.update(rri_features.get_rri_features())
+
+            # Template waveform features
+            if feature_group == 'template_features':
+                # Extract features
+                template_features = TemplateFeatures(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
+                                                     rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
+                                                     fs=FS, template_before=template_before,
+                                                     template_after=template_after)
+                template_features.extract_template_features()
+
+                # Update feature dictionary
+                features.update(template_features.get_template_features())
+
+        return features

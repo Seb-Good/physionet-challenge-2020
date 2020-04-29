@@ -13,7 +13,7 @@ import matplotlib.pylab as plt
 from ipywidgets import interact, fixed
 
 # Local imports
-from src import DATA_PATH, FS, LABELS_LOOKUP, ECG_LEADS
+from kardioml import DATA_PATH, FS, LABELS_LOOKUP, ECG_LEADS
 
 
 def waveform_plot(filename_id, filenames, path):
@@ -30,11 +30,10 @@ def waveform_plot(filename_id, filenames, path):
     # Get label
     label = ''
     for idx, lab in enumerate(meta_data['labels']):
-        out = next(item for item in LABELS_LOOKUP if item['label'] == lab)
         if idx == 0:
-            label += out['label_full']
+            label += LABELS_LOOKUP[lab]['label_full']
         else:
-            label += ' and ' + out['label_full']
+            label += ' and ' + LABELS_LOOKUP[lab]['label_full']
 
     # Time array
     time = np.arange(waveforms.shape[1]) * 1 / FS

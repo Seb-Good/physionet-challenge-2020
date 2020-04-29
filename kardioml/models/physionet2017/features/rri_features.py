@@ -10,18 +10,18 @@ import numpy as np
 import scipy as sp
 from scipy import signal
 from scipy import interpolate
-from pyentrp import entropy as ent
+from pyentrp.entropy import sample_entropy
 
 # Local imports
-from src.models.physionet2017.features.higuchi_fractal_dimension import hfd
+from kardioml.models.physionet2017.features.higuchi_fractal_dimension import hfd
 
 
 class RRIFeatures:
 
     """Extract RRI features for one ECG signal."""
 
-    def __init__(self, ts, signal_raw, signal_filtered, rpeaks,templates_ts,
-                 templates, fs, template_before, template_after):
+    def __init__(self, ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
+                 fs, template_before, template_after):
 
         # Set parameters
         self.ts = ts
@@ -73,7 +73,7 @@ class RRIFeatures:
     def get_rri_features(self):
         return self.rri_features
 
-    def calculate_heart_rate_variability_features(self):
+    def extract_rri_features(self):
         self.rri_features.update(self.calculate_rri_temporal_features(self.rri, self.diff_rri, self.diff2_rri))
         self.rri_features.update(self.calculate_rri_nonlinear_features(self.rri, self.diff_rri, self.diff2_rri))
         self.rri_features.update(self.calculate_pearson_correlation_features(self.rri))
@@ -253,7 +253,7 @@ class RRIFeatures:
             if np.isfinite(value):
                 return value
             else:
-                return np.nan()
+                return np.nan
         except ValueError:
             return np.nan
 
@@ -360,7 +360,7 @@ class RRIFeatures:
         # Non-linear RR statistics
         if len(rri) > 1:
             rri_nonlinear_features['rri_entropy'] = \
-                self.safe_check(ent.multiscale_entropy(rri, sample_length=2, tolerance=0.1*np.std(rri))[0])
+                self.safe_check(sample_entropy(rri, sample_length=2, tolerance=0.1*np.std(rri))[0])
             rri_nonlinear_features['rri_higuchi_fractal_dimension'] = self.safe_check(hfd(rri, k_max=10))
         else:
             rri_nonlinear_features['rri_entropy'] = np.nan
@@ -369,7 +369,7 @@ class RRIFeatures:
         # Non-linear RR difference statistics
         if len(diff_rri) > 1:
             rri_nonlinear_features['diff_rri_entropy'] = \
-                self.safe_check(ent.multiscale_entropy(diff_rri, sample_length=2, tolerance=0.1*np.std(diff_rri))[0])
+                self.safe_check(sample_entropy(diff_rri, sample_length=2, tolerance=0.1*np.std(diff_rri))[0])
             rri_nonlinear_features['diff_rri_higuchi_fractal_dimension'] = self.safe_check(hfd(diff_rri, k_max=10))
         else:
             rri_nonlinear_features['diff_rri_entropy'] = np.nan
@@ -378,7 +378,7 @@ class RRIFeatures:
         # Non-linear RR difference difference statistics
         if len(diff2_rri) > 1:
             rri_nonlinear_features['diff2_rri_entropy'] = \
-                self.safe_check(ent.multiscale_entropy(diff2_rri, sample_length=2, tolerance=0.1*np.std(diff2_rri))[0])
+                self.safe_check(sample_entropy(diff2_rri, sample_length=2, tolerance=0.1*np.std(diff2_rri))[0])
             rri_nonlinear_features['diff2_rri_higuchi_fractal_dimension'] = self.safe_check(hfd(diff2_rri, k_max=10))
         else:
             rri_nonlinear_features['diff2_rri_entropy'] = np.nan
@@ -390,7 +390,7 @@ class RRIFeatures:
     def pnn(diff_rri, time):
 
         # Count number of rri diffs greater than the specified time
-        nn = sum([abs(diff_rri) > time])
+        nn = np.sum(np.abs(diff_rri) > time)
 
         # Compute pNN
         pnn = nn / len(diff_rri) * 100
@@ -403,18 +403,18 @@ class RRIFeatures:
         # Empty dictionary
         pearson_correlation_features = dict()
 
-        # Calculate Pearson correlation
-        pearson_coeff_p1, pearson_p_value_p1 = sp.stats.pearsonr(rri[0:-2], rri[1:-1])
-        pearson_coeff_p2, pearson_p_value_p2 = sp.stats.pearsonr(rri[0:-3], rri[2:-1])
-        pearson_coeff_p3, pearson_p_value_p3 = sp.stats.pearsonr(rri[0:-4], rri[3:-1])
+        if len(rri[0:-2]) == len(rri[1:-1]) and len(rri[0:-2]) > 2 and  len(rri[0:-2]) > 2:
 
-        # Get features
-        pearson_correlation_features['rri_p1_pearson_coeff'] = pearson_coeff_p1
-        pearson_correlation_features['rri_p1_pearson_p_value'] = pearson_p_value_p1
-        pearson_correlation_features['rri_p2_pearson_coeff'] = pearson_coeff_p2
-        pearson_correlation_features['rri_p2_pearson_p_value'] = pearson_p_value_p2
-        pearson_correlation_features['rri_p3_pearson_coeff'] = pearson_coeff_p3
-        pearson_correlation_features['rri_p3_pearson_p_value'] = pearson_p_value_p3
+            # Calculate Pearson correlation
+            pearson_coeff_p1, pearson_p_value_p1 = sp.stats.pearsonr(rri[0:-2], rri[1:-1])
+
+            # Get features
+            pearson_correlation_features['rri_p1_pearson_coeff'] = pearson_coeff_p1
+            pearson_correlation_features['rri_p1_pearson_p_value'] = pearson_p_value_p1
+
+        else:
+            pearson_correlation_features['rri_p1_pearson_coeff'] = np.nan
+            pearson_correlation_features['rri_p1_pearson_p_value'] = np.nan
 
         return pearson_correlation_features
 

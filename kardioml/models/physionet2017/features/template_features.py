@@ -8,19 +8,18 @@ By: Sebastian D. Goodfellow, Ph.D.
 # 3rd party imports
 import numpy as np
 import scipy as sp
-from pyentrp import entropy as ent
+from pyentrp.entropy import sample_entropy
 
 # Local imports
-from src.models.physionet2017.features.higuchi_fractal_dimension import hfd
+from kardioml.models.physionet2017.features.higuchi_fractal_dimension import hfd
 
 
 class TemplateFeatures:
 
     """Extract template features for one ECG signal."""
 
-    def __init__(self, ts, signal_raw, signal_filtered, rpeaks,
-                 templates_ts, templates, fs, template_before,
-                 template_after):
+    def __init__(self, ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
+                 fs, template_before, template_after):
 
         # Input variables
         self.ts = ts
@@ -80,7 +79,7 @@ class TemplateFeatures:
     def get_template_features(self):
         return self.template_features
 
-    def calculate_template_features(self):
+    def extract_template_features(self):
         self.template_features.update(self.calculate_p_wave_features())
         self.template_features.update(self.calculate_q_wave_features())
         self.template_features.update(self.calculate_t_wave_features())
@@ -236,6 +235,7 @@ class TemplateFeatures:
         """
         Debug
         """
+        # import matplotlib.pylab as plt
         # plt.plot(self.templates, '-', c=[0.7, 0.7, 0.7])
         # plt.plot(self.median_template, '-k')
         # plt.plot([qrs_start_sp, qrs_start_sp], [self.median_template.min(), self.median_template.max()], '-r')
@@ -270,7 +270,7 @@ class TemplateFeatures:
             if np.isfinite(value):
                 return value
             else:
-                return np.nan()
+                return np.nan
 
         except Exception:
             return np.nan
@@ -299,9 +299,9 @@ class TemplateFeatures:
         """
         Calculate non-linear statistics
         """
-        multiscale_entropy = [
+        entropy = [
             self.safe_check(
-                ent.multiscale_entropy(
+                sample_entropy(
                     self.templates[0:start_sp, col],
                     sample_length=2,
                     tolerance=0.1*np.std(self.templates[0:start_sp, col])
@@ -309,15 +309,14 @@ class TemplateFeatures:
             )
             for col in range(self.templates.shape[1])
         ]
-        p_wave_features['p_wave_entropy_mean'] = np.mean(multiscale_entropy)
-        p_wave_features['p_wave_entropy_median'] = np.median(multiscale_entropy)
-        p_wave_features['p_wave_entropy_std'] = np.std(multiscale_entropy, ddof=1)
+        p_wave_features['p_wave_entropy_mean'] = np.mean(entropy)
+        p_wave_features['p_wave_entropy_std'] = np.std(entropy, ddof=1)
 
         higuchi_fractal = [
             hfd(self.templates[0:start_sp, col], k_max=10) for col in range(self.templates.shape[1])
         ]
         p_wave_features['p_wave_higuchi_fractal_mean'] = np.mean(higuchi_fractal)
-        p_wave_features['p_wave_higuchi_fractal_median'] = np.median(higuchi_fractal)
+        p_wave_features['p_wave_higuchi_fractal_mean'] = np.mean(higuchi_fractal)
         p_wave_features['p_wave_higuchi_fractal_std'] = np.std(higuchi_fractal, ddof=1)
 
         return p_wave_features
@@ -372,9 +371,9 @@ class TemplateFeatures:
         """
         Calculate non-linear statistics
         """
-        multiscale_entropy = [
+        entropy = [
             self.safe_check(
-                ent.multiscale_entropy(
+                sample_entropy(
                     self.templates[end_sp:, col],
                     sample_length=2,
                     tolerance=0.1*np.std(self.templates[end_sp:, col])
@@ -382,15 +381,13 @@ class TemplateFeatures:
             )
             for col in range(self.templates.shape[1])
         ]
-        t_wave_features['t_wave_multiscale_entropy_mean'] = np.mean(multiscale_entropy)
-        t_wave_features['t_wave_multiscale_entropy_median'] = np.median(multiscale_entropy)
-        t_wave_features['t_wave_multiscale_entropy_std'] = np.std(multiscale_entropy, ddof=1)
+        t_wave_features['t_wave_entropy_mean'] = np.mean(entropy)
+        t_wave_features['t_wave_entropy_std'] = np.std(entropy, ddof=1)
 
         higuchi_fractal = [
             hfd(self.templates[end_sp:, col], k_max=10) for col in range(self.templates.shape[1])
         ]
         t_wave_features['t_wave_higuchi_fractal_mean'] = np.mean(higuchi_fractal)
-        t_wave_features['t_wave_higuchi_fractal_median'] = np.median(higuchi_fractal)
         t_wave_features['t_wave_higuchi_fractal_std'] = np.std(higuchi_fractal, ddof=1)
 
         return t_wave_features
@@ -480,15 +477,14 @@ class TemplateFeatures:
         r_peak_amplitude_features['rpeak_min'] = np.min(rpeak_amplitudes)
         r_peak_amplitude_features['rpeak_max'] = np.max(rpeak_amplitudes)
         r_peak_amplitude_features['rpeak_mean'] = np.mean(rpeak_amplitudes)
-        r_peak_amplitude_features['rpeak_median'] = np.median(rpeak_amplitudes)
         r_peak_amplitude_features['rpeak_std'] = np.std(rpeak_amplitudes, ddof=1)
         r_peak_amplitude_features['rpeak_skew'] = sp.stats.skew(rpeak_amplitudes)
         r_peak_amplitude_features['rpeak_kurtosis'] = sp.stats.kurtosis(rpeak_amplitudes)
 
         # Non-linear statistics
-        r_peak_amplitude_features['rpeak_multiscale_entropy'] = \
+        r_peak_amplitude_features['rpeak_entropy'] = \
             self.safe_check(
-                ent.multiscale_entropy(rpeak_amplitudes, sample_length=2, tolerance=0.1*np.std(rpeak_amplitudes))[0]
+                sample_entropy(rpeak_amplitudes, sample_length=2, tolerance=0.1*np.std(rpeak_amplitudes))[0]
             )
         r_peak_amplitude_features['rpeak_higuchi_fractal_dimension'] = hfd(rpeak_amplitudes, k_max=10)
 
@@ -513,7 +509,6 @@ class TemplateFeatures:
 
         # Calculate correlation matrix statistics
         template_correlation_features['template_corr_coeff_mean'] = np.mean(upper_triangle)
-        template_correlation_features['template_corr_coeff_median'] = np.median(upper_triangle)
         template_correlation_features['template_corr_coeff_std'] = np.std(upper_triangle, ddof=1)
 
         return template_correlation_features
@@ -540,7 +535,6 @@ class TemplateFeatures:
 
         # Calculate correlation matrix statistics
         p_wave_correlation_features['p_wave_corr_coeff_mean'] = np.mean(upper_triangle)
-        p_wave_correlation_features['p_wave_corr_coeff_median'] = np.median(upper_triangle)
         p_wave_correlation_features['p_wave_corr_coeff_std'] = np.std(upper_triangle, ddof=1)
 
         return p_wave_correlation_features
@@ -568,7 +562,6 @@ class TemplateFeatures:
 
         # Calculate correlation matrix statistics
         qrs_correlation_features['qrs_corr_coeff_mean'] = np.mean(upper_triangle)
-        qrs_correlation_features['qrs_corr_coeff_median'] = np.median(upper_triangle)
         qrs_correlation_features['qrs_corr_coeff_std'] = np.std(upper_triangle, ddof=1)
 
         return qrs_correlation_features
@@ -595,7 +588,6 @@ class TemplateFeatures:
 
         # Calculate correlation matrix statistics
         t_wave_correlation_features['t_wave_corr_coeff_mean'] = np.mean(upper_triangle)
-        t_wave_correlation_features['t_wave_corr_coeff_median'] = np.median(upper_triangle)
         t_wave_correlation_features['t_wave_corr_coeff_std'] = np.std(upper_triangle, ddof=1)
 
         return t_wave_correlation_features

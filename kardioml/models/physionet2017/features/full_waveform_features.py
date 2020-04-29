@@ -12,7 +12,7 @@ import scipy as sp
 from scipy import signal
 
 # Local imports
-from src.models.physionet2017.features.higuchi_fractal_dimension import hfd
+from kardioml.models.physionet2017.features.higuchi_fractal_dimension import hfd
 
 
 class FullWaveformFeatures:

@@ -26,6 +26,9 @@ def hfd(a, k_max):
             Lk += Lmk
         L.append(np.log(Lk / (m + 1)))
         x.append([np.log(1.0 / k), 1])
-    (p, r1, r2, s) = np.linalg.lstsq(x, L)
 
-    return p[0]
+    try:
+        (p, r1, r2, s) = np.linalg.lstsq(x, L)
+        return p[0]
+    except Exception:
+        return np.nan
