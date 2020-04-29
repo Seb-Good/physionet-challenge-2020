@@ -10,12 +10,14 @@ By: Sebastian D. Goodfellow, Ph.D., 2017
 import os
 import time
 import numpy as np
+import pandas as pd
 import simplejson as json
 from biosppy.signals import ecg
 from biosppy.signals.tools import filter_signal
 
 # Local imports
 from kardioml import DATA_PATH, FS, ECG_LEADS
+from kardioml.data.data_loader import parse_header
 from kardioml.models.physionet2017.features.rri_features import RRIFeatures
 from kardioml.models.physionet2017.features.template_features import TemplateFeatures
 from kardioml.models.physionet2017.features.full_waveform_features import FullWaveformFeatures
@@ -23,14 +25,21 @@ from kardioml.models.physionet2017.features.full_waveform_features import FullWa
 
 class Features:
 
-    def __init__(self, filename):
+    def __init__(self, filename, waveform_data=None, header_data=None):
 
         # Set parameters
         self.filename = filename
+        self.waveform_data = waveform_data
+        self.header_data = header_data
 
         # Set attributes
+        self.waveform_data = self._load_waveform_file()
         self.meta_data = self._import_meta_data()
         self.features = None
+
+    def get_features(self):
+        """Get features as Pandas DataFrame."""
+        return pd.DataFrame([self.features])
 
     def save_features(self, lead):
         """Save features as JSON."""
@@ -48,7 +57,7 @@ class Features:
         t_start = time.time()
 
         # Load .mat file
-        signal_raw = self._load_waveform_file(lead=lead)
+        signal_raw = self.waveform_data[ECG_LEADS.index(lead), :].flatten()
 
         # Preprocess signal
         ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates = self._preprocess_signal(
@@ -72,14 +81,19 @@ class Features:
 
     def _import_meta_data(self):
         """Import meta data JSON files."""
-        return json.load(open(os.path.join(DATA_PATH, 'formatted', '{}.json'.format(self.filename))))
+        if self.header_data is None:
+            return json.load(open(os.path.join(DATA_PATH, 'formatted', '{}.json'.format(self.filename))))
+        else:
+            meta_data = parse_header(self.header_data)
+            self.filename = meta_data['filename']
+            return meta_data
 
-    def _load_waveform_file(self, lead):
+    def _load_waveform_file(self):
         """Loads ECG signal to numpy array from .mat file."""
-        # Get 12 leads
-        waveforms = np.load(os.path.join(DATA_PATH, 'formatted', '{}.npy'.format(self.filename)))
-
-        return waveforms[ECG_LEADS.index(lead), :].flatten()
+        if self.waveform_data is None:
+            return np.load(os.path.join(DATA_PATH, 'formatted', '{}.npy'.format(self.filename)))
+        else:
+            return self.waveform_data
 
     def _preprocess_signal(self, signal_raw, filter_bandwidth, normalize, polarity_check,
                            template_before, template_after):
@@ -135,7 +149,8 @@ class Features:
 
             return signal_raw / templates_max, signal_filtered / templates_max, templates / templates_max
 
-    def _extract_templates(self, signal_filtered, rpeaks, before, after):
+    @staticmethod
+    def _extract_templates(signal_filtered, rpeaks, before, after):
 
         # convert delimiters to samples
         before = int(before * FS)
@@ -177,15 +192,15 @@ class Features:
 
         return templates, rpeaks_new
 
-    def _apply_filter(self, signal_raw, filter_bandwidth):
+    @staticmethod
+    def _apply_filter(signal_raw, filter_bandwidth):
         """Apply FIR bandpass filter to waveform."""
         signal_filtered, _, _ = filter_signal(signal=signal_raw, ftype='FIR', band='bandpass',
                                               order=int(0.3 * FS), frequency=filter_bandwidth,
                                               sampling_rate=FS)
         return signal_filtered
 
-    @staticmethod
-    def _group_features(ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
+    def _group_features(self, ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
                         template_before, template_after, feature_groups):
 
         """Get a dictionary of all ECG features"""
@@ -211,6 +226,7 @@ class Features:
 
             # RRI waveform features
             if feature_group == 'rri_features':
+
                 # Extract features
                 rri_features = RRIFeatures(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
                                            rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
@@ -222,6 +238,7 @@ class Features:
 
             # Template waveform features
             if feature_group == 'template_features':
+
                 # Extract features
                 template_features = TemplateFeatures(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
                                                      rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
@@ -231,5 +248,9 @@ class Features:
 
                 # Update feature dictionary
                 features.update(template_features.get_template_features())
+
+            # Add age and sex
+            features.update({'age': np.nan if self.meta_data['age'] == 'NaN' else int(self.meta_data['age']),
+                             'sex': 1 if self.meta_data['sex'] else 0})
 
         return features

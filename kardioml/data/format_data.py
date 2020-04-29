@@ -46,8 +46,8 @@ class FormatData(object):
         os.makedirs(self.formatted_path, exist_ok=True)
 
         # Get a list of filenames
-        filenames = [filename.split('.')[0] for filename in os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAME))
-                     if 'mat' in filename]
+        filenames = [filename.split('.')[0] for filename in
+                     os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAME)) if 'mat' in filename]
 
         for filename in filenames:
             self._format_sample(filename=filename)
