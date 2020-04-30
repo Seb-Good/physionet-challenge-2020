@@ -68,9 +68,15 @@ below).
 6. Good luck!
 
 ## Model Submission
+The ```driver.py``` file was provided by the contest organizers and shows how a submission model is run. They will not 
+use any ```driver.py``` that we submit so no modifications should be made to this file. The code below is a copy of the 
+```___main___``` function from the ```driver.py``` file. 
 
 ```python
+from run_12ECG_classifier import load_12ECG_model, run_12ECG_classifier
+
 if __name__ == '__main__':
+
     # Parse arguments.
     if len(sys.argv) != 3:
         raise Exception('Include the input and output directories as arguments, e.g., python driver.py input output.')
@@ -109,7 +115,57 @@ if __name__ == '__main__':
     print('Done.')
 ```
 
+There are two functions loaded at the start of ```driver.py``` 
+that we have control over. They are called as follows:
+
+```python
+# Load your model and return a model object.
+model = load_12ECG_model()
+``` 
+and 
+```python
+# Process data from one sample (```.mat``` and ```.hea```) and return predicted labels and probabilities.
+current_label, current_score = run_12ECG_classifier(data, header_data, classes, model)
+```
+
+Output should be in the following format.
+
+```python
+current_label = np.array([0, 0, 0, 0, 0, 0, 0, 1, 0])
+
+current_score = np.array([3.89575280e-06, 1.04941707e-02, 1.73853521e-04, 1.84738655e-02, 1.03849954e-04, 
+                          1.97162270e-04, 7.78743392e-03, 9.46390033e-01, 2.45864340e-03], dtype=float32)
+```
+
+An example of the LaussenLabs Physionet Challenge 2017 model being called is presented below.
+
+```python
+# 3rd party imports
+import os
+import pickle
+
+# Local imports
+from kardioml import WORKING_PATH
+
+
+def run_12ECG_classifier(data, header_data, classes, model):
+    """Get predictions."""
+    current_label, current_score = model.challenge_prediction(data=data, header_data=header_data)
+
+    return current_label, current_score
+
+
+def load_12ECG_model():
+    """Load Physionet2017 Model"""
+    # Unpickle data model
+    with open(os.path.join(WORKING_PATH, 'models', 'physionet2017', 'physionet2017.model'), "rb") as input_file:
+        phyionet2017_model = pickle.load(input_file)
+
+    return phyionet2017_model
+```
+
 ## Helper Functions
+scoring
 
 ## License
 [BSD 2-Clause License](LICENSE.txt)
