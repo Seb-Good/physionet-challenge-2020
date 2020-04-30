@@ -131,8 +131,10 @@ current_label, current_score = run_12ECG_classifier(data, header_data, classes, 
 Output should be in the following format.
 
 ```python
+# Class labels
 current_label = np.array([0, 0, 0, 0, 0, 0, 0, 1, 0])
 
+# Class probabilities
 current_score = np.array([3.89575280e-06, 1.04941707e-02, 1.73853521e-04, 1.84738655e-02, 1.03849954e-04, 
                           1.97162270e-04, 7.78743392e-03, 9.46390033e-01, 2.45864340e-03], dtype=float32)
 ```
@@ -165,7 +167,17 @@ def load_12ECG_model():
 ```
 
 ## Helper Functions
-scoring
+Scoring functions can be found at ```physionet-challenge-2020/kardioml/scoring/scoring_metrics.py```. The model is 
+evaluated basked on the ```f_measure``` so use this for model tuning.
+
+```python
+accuracy, f_measure, f_beta, g_beta = compute_beta_score(labels, output, beta, num_classes, check_errors=True)
+
+auroc, auprc = compute_auc(labels, probabilities, num_classes, check_errors=True)
+```
+
+Some additional functions for parsing the header and loading ```.mat``` and ```.hea``` files is available at 
+```physionet-challenge-2020/kardioml/data/data_loader.py```. 
 
 ## License
 [BSD 2-Clause License](LICENSE.txt)
