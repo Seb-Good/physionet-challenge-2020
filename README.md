@@ -63,6 +63,8 @@ below).
 5. Run Notebooks 3 ```3_explore_formatted_data.ipynb```. This notebook pulls data from 
 ```physionet-challenge-2020/data/formatted``` and presents some summary plots of the training population.
 
+    ![Patient Age Distribution](/documents/README/age_distribution.png) 
+
 6. Good luck!
 
 ## Helper Functions
