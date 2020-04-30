@@ -53,6 +53,9 @@ class Model(object):
         # Compute final cv scores
         self.cv_scores = self._compute_final_cv_scores()
 
+        # Train final model
+        self.train_final_model(params=self.params)
+
     def cross_validate(self, learning_rate, n_estimators, max_depth, subsample, colsample,
                        gamma, min_child_weight, max_delta_step):
         """Run cross validation."""
@@ -124,6 +127,22 @@ class Model(object):
 
         return cv_scores
 
+    def train_final_model(self, params):
+        """Train final model after optimization."""
+        # Initialize model
+        self.model = OneVsRestClassifier(XGBClassifier(learning_rate=params['learning_rate'],
+                                                       n_estimators=int(params['n_estimators']),
+                                                       max_depth=int(params['max_depth']),
+                                                       subsample=params['subsample'],
+                                                       colsample=params['colsample'],
+                                                       gamma=params['gamma'],
+                                                       min_child_weight=params['min_child_weight'],
+                                                       max_delta_step=params['max_delta_step'],
+                                                       n_jobs=-1))
+
+        # Train model
+        self.model.fit(X=self.features, y=self.labels)
+
     def get_final_cv_scores(self):
         """Return a dictionary of final scores."""
         return {cv_index: self.cv_scores[cv_index]['cv_score'].get_cv_score()
@@ -146,7 +165,7 @@ class Model(object):
                                   filter_bandwidth=FILTER_BAND_LIMITS)
 
         # Get prediction output
-        predictions = self.model.predict(features.get_features())
-        probabilities = self.model.predict_proba(features.get_features())
+        predictions = self.model.predict(features.get_features()).flatten()
+        probabilities = self.model.predict_proba(features.get_features()).flatten()
 
         return predictions, probabilities

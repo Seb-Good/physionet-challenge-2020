@@ -1,18 +1,29 @@
-import numpy as np
+"""
+run_ECG_classifier.py
+---------------------
+This module provides function for preparing the final predictions for evaluation.
+By: Sebastian D. Goodfellow, Ph.D., 2020
+"""
+
+# 3rd party imports
+import os
+import pickle
+
+# Local imports
+from kardioml import WORKING_PATH
 
 
 def run_12ECG_classifier(data, header_data, classes, model):
-
-    # current_label = [1, 0, 0, 0, 0, 0, 0, 0, 0]
-    # current_score = [0.9, 0.6, 0.2, 0.05, 0.2, 0.35, 0.35, 0.1, 0.1]
-
-    num_classes = len(classes)
-    current_label = np.zeros(num_classes, dtype=int)
-    current_score = np.zeros(num_classes)
-    current_label[0] = 1
+    """Get predictions."""
+    current_label, current_score = model.challenge_prediction(data=data, header_data=header_data)
 
     return current_label, current_score
 
 
 def load_12ECG_model():
-    return []
+    """Load Physionet2017 Model"""
+    # Unpickle data model
+    with open(os.path.join(WORKING_PATH, 'models', 'physionet2017', 'physionet2017.model'), "rb") as input_file:
+        phyionet2017_model = pickle.load(input_file)
+
+    return phyionet2017_model
