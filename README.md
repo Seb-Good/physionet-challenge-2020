@@ -46,7 +46,7 @@ the rhythm labels (```#Dx```). Below is an exampe for file ```A0001.hea```.
       "channel_order": ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6" ],
       "filename": "A0001",
       "label_train": [0, 0, 0, 0, 0, 0, 1, 0, 0],
-      "labels": [ "RBBB"],
+      "labels": ["RBBB"],
       "labels_full": ["Right bundle branch block"],
       "labels_int": [6],
       "sex": "Male",
