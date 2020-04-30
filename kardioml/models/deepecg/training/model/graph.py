@@ -311,7 +311,7 @@ class Graph(object):
         """Computes the mean squared error for a given set of logits and labels."""
         with tf.variable_scope('loss'):
             # Specify class weightings {'N': 0.42001576, 'A': 2.81266491, 'O': 0.88281573, '~': 7.64157706}
-            class_weights = tf.constant([0.42001576, 2.81266491, 0.88281573, 1.0])
+            # class_weights = tf.constant([0.42001576, 2.81266491, 0.88281573, 1.0])
 
             # Specify the weights for each sample in the batch
             # weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
