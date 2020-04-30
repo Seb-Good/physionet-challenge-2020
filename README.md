@@ -179,5 +179,10 @@ auroc, auprc = compute_auc(labels, probabilities, num_classes, check_errors=True
 Some additional functions for parsing the header and loading ```.mat``` and ```.hea``` files is available at 
 ```physionet-challenge-2020/kardioml/data/data_loader.py```. 
 
+## Model Building
+An example of the LaussenLabs Physionet Challenge 2017 model can be seen at 
+```physionet-challenge-2020/kardioml/models/physionet2017```. This model uses extracted features from lead I and trains
+an XGBoost classifier.
+
 ## License
 [BSD 2-Clause License](LICENSE.txt)
