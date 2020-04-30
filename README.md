@@ -124,7 +124,7 @@ model = load_12ECG_model()
 ``` 
 and 
 ```python
-# Process data from one sample (```.mat``` and ```.hea```) and return predicted labels and probabilities.
+# Process data from one sample (.mat and .hea) and return predicted labels and probabilities.
 current_label, current_score = run_12ECG_classifier(data, header_data, classes, model)
 ```
 
