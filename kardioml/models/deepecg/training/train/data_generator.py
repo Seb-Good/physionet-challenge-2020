@@ -11,6 +11,9 @@ import json
 import numpy as np
 import tensorflow as tf
 
+# Local imports
+from kardioml import DATA_PATH, LABELS_COUNT
+
 
 class DataGenerator(object):
 
@@ -26,16 +29,16 @@ class DataGenerator(object):
         self.num_parallel_calls = num_parallel_calls
 
         # Set attributes
-        self.lookup_dict = self._get_lookup_dict()
-        self.file_names, self.labels = self._get_file_names_and_labels()
-        self.num_samples = len(self.lookup_dict)
+        self.file_names = self._get_lookup_dict()
+        self.labels = self._get_labels()
+        self.num_samples = len(self.file_names)
         self.file_paths = self._get_file_paths()
         self.num_batches = (self.num_samples + self.batch_size - 1) // self.batch_size
         self.current_seed = 0
 
         # Get lambda functions
         self.import_waveforms_fn_train = lambda file_path, label: self._import_waveform(file_path=file_path,
-                                                                                        label=label, augment=True)
+                                                                                        label=label, augment=False)
         self.import_waveforms_fn_val = lambda file_path, label: self._import_waveform(file_path=file_path,
                                                                                       label=label, augment=False)
         # Get dataset
@@ -51,29 +54,32 @@ class DataGenerator(object):
 
     def _get_file_paths(self):
         """Convert file names to full absolute file paths with .npy extension."""
-        return [os.path.join(self.path, self.mode, 'waveforms', file_name + '.npy') for file_name in self.file_names]
+        return [os.path.join(self.path, '{}.npy'.format(file_name )) for file_name in self.file_names]
 
     def _get_lookup_dict(self):
-        """Load lookup dictionary {'file_name': label}."""
-        return json.load(open(os.path.join(self.path, self.mode, 'labels', 'labels.json')))
+        """Load lookup dictionary {'train': ['A0001', ...], 'val': ['A0012', ...]}."""
+        return json.load(open(os.path.join(DATA_PATH, 'deepecg', 'training_lookup.json')))[self.mode]
 
-    def _get_file_names_and_labels(self):
+    def _get_labels(self):
         """Get list of waveform npy file paths and labels."""
-        # Get waveform file names
-        file_names = list(self.lookup_dict.keys())
-
-        # Get labels
-        labels = [self.lookup_dict[key] for key in self.lookup_dict.keys()]
+        # Get label from each file
+        labels = list()
+        for filename in self.file_names:
+            meta_data = json.load(open(os.path.join(self.path, '{}.json'.format(filename))))
+            labels.append(meta_data['label_train'])
 
         # file_paths and labels should have same length
-        assert len(file_names) == len(labels)
+        assert len(self.file_names) == len(labels)
 
-        return file_names, labels
+        return labels
 
     def _import_waveform(self, file_path, label, augment):
         """Import waveform file from file path string."""
         # Load numpy file
         waveform = tf.py_func(self._load_npy_file, [file_path], [tf.float32])
+
+        # Zero pad
+        waveform = tf.py_func(self._zero_pad, [waveform, 'center'], [tf.float32])
 
         # Set tensor shape
         waveform = tf.reshape(tensor=waveform, shape=self.shape)
@@ -146,7 +152,7 @@ class DataGenerator(object):
             return (
                 tf.data.Dataset.from_tensor_slices(
                     tensors=(tf.constant(value=self.file_paths),
-                             tf.reshape(tensor=tf.constant(self.labels), shape=[-1]))
+                             tf.reshape(tensor=tf.constant(self.labels), shape=[-1, LABELS_COUNT]))
                 )
                 .shuffle(buffer_size=self.num_samples, reshuffle_each_iteration=True)
                 .map(map_func=self.import_waveforms_fn_train, num_parallel_calls=self.num_parallel_calls)
@@ -158,7 +164,7 @@ class DataGenerator(object):
             return (
                 tf.data.Dataset.from_tensor_slices(
                     tensors=(tf.constant(value=self.file_paths),
-                             tf.reshape(tensor=tf.constant(self.labels), shape=[-1]))
+                             tf.reshape(tensor=tf.constant(self.labels), shape=[-1, LABELS_COUNT]))
                 )
                 .map(map_func=self.import_waveforms_fn_val, num_parallel_calls=self.num_parallel_calls)
                 .repeat()
@@ -170,3 +176,15 @@ class DataGenerator(object):
     def _load_npy_file(file_path):
         """Python function for loading a single .npy file as casting the data type as float32."""
         return np.load(file_path.decode()).astype(np.float32)
+
+    def _zero_pad(self, waveform, align):
+        """Zero pad waveform (align: left, center, right)."""
+        # Get remainder
+        remainder = self.shape[0] - len(waveform)
+
+        if align == 'left':
+            return np.pad(waveform, (0, remainder), 'constant', constant_values=0)
+        elif align == 'center':
+            return np.pad(waveform, (int(remainder / 2), remainder - int(remainder / 2)), 'constant', constant_values=0)
+        elif align == 'right':
+            return np.pad(waveform, (remainder, 0), 'constant', constant_values=0)

@@ -13,6 +13,9 @@ WORKING_PATH = (
 # Set data directory
 DATA_PATH = os.path.join(WORKING_PATH, 'data')
 
+# Set output directory
+OUTPUT_PATH = os.path.join(WORKING_PATH, 'output')
+
 # Dataset file name
 DATA_FILE_NAME = 'PhysioNetChallenge2020_Training_CPSC.tar.gz'
 

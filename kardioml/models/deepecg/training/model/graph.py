@@ -51,7 +51,6 @@ class Graph(object):
         self.mode_handle = None
         self.generator_train = None
         self.generator_val = None
-        self.generator_test = None
         self.iterator = None
         self.cams = None
         self.tower_losses = None
@@ -90,7 +89,7 @@ class Graph(object):
             self.optimizer = self._create_optimizer(learning_rate=self.learning_rate)
 
             # Data train, val, and test data generators
-            self.generator_train, self.generator_val, self.generator_test = self._get_generators()
+            self.generator_train, self.generator_val = self._get_generators()
 
             # Initialize iterator
             self.iterator = self._initialize_iterator()
@@ -142,13 +141,16 @@ class Graph(object):
         self.waveforms, self.labels = self._get_next_batch()
 
         # Compute forward propagation
-        self.logits = self.network.inference(input_layer=self.waveforms, is_training=self.is_training)
+        self.logits, self.cams = self.network.inference(input_layer=self.waveforms, reuse=tf.AUTO_REUSE,
+                                                        is_training=self.is_training, name='ECGNet',
+                                                        print_shape=True)
 
         # Compute loss
         self.loss = self._compute_loss(logits=self.logits, labels=self.labels)
 
-        # Compute accuracy
+        # Compute metrics
         self.accuracy = self._compute_accuracy(logits=self.logits, labels=self.labels)
+        self.f1 = self._compute_f1(logits=self.logits, labels=self.labels)
 
         # Compute gradients
         self.gradients = self._compute_gradients(optimizer=self.optimizer, loss=self.loss)
@@ -266,10 +268,7 @@ class Graph(object):
         with tf.variable_scope('val_generator'):
             generator_val = self.network.create_generator(path=self.data_path, mode='val',
                                                           batch_size=self.batch_size)
-        with tf.variable_scope('test_generator'):
-            generator_test = self.network.create_generator(path=self.data_path, mode='test',
-                                                           batch_size=self.batch_size)
-        return generator_train, generator_val, generator_test
+        return generator_train, generator_val
 
     def _get_saver(self):
         """Create tensorflow checkpoint saver."""
@@ -307,6 +306,7 @@ class Graph(object):
     def _compute_loss(logits, labels):
         """Computes the mean squared error for a given set of logits and labels."""
         with tf.variable_scope('loss'):
+
             # Specify class weightings {'N': 0.42001576, 'A': 2.81266491, 'O': 0.88281573, '~': 7.64157706}
             # class_weights = tf.constant([0.42001576, 2.81266491, 0.88281573, 1.0])
 
@@ -314,7 +314,7 @@ class Graph(object):
             # weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
 
             # compute the loss
-            losses = tf.losses.sigmoid_cross_entropy(logits=logits, labels=tf.cast(labels, tf.int32))
+            losses = tf.losses.sigmoid_cross_entropy(logits=logits, multi_class_labels=tf.cast(labels, tf.int32))
             
             # Compute mean loss
             loss = tf.reduce_mean(losses)

@@ -11,6 +11,7 @@ import tensorflow as tf
 from sklearn.metrics import f1_score
 
 # Local imports
+from kardioml.scoring.scoring_metrics import compute_beta_score
 from kardioml.models.deepecg.training.train.data_generator import DataGenerator
 from kardioml.models.deepecg.training.networks.layers import fc_layer, conv_layer, dropout_layer, \
     print_output_shape, max_pool_layer
@@ -282,7 +283,7 @@ class DeepECGV1(object):
             layer_name = 'logits'
 
             # Softmax activation
-            logits = fc_layer(input_layer=gap, neurons=self.classes, activation=None, use_bias=False,
+            logits = fc_layer(input_layer=gap, neurons=self.classes, activation=tf.nn.sigmoid, use_bias=False,
                               name=layer_name, seed=self.seed)
 
             # Print shape
@@ -387,7 +388,7 @@ class DeepECGV1(object):
             waveform = tf.placeholder(dtype=tf.float32, shape=[None, self.length, self.channels], name=scope.name)
 
         with tf.variable_scope('label') as scope:
-            label = tf.placeholder(dtype=tf.int32, shape=[None], name=scope.name)
+            label = tf.placeholder(dtype=tf.int32, shape=[None, self.classes], name=scope.name)
 
         return waveform, label
 
@@ -396,25 +397,34 @@ class DeepECGV1(object):
         return DataGenerator(path=path, mode=mode, shape=[self.length, self.channels],
                              batch_size=batch_size, prefetch_buffer=1500, seed=0, num_parallel_calls=32)
 
-    @staticmethod
-    def compute_accuracy(logits, labels):
+    def compute_accuracy(self, logits, labels):
         """Computes the model accuracy for set of logits and labels."""
         with tf.variable_scope('accuracy'):
-            return tf.reduce_mean(tf.cast(tf.equal(tf.argmax(logits, axis=1), tf.cast(labels, tf.int64)), 'float'))
+
+            # Get prediction
+            predictions = tf.cast(logits, tf.int32)
+
+            # Get label
+            labels = tf.cast(labels, tf.int32)
+
+            # Get metrics
+            accuracy, _, _, _ = tf.py_func(func=compute_beta_score, inp=[labels, predictions, self.classes, False],
+                                           Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
+
+            return accuracy
 
     def compute_f1(self, logits, labels):
         """Computes the model f1 score for set of logits and labels."""
         with tf.variable_scope('f1'):
 
             # Get prediction
-            predictions = tf.cast(tf.argmax(logits, axis=1), tf.int32)
+            predictions = tf.cast(logits, tf.int32)
 
             # Get label
             labels = tf.cast(labels, tf.int32)
 
-            return tf.py_func(func=self._compute_f1, inp=[predictions, labels], Tout=[tf.float64])
+            # Get metrics
+            _, f1, _, _ = tf.py_func(func=compute_beta_score, inp=[labels, predictions, self.classes, False],
+                                     Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
 
-    @staticmethod
-    def _compute_f1(predictions, labels):
-        """Compute the mean f1 score."""
-        return np.mean(f1_score(labels, predictions, labels=[0, 1, 2, 3], average=None)[0:3])
+            return f1
