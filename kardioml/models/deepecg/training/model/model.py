@@ -5,9 +5,6 @@ This module provides a class and methods for building and managing a model with 
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import os
 import sys
@@ -16,8 +13,8 @@ import pickle
 import tensorflow as tf
 
 # Local imports
-from haifanet.model.graph import Graph
-from haifanet.networks.haifanet_v1 import HaifaNetV1
+from kardioml.models.deepecg.training.model.graph import Graph
+from kardioml.models.deepecg.training.networks.deepecg_v1 import DeepECGV1
 
 
 class Model(object):

@@ -5,9 +5,6 @@ This module provides a function for assessing available CPUs and GPUs.
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 from tensorflow.python.client import device_lib
 

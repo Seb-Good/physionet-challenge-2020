@@ -5,18 +5,15 @@ This module provides a function for training a deep neural network in tensorflow
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd part imports
 import numpy as np
 
 # Local imports
-from haifanet.train.logger import Logger
-from haifanet.train.monitor import Monitor
-from haifanet.train.summaries import Summaries
-from haifanet.utils.devices.device_check import get_device_count
-from haifanet.train.learning_rate_schedulers import AnnealingRestartScheduler
+from kardioml.models.deepecg.training.train.logger import Logger
+from kardioml.models.deepecg.training.train.monitor import Monitor
+from kardioml.models.deepecg.training.train.summaries import Summaries
+from kardioml.models.deepecg.training.utils.devices.device_check import get_device_count
+from kardioml.models.deepecg.training.train.learning_rate_schedulers import AnnealingRestartScheduler
 
 
 def train(model, epochs, batch_size):

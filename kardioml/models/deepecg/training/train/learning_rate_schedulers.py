@@ -5,9 +5,6 @@ This module provide classes and functions for managing learning rate schedules.
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import numpy as np
 

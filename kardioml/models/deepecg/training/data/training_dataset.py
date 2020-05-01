@@ -5,9 +5,6 @@ This module provides classes and functions for creating a training dataset that 
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import os
 import json
@@ -17,7 +14,7 @@ from joblib import Parallel, delayed
 from sklearn.model_selection import train_test_split
 
 # Local imports
-from haifanet.data.ecg import ECG
+from kardioml.models.deepecg.training.data.ecg import ECG
 
 
 class TrainingDataset(object):

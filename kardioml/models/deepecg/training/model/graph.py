@@ -5,14 +5,11 @@ This module provide a class and methods for building a computational graph with 
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import tensorflow as tf
 
 # Local imports
-from haifanet.utils.devices.device_check import get_device_count
+from kardioml.models.deepecg.training.utils.devices.device_check import get_device_count
 
 
 class Graph(object):
@@ -317,7 +314,7 @@ class Graph(object):
             # weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
 
             # compute the loss
-            losses = tf.losses.sparse_softmax_cross_entropy(logits=logits, labels=tf.cast(labels, tf.int32))
+            losses = tf.losses.sigmoid_cross_entropy(logits=logits, labels=tf.cast(labels, tf.int32))
             
             # Compute mean loss
             loss = tf.reduce_mean(losses)

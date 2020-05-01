@@ -5,9 +5,6 @@ This module provides a class and methods for logging training performance.
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import os
 import time

@@ -1,12 +1,9 @@
 """
-haifanet_v1.py
---------------
+deepecg_v1.py
+-------------
 This module provides a class and methods for building a convolutional neural network with tensorflow.
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
-
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
 
 # 3rd party imports
 import numpy as np
@@ -14,11 +11,12 @@ import tensorflow as tf
 from sklearn.metrics import f1_score
 
 # Local imports
-from haifanet.train.data_generator import DataGenerator
-from haifanet.networks.layers import fc_layer, conv_layer, dropout_layer, print_output_shape, max_pool_layer
+from kardioml.models.deepecg.training.train.data_generator import DataGenerator
+from kardioml.models.deepecg.training.networks.layers import fc_layer, conv_layer, dropout_layer, \
+    print_output_shape, max_pool_layer
 
 
-class HaifaNetV1(object):
+class DeepECGV1(object):
 
     """
     Build the forward propagation computational graph for a WavNet inspired deep neural network.

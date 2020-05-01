@@ -5,15 +5,12 @@ This module provides a class for monitoring the model state during training.
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import os
 import copy
 
 # Local imports
-from haifanet.train.state import State
+from kardioml.models.deepecg.training.train.state import State
 
 
 class Monitor(object):

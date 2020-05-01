@@ -5,9 +5,6 @@ This module provides classes and methods for creating the Physionet 2017 databas
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import os
 import shutil
@@ -19,7 +16,7 @@ import scipy.io as sio
 from scipy import interpolate
 
 # Local imports
-from haifanet import DATA_DIR
+from kardioml.models.deepecg.training import DATA_DIR
 
 
 class Physionet2017DB(object):

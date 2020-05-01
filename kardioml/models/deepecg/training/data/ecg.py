@@ -5,9 +5,6 @@ This module provides classes and functions for processing an ECG waveform.
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import numpy as np
 from biosppy.signals import ecg

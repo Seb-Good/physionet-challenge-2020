@@ -5,9 +5,6 @@ This module provides functions for building basic neural network layers with sum
 By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
-# Compatibility imports
-from __future__ import absolute_import, division, print_function
-
 # 3rd party imports
 import tensorflow as tf
 
