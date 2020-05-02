@@ -1,4 +1,4 @@
-tensorflow==1.13
+tensorflow==1.12
 PyWavelets==1.1.1
 scipy==1.4.1
 pandas==1.0.0

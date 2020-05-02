@@ -14,6 +14,7 @@ import tensorflow as tf
 
 # Local imports
 from kardioml.models.deepecg.model.graph import Graph
+from kardioml.models.deepecg.networks.deepecg_v1 import DeepECGV1
 
 
 class Model(object):
