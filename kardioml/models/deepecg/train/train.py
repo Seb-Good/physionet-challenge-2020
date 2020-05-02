@@ -9,11 +9,11 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 import numpy as np
 
 # Local imports
-from kardioml.models.deepecg.training.train.logger import Logger
-from kardioml.models.deepecg.training.train.monitor import Monitor
-from kardioml.models.deepecg.training.train.summaries import Summaries
-from kardioml.models.deepecg.training.utils.devices.device_check import get_device_count
-from kardioml.models.deepecg.training.train.learning_rate_schedulers import AnnealingRestartScheduler
+from kardioml.models.deepecg.train.logger import Logger
+from kardioml.models.deepecg.train import Monitor
+from kardioml.models.deepecg.train import Summaries
+from kardioml.models.deepecg.utils import get_device_count
+from kardioml.models.deepecg.train import AnnealingRestartScheduler
 
 
 def train(model, epochs, batch_size):

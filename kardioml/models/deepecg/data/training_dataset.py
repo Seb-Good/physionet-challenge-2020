@@ -14,7 +14,7 @@ from joblib import Parallel, delayed
 from sklearn.model_selection import train_test_split
 
 # Local imports
-from kardioml.models.deepecg.training.data.ecg import ECG
+from kardioml.models.deepecg.data import ECG
 
 
 class TrainingDataset(object):

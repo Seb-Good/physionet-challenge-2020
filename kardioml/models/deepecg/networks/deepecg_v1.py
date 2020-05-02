@@ -6,14 +6,12 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
 # 3rd party imports
-import numpy as np
 import tensorflow as tf
-from sklearn.metrics import f1_score
 
 # Local imports
 from kardioml.scoring.scoring_metrics import compute_beta_score
-from kardioml.models.deepecg.training.train.data_generator import DataGenerator
-from kardioml.models.deepecg.training.networks.layers import fc_layer, conv_layer, dropout_layer, \
+from kardioml.models.deepecg.train import DataGenerator
+from kardioml.models.deepecg.networks.layers import fc_layer, conv_layer, dropout_layer, \
     print_output_shape, max_pool_layer
 
 

@@ -13,8 +13,7 @@ import pickle
 import tensorflow as tf
 
 # Local imports
-from kardioml.models.deepecg.training.model.graph import Graph
-from kardioml.models.deepecg.training.networks.deepecg_v1 import DeepECGV1
+from kardioml.models.deepecg.model.graph import Graph
 
 
 class Model(object):
