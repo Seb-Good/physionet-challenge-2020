@@ -10,7 +10,7 @@ import tensorflow as tf
 
 # Local imports
 from kardioml.scoring.scoring_metrics import compute_beta_score
-from kardioml.models.deepecg.train import DataGenerator
+from kardioml.models.deepecg.train.data_generator import DataGenerator
 from kardioml.models.deepecg.networks.layers import fc_layer, conv_layer, dropout_layer, \
     print_output_shape, max_pool_layer
 

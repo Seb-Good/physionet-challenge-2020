@@ -10,10 +10,10 @@ import numpy as np
 
 # Local imports
 from kardioml.models.deepecg.train.logger import Logger
-from kardioml.models.deepecg.train import Monitor
-from kardioml.models.deepecg.train import Summaries
-from kardioml.models.deepecg.utils import get_device_count
-from kardioml.models.deepecg.train import AnnealingRestartScheduler
+from kardioml.models.deepecg.train.monitor import Monitor
+from kardioml.models.deepecg.train.summaries import Summaries
+from kardioml.models.deepecg.utils.devices.device_check import get_device_count
+from kardioml.models.deepecg.train.learning_rate_schedulers import AnnealingRestartScheduler
 
 
 def train(model, epochs, batch_size):

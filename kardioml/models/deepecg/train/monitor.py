@@ -10,7 +10,7 @@ import os
 import copy
 
 # Local imports
-from kardioml.models.deepecg.train import State
+from kardioml.models.deepecg.train.state import State
 
 
 class Monitor(object):

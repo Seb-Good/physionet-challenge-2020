@@ -9,7 +9,7 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 import tensorflow as tf
 
 # Local imports
-from kardioml.models.deepecg.utils import get_device_count
+from kardioml.models.deepecg.utils.devices.device_check import get_device_count
 
 
 class Graph(object):
