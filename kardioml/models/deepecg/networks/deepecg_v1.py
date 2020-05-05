@@ -7,6 +7,7 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 
 # 3rd party imports
 import tensorflow as tf
+from scipy.stats.mstats import gmean
 
 # Local imports
 from kardioml.scoring.scoring_metrics import compute_beta_score
@@ -48,11 +49,11 @@ class DeepECGV1(object):
             # Print shape
             print_output_shape(layer_name='input', net=input_layer, print_shape=print_shape)
 
-            """Block Series 1"""
-            # --- Layer 1 (Convolution) ------------------------------------------------------------------------------ #
+            """Stem Layers"""
+            # --- Stem Layer 1 (Convolution) ------------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_1'
+            layer_name = 'stem_layer_1'
 
             # Set layer scope
             with tf.variable_scope(layer_name):
@@ -66,13 +67,41 @@ class DeepECGV1(object):
                 net = max_pool_layer(input_layer=net, pool_size=3, strides=2, padding='SAME',
                                      name=layer_name + '_maxpool')
 
+                # Dropout
+                net = dropout_layer(input_layer=net, drop_rate=0.3, seed=self.seed,
+                                    training=is_training, name=layer_name + '_dropout')
+
             # Print shape
             print_output_shape(layer_name=layer_name, net=net, print_shape=print_shape)
 
-            # --- Layer 2 (Convolution) ------------------------------------------------------------------------------ #
+            # --- StemLayer 2 (Convolution) -------------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_2'
+            layer_name = 'stem_layer_2'
+
+            # Set layer scope
+            with tf.variable_scope(layer_name):
+                # Convolution
+                net = conv_layer(input_layer=net, kernel_size=kernel_size, strides=1, dilation_rate=1,
+                                 filters=res_filts, padding='SAME', activation=None, use_bias=False,
+                                 name=layer_name + '_conv', seed=self.seed)
+
+                # Max pool
+                net = max_pool_layer(input_layer=net, pool_size=3, strides=2, padding='SAME',
+                                     name=layer_name + '_maxpool')
+
+                # Dropout
+                net = dropout_layer(input_layer=net, drop_rate=0.3, seed=self.seed,
+                                    training=is_training, name=layer_name + '_dropout')
+
+            # Print shape
+            print_output_shape(layer_name=layer_name, net=net, print_shape=print_shape)
+
+            """Residual Layers"""
+            # --- Residual Layer 1 (Convolution) --------------------------------------------------------------------- #
+
+            # Set name
+            layer_name = 'res_layer_1'
 
             # Compute block
             outputs = self._residual_block(input_layer=net, kernel_size=kernel_size, layer_name=layer_name,
@@ -86,10 +115,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 3 (Convolution) ------------------------------------------------------------------------------ #
+            # --- Residual Layer 2 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_3'
+            layer_name = 'res_layer_2'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -103,10 +132,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 4 (Convolution) ------------------------------------------------------------------------------ #
+            # --- Residual Layer 3 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_4'
+            layer_name = 'res_layer_3'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -120,10 +149,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 5 (Convolution) ------------------------------------------------------------------------------ #
+            # --- Residual Layer 4 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_5'
+            layer_name = 'res_layer_4'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -137,10 +166,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 6 (Convolution) ------------------------------------------------------------------------------ #
+            # --- Residual Layer 5 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_6'
+            layer_name = 'res_layer_5'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -154,10 +183,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 7 (Convolution) ------------------------------------------------------------------------------ #
+            # --- Residual Layer 6 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_7'
+            layer_name = 'res_layer_6'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -171,10 +200,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 8 (Convolution) ------------------------------------------------------------------------------ #
+            # --- Residual Layer 7 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_8'
+            layer_name = 'res_layer_7'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -188,10 +217,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 9 (Convolution) ------------------------------------------------------------------------------ #
+            # --- Residual Layer 8 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_9'
+            layer_name = 'res_layer_8'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -205,10 +234,10 @@ class DeepECGV1(object):
             print_output_shape(layer_name=layer_name + '_res', net=outputs['res'], print_shape=print_shape)
             print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
 
-            # --- Layer 10 (Convolution) ----------------------------------------------------------------------------- #
+            # --- Residual Layer 9 (Convolution) --------------------------------------------------------------------- #
 
             # Set name
-            layer_name = 'layer_10'
+            layer_name = 'res_layer_9'
 
             # Compute block
             outputs = self._residual_block(input_layer=outputs['res'], kernel_size=kernel_size, layer_name=layer_name,
@@ -281,7 +310,7 @@ class DeepECGV1(object):
             layer_name = 'logits'
 
             # Softmax activation
-            logits = fc_layer(input_layer=gap, neurons=self.classes, activation=tf.nn.sigmoid, use_bias=False,
+            logits = fc_layer(input_layer=gap, neurons=self.classes, activation=None, use_bias=False,
                               name=layer_name, seed=self.seed)
 
             # Print shape
@@ -395,34 +424,19 @@ class DeepECGV1(object):
         return DataGenerator(path=path, mode=mode, shape=[self.length, self.channels],
                              batch_size=batch_size, prefetch_buffer=1500, seed=0, num_parallel_calls=32)
 
-    def compute_accuracy(self, logits, labels):
+    def compute_metrics(self, logits, labels):
         """Computes the model accuracy for set of logits and labels."""
-        with tf.variable_scope('accuracy'):
+        with tf.variable_scope('metrics'):
 
             # Get prediction
-            predictions = tf.cast(logits, tf.int32)
+            predictions = tf.cast(tf.math.round(tf.nn.sigmoid(logits)), tf.int32)
 
             # Get label
             labels = tf.cast(labels, tf.int32)
 
             # Get metrics
-            accuracy, _, _, _ = tf.py_func(func=compute_beta_score, inp=[labels, predictions, self.classes, False],
-                                           Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
+            _, _, f_beta, g_beta = tf.py_func(func=compute_beta_score,
+                                              inp=[labels, predictions, 2, self.classes, False],
+                                              Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
 
-            return accuracy
-
-    def compute_f1(self, logits, labels):
-        """Computes the model f1 score for set of logits and labels."""
-        with tf.variable_scope('f1'):
-
-            # Get prediction
-            predictions = tf.cast(logits, tf.int32)
-
-            # Get label
-            labels = tf.cast(labels, tf.int32)
-
-            # Get metrics
-            _, f1, _, _ = tf.py_func(func=compute_beta_score, inp=[labels, predictions, self.classes, False],
-                                     Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
-
-            return f1
+            return f_beta, g_beta, tf.py_func(func=gmean, inp=[[f_beta, g_beta]], Tout=[tf.float64])

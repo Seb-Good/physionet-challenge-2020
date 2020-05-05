@@ -11,10 +11,12 @@ import json
 import shutil
 import numpy as np
 import scipy.io as sio
+from biosppy.signals import ecg
+from joblib import Parallel, delayed
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from kardioml import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, AMP_CONVERSION, LABELS_LOOKUP, LABELS_COUNT
+from kardioml import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, AMP_CONVERSION, LABELS_LOOKUP, LABELS_COUNT, FS
 
 
 class FormatData(object):
@@ -30,7 +32,7 @@ class FormatData(object):
         self.raw_path = os.path.join(DATA_PATH, 'raw')
         self.formatted_path = os.path.join(DATA_PATH, 'formatted')
 
-    def format(self, extract=True):
+    def format(self, extract=True, debug=False):
         """Format Physionet2020 dataset."""
         print('Formatting Physionet2020 dataset...')
         # Extract data file
@@ -38,9 +40,9 @@ class FormatData(object):
             self._extract_data()
 
         # Format data
-        self._format_data()
+        self._format_data(debug=debug)
 
-    def _format_data(self):
+    def _format_data(self, debug):
         """Format raw data to standard structure."""
         # Create directory for formatted data
         os.makedirs(self.formatted_path, exist_ok=True)
@@ -49,8 +51,12 @@ class FormatData(object):
         filenames = [filename.split('.')[0] for filename in
                      os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAME)) if 'mat' in filename]
 
-        for filename in filenames:
-            self._format_sample(filename=filename)
+        if debug:
+            for filename in filenames:
+                self._format_sample(filename=filename)
+
+        else:
+            _ = Parallel(n_jobs=-1)(delayed(self._format_sample)(filename) for filename in filenames)
 
     def _format_sample(self, filename):
         """Format individual .mat and .hea sample."""
@@ -68,8 +74,22 @@ class FormatData(object):
             json.dump({'filename': filename, 'channel_order': channel_order, 'age': age, 'sex': sex,
                        'labels': labels, 'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
                        'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
-                       'label_train': self._get_training_label(labels=labels), 'shape': data.shape},
+                       'label_train': self._get_training_label(labels=labels), 'shape': data.shape,
+                       'hr': self._compute_heart_rate(waveforms=data)},
                       file, sort_keys=True)
+
+    def _compute_heart_rate(self, waveforms):
+        """Calculate median heart rate."""
+        hr = list()
+        for channel in range(waveforms.shape[0]):
+            try:
+                # Get heart rate
+                ecg_object = ecg.ecg(signal=waveforms[channel, :], sampling_rate=FS, show=False)
+                hr.extend(ecg_object['heart_rate'])
+            except Exception:
+                pass
+
+        return np.median(hr) if len(hr) > 0 else 'nan'
 
     def _extract_data(self):
         """Extract the raw dataset file."""
@@ -102,3 +122,5 @@ class FormatData(object):
         mlb = MultiLabelBinarizer(classes=np.arange(LABELS_COUNT).tolist())
 
         return mlb.fit_transform([[LABELS_LOOKUP[label]['label_int'] for label in labels]])[0].tolist()
+
+

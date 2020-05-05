@@ -63,7 +63,8 @@ class Logger(object):
             self.csv = pd.read_csv(os.path.join(self.save_path, 'logs', 'training.csv'))
         else:
             self.csv = pd.DataFrame(data=[], columns=['epoch', 'steps', 'train_time', 'epoch_time', 'lr', 'train_loss',
-                                                      'val_loss', 'train_acc', 'val_acc', 'train_f1', 'val_f1'])
+                                                      'val_loss', 'train_f_beta', 'val_f_beta', 'train_g_beta',
+                                                      'val_g_beta', 'train_mean', 'val_mean'])
 
     def _compute_training_time(self):
         """Compute elapsed time from start of training."""
@@ -111,10 +112,12 @@ class Logger(object):
         self.logger.info('Epoch: {:.0f}'.format(self.monitor.current_state.epoch))
         self.logger.info('Training Loss: {:.6f}'.format(self.monitor.current_state.train_loss))
         self.logger.info('Validation Loss: {:.6f}'.format(self.monitor.current_state.val_loss))
-        self.logger.info('Training Accuracy: {:.3f}'.format(self.monitor.current_state.train_accuracy * 100))
-        self.logger.info('Validation Accuracy: {:.3f}'.format(self.monitor.current_state.val_accuracy * 100))
-        self.logger.info('Training F1: {:.3f}'.format(self.monitor.current_state.train_f1 * 100))
-        self.logger.info('Validation F1: {:.3f}'.format(self.monitor.current_state.val_f1 * 100))
+        self.logger.info('Training F-Beta: {:.3f}'.format(self.monitor.current_state.train_f_beta * 100))
+        self.logger.info('Validation F-Beta: {:.3f}'.format(self.monitor.current_state.val_f_beta * 100))
+        self.logger.info('Training G-Beta: {:.3f}'.format(self.monitor.current_state.train_g_beta * 100))
+        self.logger.info('Validation G-Beta: {:.3f}'.format(self.monitor.current_state.val_g_beta * 100))
+        self.logger.info('Training Geometric Mean: {:.3f}'.format(self.monitor.current_state.train_geometric_mean * 100))
+        self.logger.info('Validation Geometric Mean: {:.3f}'.format(self.monitor.current_state.val_geometric_mean * 100))
 
     def _log_time_summary(self):
         self.logger.info('\nTime Summary:')
@@ -129,14 +132,16 @@ class Logger(object):
         self.logger.info('Epoch: {:.0f}'.format(self.monitor.best_state.epoch))
         self.logger.info('Training Loss: {:.6f}'.format(self.monitor.best_state.train_loss))
         self.logger.info('Validation Loss: {:.6f}'.format(self.monitor.best_state.val_loss))
-        self.logger.info('Training Accuracy: {:.3f}'.format(self.monitor.current_state.train_accuracy * 100))
-        self.logger.info('Validation Accuracy: {:.3f}'.format(self.monitor.current_state.val_accuracy * 100))
-        self.logger.info('Training F1: {:.3f}'.format(self.monitor.current_state.train_f1 * 100))
-        self.logger.info('Validation F1: {:.3f}'.format(self.monitor.current_state.val_f1 * 100))
+        self.logger.info('Training F-Beta: {:.3f}'.format(self.monitor.current_state.train_f_beta * 100))
+        self.logger.info('Validation F-Beta: {:.3f}'.format(self.monitor.current_state.val_f_beta * 100))
+        self.logger.info('Training G-Beta: {:.3f}'.format(self.monitor.current_state.train_g_beta * 100))
+        self.logger.info('Validation G-Beta: {:.3f}'.format(self.monitor.current_state.val_g_beta * 100))
+        self.logger.info('Training Geometric Mean: {:.3f}'.format(self.monitor.current_state.train_geometric_mean * 100))
+        self.logger.info('Validation Geometric Mean: {:.3f}'.format(self.monitor.current_state.val_geometric_mean * 100))
 
     def _is_best(self):
         """Check for improvement."""
-        if self.monitor.current_state.val_f1 == self.monitor.best_state.val_f1:
+        if self.monitor.current_state.val_geometric_mean == self.monitor.best_state.val_geometric_mean:
             return '*'
         else:
             return ''
@@ -144,16 +149,18 @@ class Logger(object):
     def _get_training_log_string(self):
         """Generate log string."""
         log_string = 'Epoch {0:.0f}, Step {1}, T-Time: {2:.3f} hr, E-Time: {3:.3f} min, lr: {4:.2e}, ' + \
-                     'Train Loss: {5:.6f}, Val Loss: {6:.6f}, Train Acc: {7:.3f} %, Val Acc: {8:.3f} %, ' + \
-                     'Train F1: {9:.3f} %, Val F1: {10:.3f} % {11}'
+                     'Train Loss: {5:.6f}, Val Loss: {6:.6f}, Train F: {7:.3f} %, Val F: {8:.3f} %, ' + \
+                     'Train G: {9:.3f} %, Val G: {10:.3f} %, Train Mean: {11:.3f} %, Val Mean: {12:.3f} % {13}'
 
         return log_string.format(self.monitor.current_state.epoch, self.monitor.current_state.global_step,
                                  self._compute_training_time() / 3600., self._compute_epoch_time() / 60.,
                                  self.monitor.current_state.learning_rate, self.monitor.current_state.train_loss,
-                                 self.monitor.current_state.val_loss, self.monitor.current_state.train_accuracy * 100,
-                                 self.monitor.current_state.val_accuracy * 100,
-                                 self.monitor.current_state.train_f1 * 100,
-                                 self.monitor.current_state.val_f1 * 100, self._is_best())
+                                 self.monitor.current_state.val_loss, self.monitor.current_state.train_f_beta * 100,
+                                 self.monitor.current_state.val_f_beta * 100,
+                                 self.monitor.current_state.train_g_beta * 100,
+                                 self.monitor.current_state.val_g_beta * 100,
+                                 self.monitor.current_state.train_geometric_mean * 100,
+                                 self.monitor.current_state.val_geometric_mean * 100, self._is_best())
 
     def log_training(self, monitor):
         """Log training results."""
@@ -199,10 +206,12 @@ class Logger(object):
                               lr=self.monitor.current_state.learning_rate,
                               train_loss=self.monitor.current_state.train_loss,
                               val_loss=self.monitor.current_state.val_loss,
-                              train_acc=self.monitor.current_state.train_accuracy,
-                              val_acc=self.monitor.current_state.val_accuracy,
-                              train_f1=self.monitor.current_state.train_f1,
-                              val_f1=self.monitor.current_state.val_f1))
+                              train_f_beta=self.monitor.current_state.train_f_beta,
+                              val_f_beta=self.monitor.current_state.val_f_beta,
+                              train_g_beta=self.monitor.current_state.train_g_beta,
+                              val_g_beta=self.monitor.current_state.val_g_beta,
+                              train_mean=self.monitor.current_state.train_geometric_mean,
+                              val_mean=self.monitor.current_state.val_geometric_mean))
 
     def _start_log(self):
         """Log starting state."""

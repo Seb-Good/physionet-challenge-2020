@@ -38,7 +38,7 @@ class DataGenerator(object):
 
         # Get lambda functions
         self.import_waveforms_fn_train = lambda file_path, label: self._import_waveform(file_path=file_path,
-                                                                                        label=label, augment=False)
+                                                                                        label=label, augment=True)
         self.import_waveforms_fn_val = lambda file_path, label: self._import_waveform(file_path=file_path,
                                                                                       label=label, augment=False)
         # Get dataset
@@ -78,27 +78,44 @@ class DataGenerator(object):
         # Load numpy file
         waveform = tf.py_func(self._load_npy_file, [file_path], [tf.float32])
 
-        # Zero pad
-        waveform = tf.py_func(self._zero_pad, [waveform, 'center'], [tf.float32])
+        # Augment waveform
+        if augment:
+
+            # Random amplitude scale
+            waveform = self._random_scale(waveform=waveform, prob=0.5)
+
+        # Pad waveform
+        waveform = tf.py_func(self._pad_waveform, [waveform], [tf.float32])
 
         # Set tensor shape
         waveform = tf.reshape(tensor=waveform, shape=self.shape)
 
-        # Augment waveform
-        if augment:
-            waveform = self._augment(waveform=waveform)
-
         return waveform, label
 
-    def _augment(self, waveform):
-        """Apply random augmentations."""
-        # Random amplitude scale
-        waveform = self._random_scale(waveform=waveform, prob=0.5)
-
-        # Random polarity flip
-        waveform = self._random_polarity(waveform=waveform, prob=0.5)
-
+    @staticmethod
+    def _load_npy_file(file_path):
+        """Python function for loading a single .npy file as casting the data type as float32."""
+        # Import waveform
+        waveform = np.load(file_path.decode()).astype(np.float32)
+        waveform = waveform.reshape([waveform.shape[1], waveform.shape[0]])
         return waveform
+
+    def _pad_waveform(self, waveform):
+        """Python function for padding waveform."""
+        # Squeeze waveform
+        waveform = waveform.squeeze()
+
+        # Pad waveform
+        remainder = self.shape[0] - waveform.shape[0]
+        if remainder >= 0:
+            return np.pad(waveform, ((int(remainder / 2), remainder - int(remainder / 2)), (0, 0)),
+                          'constant', constant_values=0)
+        else:
+            return waveform[0:self.shape[0], :]
+
+    def _random_resample(self):
+        """Randomly resample waveform."""
+        pass
 
     def _random_scale(self, waveform, prob):
         """Apply random multiplication factor."""
@@ -118,22 +135,6 @@ class DataGenerator(object):
         scale_factor = tf.random_uniform(shape=[], minval=0.5, maxval=2.5, dtype=tf.float32)
 
         return waveform * scale_factor
-
-    def _random_polarity(self, waveform, prob):
-        """Apply random polarity flip."""
-        # Get random true or false
-        prediction = self._random_true_false(prob=prob)
-
-        # Apply random polarity flip
-        waveform = tf.cond(prediction, lambda: self._polarity(waveform=waveform),
-                           lambda: self._do_nothing(waveform=waveform))
-
-        return waveform
-
-    @staticmethod
-    def _polarity(waveform):
-        """Apply random polarity flip."""
-        return waveform * -1
 
     @staticmethod
     def _do_nothing(waveform):
@@ -171,20 +172,3 @@ class DataGenerator(object):
                 .batch(batch_size=self.batch_size)
                 .prefetch(buffer_size=self.prefetch_buffer)
             )
-
-    @staticmethod
-    def _load_npy_file(file_path):
-        """Python function for loading a single .npy file as casting the data type as float32."""
-        return np.load(file_path.decode()).astype(np.float32)
-
-    def _zero_pad(self, waveform, align):
-        """Zero pad waveform (align: left, center, right)."""
-        # Get remainder
-        remainder = self.shape[0] - len(waveform)
-
-        if align == 'left':
-            return np.pad(waveform, (0, remainder), 'constant', constant_values=0)
-        elif align == 'center':
-            return np.pad(waveform, (int(remainder / 2), remainder - int(remainder / 2)), 'constant', constant_values=0)
-        elif align == 'right':
-            return np.pad(waveform, (remainder, 0), 'constant', constant_values=0)

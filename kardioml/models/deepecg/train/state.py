@@ -12,7 +12,12 @@ import numpy as np
 import tensorflow as tf
 from datetime import datetime
 import matplotlib.pylab as plt
-from sklearn.metrics import f1_score
+from scipy.special import expit
+from scipy.stats.mstats import gmean
+
+# Local imports
+from kardioml import LABELS_COUNT
+from kardioml.scoring.scoring_metrics import compute_beta_score
 
 
 class State(object):
@@ -30,10 +35,12 @@ class State(object):
         # Set attributes
         self.train_loss = None
         self.val_loss = None
-        self.train_accuracy = None
-        self.val_accuracy = None
-        self.train_f1 = None
-        self.val_f1 = None
+        self.train_f_beta = None
+        self.val_f_beta = None
+        self.train_g_beta = None
+        self.val_g_beta = None
+        self.train_geometric_mean = None
+        self.val_geometric_mean = None
         self.logits = None
         self.labels = None
         self.waveforms = None
@@ -56,10 +63,10 @@ class State(object):
 
     def _compute_metrics(self):
         # Training metrics
-        self.train_loss, self.train_accuracy, self.train_f1 = self._compute_train_metrics()
+        self.train_loss, self.train_f_beta, self.train_g_beta, self.train_geometric_mean = self._compute_train_metrics()
 
         # Validation metrics
-        self.val_loss, self.val_accuracy, self.val_f1 = self._compute_val_metrics()
+        self.val_loss, self.val_f_beta, self.val_g_beta, self.val_geometric_mean = self._compute_val_metrics()
 
     def _get_num_train_batches(self):
         """Number of batches for training Dataset."""
@@ -82,7 +89,7 @@ class State(object):
             metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
             metrics = self.sess.run(metrics_op)
 
-            return metrics['loss'], metrics['accuracy'], metrics['f1']
+            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['geometric_mean']
 
         else:
             # Get train handle
@@ -107,7 +114,7 @@ class State(object):
             metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
             metrics = self.sess.run(metrics_op)
 
-            return metrics['loss'], metrics['accuracy'], metrics['f1']
+            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['geometric_mean']
 
     def _compute_val_metrics(self):
         """Get validation metrics."""
@@ -151,13 +158,14 @@ class State(object):
         self.cams = np.concatenate(cams_all, axis=0)
 
         # Compute f1 score
-        f1 = np.mean(f1_score(self.labels, np.argmax(self.logits, axis=1), labels=[0, 1, 2, 3], average=None)[0:3])
+        _, _, f_beta, g_beta = compute_beta_score(labels=self.labels, output=np.round(expit(self.logits)).astype(int),
+                                                  beta=2, num_classes=LABELS_COUNT, check_errors=True)
 
         # Get metrics
         metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
         metrics = self.sess.run(metrics_op)
 
-        return metrics['loss'], metrics['accuracy'], f1
+        return metrics['loss'], f_beta, g_beta, gmean([f_beta, g_beta])
 
     def _plot_val_cams(self):
         """Plot validation class activation maps."""

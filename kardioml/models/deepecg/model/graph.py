@@ -32,8 +32,9 @@ class Graph(object):
         self.global_step = None
         self.logits = None
         self.loss = None
-        self.accuracy = None
-        self.f1 = None
+        self.f_beta = None
+        self.g_beta = None
+        self.geometric_mean = None
         self.optimizer = None
         self.train_summary_all_op = None
         self.val_cam_plots_summary_op = None
@@ -54,8 +55,9 @@ class Graph(object):
         self.iterator = None
         self.cams = None
         self.tower_losses = None
-        self.tower_accuracies = None
-        self.tower_f1 = None
+        self.tower_f_beta = None
+        self.tower_g_beta = None
+        self.tower_geometric_mean = None
         self.tower_gradients = None
         self.tower_waveforms = None
         self.tower_labels = None
@@ -149,8 +151,9 @@ class Graph(object):
         self.loss = self._compute_loss(logits=self.logits, labels=self.labels)
 
         # Compute metrics
-        self.accuracy = self._compute_accuracy(logits=self.logits, labels=self.labels)
-        self.f1 = self._compute_f1(logits=self.logits, labels=self.labels)
+        self.f_beta = self._compute_f_beta(logits=self.logits, labels=self.labels)
+        self.g_beta = self._compute_g_beta(logits=self.logits, labels=self.labels)
+        self.geometric_mean = self._compute_geometric_mean(logits=self.logits, labels=self.labels)
 
         # Compute gradients
         self.gradients = self._compute_gradients(optimizer=self.optimizer, loss=self.loss)
@@ -159,8 +162,9 @@ class Graph(object):
         """Build parallel forward graph for training on more than one GPU."""
         # Initialize tower lists
         self.tower_losses = list()
-        self.tower_accuracies = list()
-        self.tower_f1 = list()
+        self.tower_f_beta = list()
+        self.tower_g_beta = list()
+        self.tower_geometric_mean = list()
         self.tower_gradients = list()
         self.tower_waveforms = list()
         self.tower_labels = list()
@@ -183,11 +187,14 @@ class Graph(object):
                     # Compute loss
                     loss = self._compute_loss(logits=logits, labels=labels)
 
-                    # Compute accuracy
-                    accuracy = self._compute_accuracy(logits=logits, labels=labels)
+                    # Compute f-beta
+                    f_beta = self._compute_f_beta(logits=logits, labels=labels)
 
-                    # Compute f1
-                    f1 = self._compute_f1(logits=logits, labels=labels)
+                    # Compute g-beta
+                    g_beta = self._compute_g_beta(logits=logits, labels=labels)
+
+                    # Compute geometric mean
+                    geometric_mean = self._compute_geometric_mean(logits=logits, labels=labels)
 
                     # Compute gradients
                     gradients = self._compute_gradients(optimizer=self.optimizer, loss=loss)
@@ -195,11 +202,14 @@ class Graph(object):
                     # Append losses
                     self.tower_losses.append(loss)
 
-                    # Append accuracy
-                    self.tower_accuracies.append(accuracy)
+                    # Append f_beta
+                    self.tower_f_beta.append(f_beta)
 
-                    # Append f1
-                    self.tower_f1.append(f1)
+                    # Append g_beta
+                    self.tower_g_beta.append(g_beta)
+
+                    # Append geometric mean
+                    self.tower_geometric_mean.append(geometric_mean)
 
                     # Append gradients
                     self.tower_gradients.append(gradients)
@@ -216,8 +226,9 @@ class Graph(object):
 
         # Merge towers
         self.loss = self._compute_mean_loss(tower_losses=self.tower_losses)
-        self.accuracy = self._compute_mean_accuracy(tower_accuracies=self.tower_accuracies)
-        self.f1 = self._compute_mean_f1(tower_f1=self.tower_f1)
+        self.f_beta = self._compute_mean_f_beta(tower_f_beta=self.tower_f_beta)
+        self.g_beta = self._compute_mean_g_beta(tower_g_beta=self.tower_g_beta)
+        self.geometric_mean = self._compute_mean_geometric_mean(tower_geometric_mean=self.tower_geometric_mean)
         self.gradients = self._compute_mean_gradients(tower_gradients=self.tower_gradients)
         self._group_data()
 
@@ -232,8 +243,9 @@ class Graph(object):
     def _compute_metrics(self):
         """Collect loss metric."""
         with tf.variable_scope('metrics'):
-            metrics = {'accuracy': tf.metrics.mean(values=self.accuracy),
-                       'f1': tf.metrics.mean(values=self.f1),
+            metrics = {'f_beta': tf.metrics.mean(values=self.f_beta),
+                       'g_beta': tf.metrics.mean(values=self.g_beta),
+                       'geometric_mean': tf.metrics.mean(values=self.geometric_mean),
                        'loss': tf.metrics.mean(values=self.loss)}
         return metrics
 
@@ -321,19 +333,26 @@ class Graph(object):
 
         return loss
 
-    def _compute_accuracy(self, logits, labels):
+    def _compute_f_beta(self, logits, labels):
         """Computes the accuracy set of logits and labels."""
-        with tf.variable_scope('accuracy'):
-            accuracy = self.network.compute_accuracy(logits=logits, labels=labels)
+        with tf.variable_scope('f_beta'):
+            f_beta, _, _ = self.network.compute_metrics(logits=logits, labels=labels)
 
-        return accuracy
+        return f_beta
 
-    def _compute_f1(self, logits, labels):
+    def _compute_g_beta(self, logits, labels):
         """Computes the f1 score set of logits and labels."""
-        with tf.variable_scope('f1'):
-            f1 = self.network.compute_f1(logits=logits, labels=labels)
+        with tf.variable_scope('g_beta'):
+            _, g_beta, _ = self.network.compute_metrics(logits=logits, labels=labels)
 
-        return f1
+        return g_beta
+
+    def _compute_geometric_mean(self, logits, labels):
+        """Computes the f1 score set of logits and labels."""
+        with tf.variable_scope('g_beta'):
+            _, _, gmean = self.network.compute_metrics(logits=logits, labels=labels)
+
+        return gmean
 
     @staticmethod
     def _compute_gradients(optimizer, loss):
@@ -362,26 +381,37 @@ class Graph(object):
         return loss
 
     @staticmethod
-    def _compute_mean_accuracy(tower_accuracies):
-        """Compute mean accuracy across towers."""
+    def _compute_mean_f_beta(tower_f_beta):
+        """Compute mean f_beta across towers."""
         with tf.variable_scope('accuracy'):
-            accuracy = tf.reduce_mean(tower_accuracies)
+            f_beta = tf.reduce_mean(tower_f_beta)
 
         # Get summary
-        tf.summary.scalar(name='accuracy/accuracy', tensor=accuracy, collections=['train_metrics'])
+        tf.summary.scalar(name='f_beta/f_beta', tensor=f_beta, collections=['train_metrics'])
 
-        return accuracy
+        return f_beta
 
     @staticmethod
-    def _compute_mean_f1(tower_f1):
+    def _compute_mean_g_beta(tower_g_beta):
         """Compute mean f1 score across towers."""
-        with tf.variable_scope('f1'):
-            f1 = tf.reduce_mean(tower_f1)
+        with tf.variable_scope('g_beta'):
+            g_beta = tf.reduce_mean(tower_g_beta)
 
         # Get summary
-        tf.summary.scalar(name='f1/f1', tensor=f1, collections=['train_metrics'])
+        tf.summary.scalar(name='g_beta/g_beta', tensor=g_beta, collections=['train_metrics'])
 
-        return f1
+        return g_beta
+
+    @staticmethod
+    def _compute_mean_geometric_mean(tower_geometric_mean):
+        """Compute mean f1 score across towers."""
+        with tf.variable_scope('geometric_mean'):
+            geometric_mean = tf.reduce_mean(tower_geometric_mean)
+
+        # Get summary
+        tf.summary.scalar(name='geometric_mean/geometric_mean', tensor=geometric_mean, collections=['train_metrics'])
+
+        return geometric_mean
 
     @staticmethod
     def _compute_mean_gradients(tower_gradients):

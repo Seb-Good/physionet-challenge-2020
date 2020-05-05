@@ -44,8 +44,9 @@ class Summaries(object):
         # Create value summary
         summary = tf.Summary()
         summary.value.add(tag='loss/loss', simple_value=monitor.current_state.train_loss)
-        summary.value.add(tag='accuracy/accuracy', simple_value=monitor.current_state.train_accuracy)
-        summary.value.add(tag='f1/f1', simple_value=monitor.current_state.train_f1)
+        summary.value.add(tag='f_beta/f_beta', simple_value=monitor.current_state.train_f_beta)
+        summary.value.add(tag='g_beta/g_beta', simple_value=monitor.current_state.train_g_beta)
+        summary.value.add(tag='geometric_mean/geometric_mean', simple_value=monitor.current_state.train_geometric_mean)
 
         # Get validation summary
         self.train_summary_writer.add_summary(summary=summary, global_step=monitor.current_state.global_step)
@@ -57,8 +58,9 @@ class Summaries(object):
         # Create value summary
         summary = tf.Summary()
         summary.value.add(tag='loss/loss', simple_value=monitor.current_state.val_loss)
-        summary.value.add(tag='accuracy/accuracy', simple_value=monitor.current_state.val_accuracy)
-        summary.value.add(tag='f1/f1', simple_value=monitor.current_state.val_f1)
+        summary.value.add(tag='f_beta/f_beta', simple_value=monitor.current_state.val_f_beta)
+        summary.value.add(tag='g_beta/g_beta', simple_value=monitor.current_state.val_g_beta)
+        summary.value.add(tag='geometric_mean/geometric_mean', simple_value=monitor.current_state.val_geometric_mean)
 
         # Get validation summary
         self.val_summary_writer.add_summary(summary=summary, global_step=monitor.current_state.global_step)
@@ -68,7 +70,7 @@ class Summaries(object):
 
     def log_val_cam_plots_summaries(self, monitor):
         """Generate class activation map plot summaries."""
-        if monitor.current_state.val_f1 == monitor.best_state.val_f1:
+        if monitor.current_state.val_geometric_mean == monitor.best_state.val_geometric_mean:
 
             # Get validation cam plots as numpy array
             val_cam_plots = self.sess.run([monitor.current_state.val_cam_plots])[0]

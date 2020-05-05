@@ -50,12 +50,12 @@ class Monitor(object):
 
     def _improvement_check(self):
         """Check for improvement in validation accuracy."""
-        if self.current_state.val_f1 > self.best_state.val_f1:
+        if self.current_state.val_geometric_mean > self.best_state.val_geometric_mean:
             self.best_state = copy.copy(self.current_state)
 
     def _save_checkpoint(self):
         """Check for improvement in validation accuracy."""
-        if self.current_state.val_accuracy == self.best_state.val_accuracy:
+        if self.current_state.val_geometric_mean == self.best_state.val_geometric_mean:
             self.graph.saver.save(sess=self.sess, save_path=os.path.join(self.save_path, 'checkpoints', 'model'),
                                   global_step=self.graph.global_step)
 
