@@ -13,7 +13,7 @@ from kardioml.models.deepecg.train.logger import Logger
 from kardioml.models.deepecg.train.monitor import Monitor
 from kardioml.models.deepecg.train.summaries import Summaries
 from kardioml.models.deepecg.utils.devices.device_check import get_device_count
-from kardioml.models.deepecg.train.learning_rate_schedulers import AnnealingRestartScheduler
+from kardioml.models.deepecg.train.learning_rate_schedulers import AnnealingWarmRestartScheduler
 
 
 def train(model, epochs, batch_size):
@@ -31,8 +31,9 @@ def train(model, epochs, batch_size):
         steps_per_epoch = int(np.ceil(num_train_batches / num_gpus))
 
         # Initialize learning rate scheduler
-        lr_scheduler = AnnealingRestartScheduler(lr_min=1e-5, lr_max=1e-3, steps_per_epoch=steps_per_epoch,
-                                                 lr_max_decay=0.6, epochs_per_cycle=epochs, cycle_length_factor=1.5)
+        lr_scheduler = AnnealingWarmRestartScheduler(lr_min=1e-5, lr_max=1e-3, steps_per_epoch=steps_per_epoch,
+                                                     lr_max_decay=1., epochs_per_cycle=10, cycle_length_factor=1.5,
+                                                     warmup_factor=0.1)
 
         # Initialize model model_tracker
         monitor = Monitor(sess=sess, graph=model.graph, learning_rate=lr_scheduler.lr, batch_size=batch_size,
@@ -93,7 +94,7 @@ def train(model, epochs, batch_size):
                 break
 
             # Update learning rate scheduler
-            lr_scheduler.on_epoch_end_update(epoch=epoch)
+            lr_scheduler.on_epoch_end_update()
 
         # End tracking
         monitor.end_monitoring()
