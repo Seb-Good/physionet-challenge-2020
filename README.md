@@ -50,6 +50,7 @@ the rhythm labels (```#Dx```). Below is an exampe for file ```A0001.hea```.
       "labels_full": ["Right bundle branch block"],
       "labels_int": [6],
       "sex": "Male",
+      "hr": 100.56342212577579,
       "shape": [12, 7500]
     }
     ``` 
