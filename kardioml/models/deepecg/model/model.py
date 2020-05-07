@@ -21,7 +21,7 @@ class Model(object):
 
     """A class for managing a model through training."""
 
-    def __init__(self, model_name, network_name, network_parameters, save_path, data_path, max_to_keep):
+    def __init__(self, model_name, network_name, network_parameters, save_path, data_path, lookup_path, max_to_keep):
 
         # Set input parameters
         self.model_name = model_name
@@ -29,6 +29,7 @@ class Model(object):
         self.network_parameters = network_parameters
         self.save_path = os.path.join(save_path, self.model_name)
         self.data_path = data_path
+        self.lookup_path = lookup_path
         self.max_to_keep = max_to_keep
 
         # Set attributes
@@ -55,7 +56,7 @@ class Model(object):
 
         # Build computational graph
         self.graph = Graph(network=self.network, save_path=self.save_path, data_path=self.data_path,
-                           max_to_keep=self.max_to_keep)
+                           lookup_path=self.lookup_path, max_to_keep=self.max_to_keep)
 
         # Start session
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))

@@ -16,12 +16,13 @@ class Graph(object):
 
     """Computational graph class."""
 
-    def __init__(self, network, save_path, data_path, max_to_keep):
+    def __init__(self, network, save_path, data_path, lookup_path, max_to_keep):
 
         # Set input parameters
         self.network = network          # network: neural network architecture
         self.save_path = save_path      # save_path: checkpoints, summaries, and graphs
         self.data_path = data_path      # data_path: waveforms, labels
+        self.lookup_path = lookup_path  # lookup_path: dictionary
         self.max_to_keep = max_to_keep  # Maximum number of checkpoints to keep
 
         # Set attributes
@@ -140,12 +141,12 @@ class Graph(object):
     def _build_sequential_forward_graph(self):
         """Build sequential forward graph for training on CPU or single GPU."""
         # Get mini-batch
-        self.waveforms, self.labels = self._get_next_batch()
+        self.waveforms, self.labels, age, sex = self._get_next_batch()
 
         # Compute forward propagation
-        self.logits, self.cams = self.network.inference(input_layer=self.waveforms, reuse=tf.AUTO_REUSE,
-                                                        is_training=self.is_training, name='ECGNet',
-                                                        print_shape=True)
+        self.logits, self.cams = self.network.inference(input_layer=self.waveforms, age=age, sex=sex,
+                                                        reuse=tf.AUTO_REUSE, is_training=self.is_training,
+                                                        name='ECGNet', print_shape=False)
 
         # Compute loss
         self.loss = self._compute_loss(logits=self.logits, labels=self.labels)
@@ -177,12 +178,12 @@ class Graph(object):
                 with tf.name_scope('tower_{}'.format(tower_id)) as name_scope:
 
                     # Get mini-batch
-                    waveforms, labels = self._get_next_batch()
+                    waveforms, labels, age, sex = self._get_next_batch()
 
                     # Compute inference
-                    logits, cams = self.network.inference(input_layer=waveforms, reuse=tf.AUTO_REUSE,
-                                                          is_training=self.is_training, name='ECGNet',
-                                                          print_shape=True)
+                    logits, cams = self.network.inference(input_layer=waveforms, age=age, sex=sex,
+                                                          reuse=tf.AUTO_REUSE, is_training=self.is_training,
+                                                          name='ECGNet', print_shape=False)
 
                     # Compute loss
                     loss = self._compute_loss(logits=logits, labels=labels)
@@ -268,18 +269,18 @@ class Graph(object):
     def _get_next_batch(self):
         """Get next batch (waveforms, labels) from iterator."""
         with tf.name_scope('next_batch'):
-            waveforms, labels = self.iterator.get_next()
+            waveforms, labels, age, sex = self.iterator.get_next()
 
-        return waveforms, labels
+        return waveforms, labels, age, sex
 
     def _get_generators(self):
         """Create train, val, and test data generators."""
         with tf.variable_scope('train_generator'):
-            generator_train = self.network.create_generator(path=self.data_path, mode='train',
-                                                            batch_size=self.batch_size)
+            generator_train = self.network.create_generator(data_path=self.data_path, lookup_path=self.lookup_path,
+                                                            mode='train', batch_size=self.batch_size)
         with tf.variable_scope('val_generator'):
-            generator_val = self.network.create_generator(path=self.data_path, mode='val',
-                                                          batch_size=self.batch_size)
+            generator_val = self.network.create_generator(data_path=self.data_path, lookup_path=self.lookup_path,
+                                                          mode='val', batch_size=self.batch_size)
         return generator_train, generator_val
 
     def _get_saver(self):

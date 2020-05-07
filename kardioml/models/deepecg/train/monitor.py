@@ -15,7 +15,7 @@ from kardioml.models.deepecg.train.state import State
 
 class Monitor(object):
 
-    def __init__(self, sess, graph, learning_rate, batch_size, save_path, num_gpus):
+    def __init__(self, sess, graph, learning_rate, batch_size, save_path, early_stopping_epoch, num_gpus):
 
         # Set parameters
         self.sess = sess
@@ -23,6 +23,7 @@ class Monitor(object):
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.save_path = save_path
+        self.early_stopping_epoch = early_stopping_epoch
         self.num_gpus = num_gpus
 
         # Set attributes
@@ -50,7 +51,7 @@ class Monitor(object):
 
     def _improvement_check(self):
         """Check for improvement in validation accuracy."""
-        if self.current_state.val_geometric_mean > self.best_state.val_geometric_mean:
+        if self.current_state.val_loss < self.best_state.val_loss:
             self.best_state = copy.copy(self.current_state)
 
     def _save_checkpoint(self):
@@ -63,3 +64,12 @@ class Monitor(object):
         """Save checkpoint."""
         self.graph.saver.save(sess=self.sess, save_path=os.path.join(self.save_path, 'checkpoints', 'model'),
                               global_step=self.graph.global_step)
+
+    def early_stopping_check(self):
+        """Check for early stopping."""
+        # Calculate number of epochs since and accuracy improvement on the validation dataset
+        epochs = self.current_state.epoch - self.best_state.epoch
+
+        if self.early_stopping_epoch is not None:
+            if epochs > self.early_stopping_epoch:
+                return True

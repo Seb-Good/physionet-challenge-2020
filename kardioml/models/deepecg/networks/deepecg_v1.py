@@ -30,7 +30,7 @@ class DeepECGV1(object):
         self.classes = classes
         self.seed = seed
 
-    def inference(self, input_layer, reuse, is_training, name, print_shape=True):
+    def inference(self, input_layer, age, sex, reuse, is_training, name, print_shape=True):
         """Forward propagation of computational graph."""
         # Check input layer dimensions
         assert input_layer.shape[1] == self.length
@@ -304,13 +304,27 @@ class DeepECGV1(object):
             # Print shape
             print_output_shape(layer_name=layer_name, net=gap, print_shape=print_shape)
 
+            # --- Add Features --------------------------------------------------------------------------------------- #
+
+            # Set name
+            layer_name = 'add_features'
+
+            # Set layer scope
+            with tf.variable_scope(layer_name):
+
+                # Add age and sex along dimension 1
+                features = tf.concat(values=[gap, tf.cast(age, tf.float32), tf.cast(sex, tf.float32)], axis=1)
+
+            # Print shape
+            print_output_shape(layer_name=layer_name, net=features, print_shape=print_shape)
+
             # --- Softmax Layer -------------------------------------------------------------------------------------- #
 
             # Set name
             layer_name = 'logits'
 
             # Softmax activation
-            logits = fc_layer(input_layer=gap, neurons=self.classes, activation=None, use_bias=False,
+            logits = fc_layer(input_layer=features, neurons=self.classes, activation=None, use_bias=False,
                               name=layer_name, seed=self.seed)
 
             # Print shape
@@ -396,7 +410,7 @@ class DeepECGV1(object):
         num_filters = int(net.shape[-1])
 
         with tf.variable_scope('logits', reuse=True):
-            weights = tf.gather(tf.transpose(tf.get_variable('kernel')), label)
+            weights = tf.gather(tf.transpose(tf.get_variable('kernel')), label)[0:num_filters]
             weights = tf.reshape(weights, [-1, num_filters, 1])
 
         # Reshape weights
@@ -419,10 +433,11 @@ class DeepECGV1(object):
 
         return waveform, label
 
-    def create_generator(self, path, mode, batch_size):
+    def create_generator(self, data_path, lookup_path, mode, batch_size):
         """Create data generator graph operation."""
-        return DataGenerator(path=path, mode=mode, shape=[self.length, self.channels],
-                             batch_size=batch_size, prefetch_buffer=1500, seed=0, num_parallel_calls=32)
+        return DataGenerator(data_path=data_path, lookup_path=lookup_path, mode=mode,
+                             shape=[self.length, self.channels], batch_size=batch_size,
+                             prefetch_buffer=200, seed=0, num_parallel_calls=32)
 
     def compute_metrics(self, logits, labels):
         """Computes the model accuracy for set of logits and labels."""

@@ -141,7 +141,7 @@ class Logger(object):
 
     def _is_best(self):
         """Check for improvement."""
-        if self.monitor.current_state.val_geometric_mean == self.monitor.best_state.val_geometric_mean:
+        if self.monitor.current_state.val_loss == self.monitor.best_state.val_loss:
             return '*'
         else:
             return ''

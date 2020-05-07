@@ -63,3 +63,124 @@ class AnnealingRestartScheduler(object):
 def exponential_step_decay(decay_epochs, decay_rate, initial_learning_rate, epoch):
     """Compute exponential learning rate step decay."""
     return initial_learning_rate * np.power(decay_rate, np.floor((epoch / decay_epochs)))
+
+
+class LearningRateScheduler(object):
+
+    def __init__(self, learning_rate_min, learning_rate_max, steps_per_epoch, learning_rate_decay,
+                 epochs_per_cycle, multiplication_factor, warmup_factor):
+
+        # Set parameters
+        self.learning_rate_min = learning_rate_min
+        self.learning_rate_max = learning_rate_max
+        self.steps_per_epoch = steps_per_epoch
+        self.learning_rate_decay = learning_rate_decay
+        self.epochs_per_cycle = epochs_per_cycle
+        self.multiplication_factor = multiplication_factor
+        self.warmup_factor = warmup_factor
+
+        # Set attributes
+        self.learning_rate = None
+        self.cycle_epoch = None
+        self.cycle_step = None
+        self.warmup_step = None
+        self.annealing_step = None
+        self.learning_rate_mode = None
+        self.cycle_epochs = None
+        self.cycle_steps = None
+        self.warmup_epochs = None
+        self.annealing_epochs = None
+        self.warmup_steps = None
+        self.annealing_steps = None
+
+        # Get cycle schedule
+        self._get_cycle_schedule()
+
+    def on_batch_end_update(self):
+        """Update learning rate at the end of each batch."""
+        self.learning_rate = self._compute_learning_rate()
+
+    def on_epoch_end_update(self):
+        """Check for end of current cycle, apply restarts when necessary."""
+        if self.cycle_epoch + 1 == self.cycle_epochs:
+            self.epochs_per_cycle = int(np.ceil(self.epochs_per_cycle * self.multiplication_factor))
+            self.learning_rate_max *= self.learning_rate_decay
+            self._get_cycle_schedule()
+        else:
+            self.cycle_epoch += 1
+
+    def _compute_learning_rate(self):
+        """Compute learning rate."""
+        if self.learning_rate_mode[self.cycle_epoch] == 'warmup':
+            return self._compute_warmup_learning_rate()
+        elif self.learning_rate_mode[self.cycle_epoch] == 'annealing':
+            return self._compute_annealing_learning_rate()
+
+    def _compute_warmup_learning_rate(self):
+        """Compute warmup learning rate."""
+        # Update step
+        self.warmup_step += 1
+
+        # Compute the fraction of the warmup cycle that is completed
+        fraction_complete = self._compute_fraction_complete_warmup()
+
+        # Compute learning rate
+        learning_rate = self.learning_rate_min + (self.learning_rate_max - self.learning_rate_min) / \
+                        self.warmup_steps * self.warmup_step
+
+        return learning_rate
+
+    def _compute_annealing_learning_rate(self):
+        """Compute annealing learning rate."""
+        # Update step
+        self.annealing_step += 1
+
+        # Compute the fraction of the annealing cycle that is completed
+        fraction_complete = self._compute_fraction_complete_annealing()
+
+        # Compute learning rate
+        learning_rate = self.learning_rate_min + 0.5 * (self.learning_rate_max - self.learning_rate_min) * \
+                        (1 + np.cos(fraction_complete * np.pi))
+
+        return learning_rate
+
+    def _compute_fraction_complete(self):
+        """Compute the fraction of the total cycle that is completed."""
+        return self.cycle_step / (self.steps_per_epoch * self.epochs_per_cycle)
+
+    def _compute_fraction_complete_warmup(self):
+        """Compute the fraction of the warmup cycle that is completed."""
+        return self.warmup_step / self.warmup_steps
+
+    def _compute_fraction_complete_annealing(self):
+        """Compute the fraction of the annealing cycle that is completed."""
+        return self.annealing_step / self.annealing_steps
+
+    def _get_cycle_schedule(self):
+        """Generate warmup-annealing schedule for the current cycle."""
+        self.cycle_epoch = 0
+        self.cycle_step = 0
+        self.warmup_step = 0
+        self.annealing_step = 0
+
+        # Get epochs
+        self.cycle_epoch = 0
+        self.cycle_epochs = self.epochs_per_cycle
+        self.warmup_epochs = int(self.warmup_factor * self.cycle_epochs)
+        self.annealing_epochs = self.epochs_per_cycle - self.warmup_epochs
+
+        # Get steps
+        self.cycle_step = 0
+        self.cycle_steps = self.cycle_epochs * self.steps_per_epoch
+        self.warmup_steps = self.warmup_epochs * self.steps_per_epoch
+        self.annealing_steps = self.annealing_epochs * self.steps_per_epoch
+
+        # Learning rate mode schedule
+        self.learning_rate_mode = ['annealing' if epoch not in range(int(self.warmup_factor * self.cycle_epochs))
+                                   else 'warmup' for epoch in range(self.cycle_epochs)]
+
+        # Learning rate
+        if self.learning_rate_mode[0] == 'warmup':
+            self.learning_rate = self.learning_rate_min
+        elif self.learning_rate_mode[0] == 'annealing':
+            self.learning_rate = self.learning_rate_max
