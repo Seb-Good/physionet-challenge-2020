@@ -1,0 +1,6 @@
+
+for FOLD in 1 2 3 4
+do
+    python main.py --start_fold $FOLD
+done
+
