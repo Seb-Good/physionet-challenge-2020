@@ -7,7 +7,6 @@ import os
 from model.config_wavenet import hparams
 
 from pipeline import Pipeline
-from data_generator import DataGenerator
 
 @click.command()
 @click.option('--fold', default=0, help='fold to train')
@@ -17,8 +16,7 @@ from data_generator import DataGenerator
 @click.option('--ssl', default=False, help='semi-supervised learning')
 def main(fold, batch, lr, epochs,ssl):
 
-    get_data = DataGenerator(ssl=ssl)
-    cross_val = Pipeline(get_data=get_data,start_fold=fold, batch_size=batch, lr=lr, epochs=epochs)
+    cross_val = Pipeline(start_fold=fold, batch_size=batch, lr=lr, epochs=epochs)
     score = cross_val.train()
     log.info(f'Model F1 macro = {score}')
     log.info(f'Model fold = {fold}')

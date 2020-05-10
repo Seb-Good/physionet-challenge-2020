@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchsummary import summary
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 #from pytorch_toolbelt import losses as L
-from torch.utils.data import Dataset, DataLoader
+
 from pytorchtools import EarlyStopping
 
 # import EarlyStopping
@@ -121,47 +121,25 @@ class WaveNet(nn.Module):
         return x, part_head
 
 
-class Dataset_train(Dataset):
-    def __init__(self, input, output, output_part):
-        self.input = input
-        self.output = output
-        self.output_part = output_part
 
-    def __len__(self):
-        return len(self.input)
-
-    def __getitem__(self, idx):
-
-        x = self.input[idx]
-        y = self.output[idx]
-        y_part = self.output_part[idx]
-
-        x = torch.tensor(x, dtype=torch.float)
-        y = torch.tensor(y, dtype=torch.float)
-        y_part = torch.tensor(y_part, dtype=torch.float)
-
-        return x, y, y_part
-
-
-class Dataset_test(Dataset):
-    def __init__(self, input):
-        self.input = input
-
-    def __len__(self):
-        return len(self.input)
-
-    def __getitem__(self, idx):
-        x = self.input[idx]
-        x = torch.tensor(x, dtype=torch.float)
-        return x
 
 
 class DL_model:
-    def __init__(self, n_channels):
+    def __init__(self):
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+        #TODO: get partions of the data
+        train = Dataset_train(X_train, y_train, y_partions)
+        valid = Dataset_train(X_val, y_val, y_partions)
+
+        self.train_loader = torch.utils.data.DataLoader(batch_size=hparams['batch_size'], shuffle=True)
+        self.valid_loader = torch.utils.data.DataLoader(batch_size=hparams['batch_size'], shuffle=True)
+
         # define the model
+
+
+
         self.model = WaveNet(n_channels=n_channels).cuda()
         summary(self.model, (hparams['model']['input_size'], n_channels))
 
@@ -171,31 +149,6 @@ class DL_model:
         self.optimizer = torch.optim.Adam(
             params=self.model.parameters(), lr=hparams['lr'], weight_decay=1e-5
         )
-        #test
-        # {0: 0.005667983023907451,
-        #  1: 0.0318489224862232,
-        #  2: 0.059184860721374306,
-        #  3: 0.05115955747500444,
-        #  4: 0.08582807091547462,
-        #  5: 0.12348720145657063,
-        #  10: 1.0,
-        #  9: 0.25507909000405593,
-        #  8: 0.14042423627321626,
-        #  7: 0.13084182853252133,
-        #  6: 0.18530522593951732}
-
-        #train
-        # {0: 0.02482742807911037,
-        #  1: 0.033233229695531795,
-        #  3: 0.03960287404284465,
-        #  2: 0.046687955179144924,
-        #  10: 1.0,
-        #  9: 0.2625110196885101,
-        #  8: 0.14574012064457978,
-        #  7: 0.13483387732769844,
-        #  6: 0.18995598366930339,
-        #  5: 0.10732016446568177,
-        #  4: 0.06941722016407742}
 
         #weights = torch.Tensor([0.025,0.033,0.039,0.046,0.069,0.107,0.189,0.134,0.145,0.262,1]).cuda()
         self.loss_1 = nn.CrossEntropyLoss(weight=None)  # main loss
@@ -234,11 +187,9 @@ class DL_model:
             for j in range(11):
                 y_partions[i, 0, j] = np.where(y_train[i, :, 0] == j)[0].shape[0] / 4000
 
-        train = Dataset_train(X_train, y_train, y_partions)
-        valid = Dataset_train(X_val, y_val, y_partions)
 
-        train_loader = torch.utils.data.DataLoader(train, batch_size=hparams['batch_size'], shuffle=True)
-        valid_loader = torch.utils.data.DataLoader(valid, batch_size=hparams['batch_size'], shuffle=True)
+
+
 
         for epoch in range(hparams['n_epochs']):
 

@@ -4,8 +4,10 @@ from config import DATA_PATH, TEST_NAME, TRAIN_NAME, TARGET, SEMI_SUPERVISED,TRA
 from model.wavenet import hparams
 import pandas as pd
 import numpy as np
+import json
 import gc
-
+import torch
+from torch.utils.data import Dataset, DataLoader
 
 class DataGenerator:
     def __init__(self,ssl):
@@ -227,3 +229,65 @@ class DataGenerator:
         X_neg[:] = 0
         X_neg[:, : -1 * shift, :] = X[:, shift:, :]
         return X_neg
+
+
+
+class Dataset_train(Dataset):
+    def __init__(self, indexes):
+        self.indexes = indexes
+
+    def __len__(self):
+        return len(self.indexes)
+
+    def __getitem__(self, idx):
+
+
+        X,y = self.load_data(idx)
+
+        y = y['label_train'].values
+
+        x = torch.tensor(x, dtype=torch.float)
+        y = torch.tensor(y, dtype=torch.float)
+
+        return x, y
+
+    def load_data(self,indexes):
+
+        #load waveforms
+        for count,i in enumerate(indexes):
+            if count == 0:
+                X = np.load(i+'npy')
+                X = np.reshape(X,(-1,X.shape[1],X.shape[0]))
+            else:
+                data = np.load(i+'npy')
+                data = np.reshape(data, (-1, data.shape[1], data.shape[0]))
+                X = np.concatenate((X,data),axis=0)
+
+        y = []
+        #load annotation
+        for i in indexes:
+            y.append(json.load(open(i+'.json')))
+
+        y = pd.DataFrame(y)
+
+        return X,y
+
+
+class Dataset_test(Dataset):
+    def __init__(self, input):
+        self.input = input
+
+    def __len__(self):
+        return len(self.input)
+
+    def __getitem__(self, idx):
+        x = self.input[idx]
+        x = torch.tensor(x, dtype=torch.float)
+        return x
+
+
+class PreProcessing():
+
+    def process_data(self,X):
+
+        return X

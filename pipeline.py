@@ -3,12 +3,14 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import KFold, GroupKFold,StratifiedKFold
 import numpy as np
 import matplotlib.pyplot as plt
+import json
+import pandas as pd
 
 from model.config_wavenet import hparams
 from model.wavenet import DL_model
-from data_generator import DataGenerator
-from config import *
-
+from config import SPLIT_TABLE_PATH,PIC_FOLDER,DEBUG_FOLDER
+import torch
+import os
 
 def seed_everything(seed):
     np.random.seed(seed)
@@ -21,7 +23,7 @@ seed_everything(42)
 
 class Pipeline:
     def __init__(
-        self, get_data,start_fold, epochs, batch_size, lr, pic_folder=PIC_FOLDER, debug_folder=DEBUG_FOLDER,
+        self, start_fold, epochs, batch_size, lr, split_table_path = SPLIT_TABLE_PATH,pic_folder=PIC_FOLDER, debug_folder=DEBUG_FOLDER,
     ):
 
         # load the model
@@ -35,29 +37,30 @@ class Pipeline:
         print('Selected Learning rate:', hparams['lr'])
         print('\n')
 
-        self.get_data = get_data
 
         self.pic_folder = pic_folder
         self.debug_folder = debug_folder
+        self.split_table_path = split_table_path
+
+        self.splits = self.load_split_table()
+
+    def load_split_table(self):
+
+        splits = []
+
+        for i in range(5):
+            data = json.load(open(self.split_table_path+f'training_lookup_cv{i+1}.json'))
+            splits.append(data)
+
+        splits = pd.DataFrame(splits)
+
+        return splits
 
     def train(self):
 
-        # kfold cross-validation
-        #kf = KFold(hparams['n_fold'], shuffle=True, random_state=42)
-
-        kf = StratifiedKFold(hparams['n_fold'], shuffle=True, random_state=42)
-
-        # kf = GroupKFold(n_splits=hparams['n_fold'])
-        #
-        group = np.arange(self.get_data.X_train.shape[0])
-        step = 500000
-        for i in range(int(self.get_data.X_train.shape[0]/step)):
-            group[i*step:(i+1)*step] = i
 
         score = 0
-        for fold, (train_ind, val_ind) in enumerate(
-            kf.split(X=self.get_data.X_train[:,:,0],y=self.get_data.y_train[:,0,0],groups=group)
-        ):
+        for fold in range(self.splits.shape[0]):
 
             if fold != self.start_fold:
                 continue
