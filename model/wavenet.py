@@ -1,19 +1,17 @@
 import torch
+from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
-import torch.nn.functional as F
 from torchsummary import summary
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-#from pytorch_toolbelt import losses as L
+import torch.nn.functional as F
 
+# from pytorch_toolbelt import losses as L
 from pytorchtools import EarlyStopping
 
 # import EarlyStopping
 from model.config_wavenet import hparams
 import numpy as np
 from tqdm import tqdm
-from sklearn.metrics import f1_score
-import gc
-from loss_functions import AngularPenaltySMLoss
 
 
 class wave_block(nn.Module):
@@ -40,7 +38,6 @@ class wave_block(nn.Module):
         self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
 
-
     def forward(self, x):
         res_x = x
         tanh = self.tanh(self.conv2(x))
@@ -49,6 +46,7 @@ class wave_block(nn.Module):
         x = self.conv4(res)
         x = res_x + x
         return x
+
 
 class CBR(nn.Module):
     def __init__(self, in_ch, out_ch, kernel_size, dilation):
@@ -64,32 +62,26 @@ class CBR(nn.Module):
         self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
 
-
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
         return x
 
+
 class WaveNet(nn.Module):
     def __init__(self, n_channels, basic_block=wave_block):
         super().__init__()
         self.basic_block = basic_block
         self.layer1 = self._make_layers(n_channels, 16, 3, 12)
-        self.bn1 = nn.BatchNorm1d(16)
+        self.pool1 = torch.nn.MaxPool1d(kernel_size=2)
         self.layer2 = self._make_layers(16, 32, 3, 8)
-        self.bn2 = nn.BatchNorm1d(32)
+        self.pool2 = torch.nn.MaxPool1d(kernel_size=2)
         self.layer3 = self._make_layers(32, 64, 3, 4)
-        self.bn3 = nn.BatchNorm1d(64)
-        self.layer4 = self._make_layers(64, 128, 3, 1)
-        #self.bn4 = nn.BatchNorm1d(128)
-        self.fc = nn.Linear(128, 11) #
+        self.pool3 = torch.nn.MaxPool1d(kernel_size=2)
 
-        self.main_head = self._make_layers(128, 11, 1, 1)
-        self.angular_output = AngularPenaltySMLoss(in_features=128,out_features=11,loss_type='arcface')
-
-        self.part_head = nn.Linear(4000, 1)
-
+        self.fc1 = nn.Linear(int(64 * 4500), 300)
+        self.fc2 = nn.Linear(300, 9)#
 
 
     def _make_layers(self, in_ch, out_ch, kernel_size, n):
@@ -102,44 +94,39 @@ class WaveNet(nn.Module):
     def forward(self, x):
         x = x.permute(0, 2, 1)
         x = self.layer1(x)
-        #x = self.bn1(x)
+        x = self.pool1(x)
         x = self.layer2(x)
-        #x = self.bn2(x)
+        x = self.pool2(x)
         x = self.layer3(x)
-        #x = self.bn3(x)
-        x = self.layer4(x)
-        #x = self.bn4(x)
+        x = self.pool3(x)
 
-        part_head = self.part_head(x)
+        x = x.view(-1, int(x.shape[1] * x.shape[2]))
 
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = torch.sigmoid(x)
+
+        return x
+
+    def activatations(self, x):
+        """
+
+        :param x: input signal
+        :return: activations of the first layer
+        """
         x = x.permute(0, 2, 1)
-        part_head = part_head.permute(0, 2, 1)
-
-        x = self.fc(x)
-        part_head = self.fc(part_head)
-
-        return x, part_head
-
-
-
+        x = self.layer1(x)
+        x = torch.mean(x, dim=1)
+        return x
 
 
 class DL_model:
-    def __init__(self):
+    def __init__(self, n_channels):
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        #TODO: get partions of the data
-        train = Dataset_train(X_train, y_train, y_partions)
-        valid = Dataset_train(X_val, y_val, y_partions)
-
-        self.train_loader = torch.utils.data.DataLoader(batch_size=hparams['batch_size'], shuffle=True)
-        self.valid_loader = torch.utils.data.DataLoader(batch_size=hparams['batch_size'], shuffle=True)
-
         # define the model
-
-
-
         self.model = WaveNet(n_channels=n_channels).cuda()
         summary(self.model, (hparams['model']['input_size'], n_channels))
 
@@ -150,20 +137,20 @@ class DL_model:
             params=self.model.parameters(), lr=hparams['lr'], weight_decay=1e-5
         )
 
-        #weights = torch.Tensor([0.025,0.033,0.039,0.046,0.069,0.107,0.189,0.134,0.145,0.262,1]).cuda()
-        self.loss_1 = nn.CrossEntropyLoss(weight=None)  # main loss
-        self.loss_2 = nn.L1Loss()  # loss for the second head
+        # weights = torch.Tensor([0.025,0.033,0.039,0.046,0.069,0.107,0.189,0.134,0.145,0.262,1]).cuda()
+        self.loss_1 = nn.BCEWithLogitsLoss(weight=None)  # main loss
 
         # define early stopping
         self.early_stopping = EarlyStopping(
             checkpoint_path=hparams['checkpoint_path'] + '/checkpoint.pt',
             patience=hparams['patience'],
             delta=hparams['min_delta'],
+            is_maximize=False,
         )
         # lr cheduler
         self.scheduler = ReduceLROnPlateau(
             optimizer=self.optimizer,
-            mode='max',
+            mode='min',
             factor=0.2,
             patience=3,
             verbose=True,
@@ -173,23 +160,13 @@ class DL_model:
             eps=0,
         )
 
-    def fit(self, X_train, y_train, X_val, y_val):
+    def fit(self, train, valid):
 
-        # history
-        history_train_loss = []
-        history_val_loss = []
-        history_train_metric = []
-        history_val_metric = []
+        train_loader = torch.utils.data.DataLoader(train, batch_size=hparams['batch_size'], shuffle=True)
+        valid_loader = torch.utils.data.DataLoader(valid, batch_size=hparams['batch_size'], shuffle=True)
 
-        # calculate an average over each class for the second head
-        y_partions = np.zeros((y_train.shape[0], 1, 11))
-        for i in range(y_partions.shape[0]):
-            for j in range(11):
-                y_partions[i, 0, j] = np.where(y_train[i, :, 0] == j)[0].shape[0] / 4000
-
-
-
-
+        # tensorboard object
+        writer = SummaryWriter()
 
         for epoch in range(hparams['n_epochs']):
 
@@ -199,30 +176,19 @@ class DL_model:
 
             train_preds, train_true = torch.Tensor([]), torch.Tensor([])
 
-            for (X_batch, y_batch, y_part_batch) in tqdm(train_loader):
+            for (X_batch, y_batch) in tqdm(train_loader):
 
                 y_batch = y_batch.cuda()
                 X_batch = X_batch.cuda()
-                y_part_batch = y_part_batch.cuda()
 
                 self.optimizer.zero_grad()
                 # get model predictions
-                pred, pred_part = self.model(X_batch)
+                pred = self.model(X_batch)
 
                 # process loss_1
-                #pred_ = pred.view(-1, pred.shape[-1])
-                pred_ = pred.reshape(-1, pred.shape[-1])
-                y_batch_ = y_batch.view(-1)
-                train_loss = self.loss_1(pred_, y_batch_.long())
-
-                # process loss_2
-                pred_part = pred_part.view(-1)
-                y_part_batch = y_part_batch.view(-1)
-                loss_2 = self.loss_2(pred_part, y_part_batch)
-
-                if epoch <10:
-                    # calculate a sum of losses:
-                    train_loss += +0.5 * loss_2
+                pred_ = pred.view(-1, pred.shape[-1])
+                y_batch_ = y_batch.view(-1, y_batch.shape[-1])
+                train_loss = self.loss_1(pred_, y_batch_)
 
                 train_loss.backward()
                 self.optimizer.step()
@@ -237,12 +203,14 @@ class DL_model:
 
                 X_batch = X_batch.cpu().detach()
                 y_batch = y_batch.cpu().detach()
-                y_part_batch = y_part_batch.cpu().detach()
 
             # calc triaing metric
-            train_metric = f1_score(
-                train_true.numpy(), train_preds.numpy().argmax(1), average='macro', labels=list(range(11))
+            train_preds = self.apply_threshold(train_preds.numpy())
+            f2_train, g2_train = self.compute_beta_score(
+                train_true.numpy(), train_preds, beta=2, num_classes=9
             )
+
+            gm_train = np.sqrt(f2_train * g2_train)
 
             # evaluate the model
             self.model.eval()
@@ -250,17 +218,17 @@ class DL_model:
             print('Model evaluation...')
             avg_val_loss = 0.0
             with torch.no_grad():
-                for X_batch, y_batch, y_part_batch in valid_loader:
+                for X_batch, y_batch in valid_loader:
 
                     y_batch = y_batch.cuda()
                     X_batch = X_batch.cuda()
 
-                    pred, pred_partion = self.model(X_batch)
-                    #pred_ = pred.view(-1, pred.shape[-1])
+                    pred = self.model(X_batch)
+                    # pred_ = pred.view(-1, pred.shape[-1])
                     pred_ = pred.reshape(-1, pred.shape[-1])
-                    y_batch_ = y_batch.view(-1)
+                    y_batch_ = y_batch.view(-1, y_batch.shape[-1])
 
-                    avg_val_loss += self.loss_1(pred_, y_batch_.long()).item() / len(valid_loader)
+                    avg_val_loss += self.loss_1(pred_, y_batch_).item() / len(valid_loader)
 
                     X_batch = X_batch.cpu().detach()
                     y_batch = y_batch.cpu().detach()
@@ -269,12 +237,13 @@ class DL_model:
                     val_preds = torch.cat([val_preds, pred_.cpu().detach()], 0)
 
             # evalueate metric
-            val_metric = f1_score(
-                val_true.numpy(), val_preds.numpy().argmax(1), labels=list(range(11)), average='macro'
-            )
+            val_preds = self.apply_threshold(val_preds.numpy())
+            f2_val, g2_val = self.compute_beta_score(val_true.numpy(), val_preds, beta=2, num_classes=9)
 
-            self.scheduler.step(val_metric)
-            res = self.early_stopping(score=val_metric, model=self.model)
+            gm_val = np.sqrt(f2_val * g2_val)
+
+            self.scheduler.step(avg_val_loss)
+            res = self.early_stopping(score=avg_val_loss, model=self.model)
 
             # print statistics
             if hparams['verbose_train']:
@@ -283,44 +252,51 @@ class DL_model:
                     epoch + 1,
                     '| Train_loss: ',
                     avg_loss,
-                    '| Train_Metrics: ',
-                    train_metric,
+                    '| F2_train: ',
+                    f2_train,
+                    '| G2_train: ',
+                    g2_train,
+                    '| GM_train: ',
+                    gm_train,
                     '| Val_loss: ',
                     avg_val_loss,
-                    '| Val_Metrics: ',
-                    val_metric,
+                    '| F2_val: ',
+                    f2_val,
+                    '| G2_val: ',
+                    g2_val,
+                    '| GM_val: ',
+                    gm_val,
                     '| LR: ',
                     self.get_lr(self.optimizer),
                 )
 
-            # # add history
-            history_train_loss.append(avg_loss)
-            history_val_loss.append(avg_val_loss)
-            history_train_metric.append(train_metric)
-            history_val_metric.append(val_metric)
+            # # add history to tensorboard
+            writer.add_scalars('Loss', {'Train_loss': avg_loss, 'Val_loss': avg_val_loss}, epoch)
+
+            writer.add_scalars('F2', {'F2_train': f2_train, 'F2_val': f2_val}, epoch)
+
+            writer.add_scalars('G2', {'G2_train': g2_train, 'G2_val': g2_val}, epoch)
+
+            writer.add_scalars('Geometric mean', {'GM_train': gm_train, 'GM_val': gm_val}, epoch)
 
             if res == 2:
                 print("Early Stopping")
-                print(f'folder %d global best val max f1 model score {self.early_stopping.best_score}')
+                print(f'global best min val_loss model score {self.early_stopping.best_score}')
                 break
             elif res == 1:
-                print(f'save folder %d global val max f1 model score {val_metric}')
+                print(f'save global val_loss model score {avg_val_loss}')
 
-        history = {}
-        history['train_loss'] = history_train_loss
-        history['val_loss'] = history_val_loss
-        history['train_metric'] = history_train_metric
-        history['val_metric'] = history_val_metric
+        writer.close()
 
-        return history
+        return True
 
+    # TODO
     # prediction function
     def predict(self, X_test):
 
         # evaluate the model
         self.model.eval()
 
-        X_test = Dataset_test(X_test)
         test_loader = torch.utils.data.DataLoader(X_test, batch_size=hparams['batch_size'], shuffle=False)
 
         test_preds = torch.Tensor([])
@@ -329,27 +305,131 @@ class DL_model:
 
                 X_batch = X_batch.cuda()
 
-                pred, pred_part = self.model(X_batch)
+                pred = self.model(X_batch)
                 # pred = pred.view(-1, pred.shape[-1])
 
                 X_batch = X_batch.cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 
-                #test_preds = F.softmax(test_preds,dim=2)
+                # test_preds = F.softmax(test_preds,dim=2)
+
+        return test_preds.numpy()
+
+    def get_heatmap(self, X_test):
+
+        # evaluate the model
+        self.model.eval()
+
+        test_loader = torch.utils.data.DataLoader(X_test, batch_size=hparams['batch_size'], shuffle=False)
+
+        test_preds = torch.Tensor([])
+        with torch.no_grad():
+            for i, (X_batch) in enumerate(test_loader):
+                X_batch = X_batch.cuda()
+
+                pred = self.model.activatations(X_batch)
+                # pred = pred.view(-1, pred.shape[-1])
+
+                X_batch = X_batch.cpu().detach()
+
+                test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 
         return test_preds.numpy()
 
     def model_save(self, model_path):
-
         torch.save(self.model, model_path)
         return True
 
     def model_load(self, model_path):
-
         self.model = torch.load(model_path)
         return True
 
     def get_lr(self, optimizer):
         for param_group in optimizer.param_groups:
             return param_group['lr']
+
+    def apply_threshold(self, y):
+
+        y[np.where(y > 0.5)] = 1
+        y[np.where(y <= 0.5)] = 0
+
+        return y
+
+    def compute_beta_score(self, labels, output, beta, num_classes, check_errors=True):
+
+        # Check inputs for errors.
+        if check_errors:
+            if len(output) != len(labels):
+                raise Exception('Numbers of outputs and labels must be the same.')
+
+        # Populate contingency table.
+        num_recordings = len(labels)
+
+        fbeta_l = np.zeros(num_classes)
+        gbeta_l = np.zeros(num_classes)
+        fmeasure_l = np.zeros(num_classes)
+        accuracy_l = np.zeros(num_classes)
+
+        f_beta = 0
+        g_beta = 0
+        f_measure = 0
+        accuracy = 0
+
+        # Weight function
+        C_l = np.ones(num_classes)
+
+        for j in range(num_classes):
+            tp = 0
+            fp = 0
+            fn = 0
+            tn = 0
+
+            for i in range(num_recordings):
+
+                num_labels = np.sum(labels[i])
+
+                if labels[i][j] and output[i][j]:
+                    tp += 1 / num_labels
+                elif not labels[i][j] and output[i][j]:
+                    fp += 1 / num_labels
+                elif labels[i][j] and not output[i][j]:
+                    fn += 1 / num_labels
+                elif not labels[i][j] and not output[i][j]:
+                    tn += 1 / num_labels
+
+            # Summarize contingency table.
+            if (1 + beta ** 2) * tp + (fn * beta ** 2) + fp:
+                fbeta_l[j] = float((1 + beta ** 2) * tp) / float(
+                    ((1 + beta ** 2) * tp) + (fn * beta ** 2) + fp
+                )
+            else:
+                fbeta_l[j] = 1.0
+
+            if tp + fp + beta * fn:
+                gbeta_l[j] = float(tp) / float(tp + fp + beta * fn)
+            else:
+                gbeta_l[j] = 1.0
+
+            if tp + fp + fn + tn:
+                accuracy_l[j] = float(tp + tn) / float(tp + fp + fn + tn)
+            else:
+                accuracy_l[j] = 1.0
+
+            if 2 * tp + fp + fn:
+                fmeasure_l[j] = float(2 * tp) / float(2 * tp + fp + fn)
+            else:
+                fmeasure_l[j] = 1.0
+
+        for i in range(num_classes):
+            f_beta += fbeta_l[i] * C_l[i]
+            g_beta += gbeta_l[i] * C_l[i]
+            f_measure += fmeasure_l[i] * C_l[i]
+            accuracy += accuracy_l[i] * C_l[i]
+
+        f_beta = float(f_beta) / float(num_classes)
+        g_beta = float(g_beta) / float(num_classes)
+        f_measure = float(f_measure) / float(num_classes)
+        accuracy = float(accuracy) / float(num_classes)
+
+        return f_beta, g_beta

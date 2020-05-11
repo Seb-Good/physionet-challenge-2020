@@ -3,7 +3,7 @@ import torch
 
 hparams = {}
 # training params
-hparams['n_epochs'] = 150
+hparams['n_epochs'] = 1
 hparams['lr'] = 0.001
 hparams['batch_size'] = 5
 hparams['verbose_train'] = True
@@ -29,7 +29,7 @@ structure_hparams = dict()
 # global dropout rate
 structure_hparams['dropout'] = 0.2
 # number of filers for the model
-structure_hparams['input_size'] = 4000  # MUST be the order of 10
+structure_hparams['input_size'] = 36000  # MUST be the order of 10
 
 
 hparams['model'] = structure_hparams
