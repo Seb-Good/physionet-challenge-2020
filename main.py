@@ -4,7 +4,7 @@ import click
 import os
 
 # import modules
-from model.config_wavenet import hparams
+from model.config_ecgnet import hparams
 
 from pipeline import Pipeline
 

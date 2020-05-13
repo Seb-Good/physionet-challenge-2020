@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import json
 import pandas as pd
 
-from model.config_wavenet import hparams
+from model.config_ecgnet import hparams
 from data_generator import Dataset_train, Dataset_test
-from model.wavenet import DL_model
+from model.ecgnet import DL_model
 from config import SPLIT_TABLE_PATH, PIC_FOLDER, DEBUG_FOLDER
 import torch
 import os
@@ -120,10 +120,3 @@ class Pipeline:
 
         return fold_score
 
-    def predictions_postprocess(self, pred):
-        return np.argmax(pred, axis=2)
-
-    def metrics(self, y_true, pred):
-        y_true = np.reshape(y_true, (-1))
-        pred = np.reshape(pred, (-1))
-        return f1_score(y_true, pred, average='macro', labels=list(range(11)))

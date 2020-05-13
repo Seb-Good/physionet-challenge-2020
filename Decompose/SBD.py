@@ -18,7 +18,7 @@ def SBD(X):
     # apply sub-bands decomposition
     def subband(data, filter_grid):
 
-        data = data[:, 0]
+        #data = data[:, 0]
 
         data_subband = np.zeros((data.shape[0], filter_grid.shape[1]))
 
@@ -31,8 +31,8 @@ def SBD(X):
     X1 = np.zeros((X.shape[0], X.shape[1], filter_bank.shape[1]), dtype='float32')
 
     # novel data filling
-    for i in tqdm(range(X.shape[0])):
-        buf = subband(X[i, :, :], filter_bank)
+    for i in range(X.shape[0]):
+        buf = subband(X[i, :], filter_bank)
         X1[i, :, :] = buf
 
     return X1

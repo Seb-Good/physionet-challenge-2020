@@ -3,9 +3,9 @@ import torch
 
 hparams = {}
 # training params
-hparams['n_epochs'] = 1
-hparams['lr'] = 0.001
-hparams['batch_size'] = 5
+hparams['n_epochs'] = 50
+hparams['lr'] = 0.003
+hparams['batch_size'] = 10
 hparams['verbose_train'] = True
 
 # early stopping settings

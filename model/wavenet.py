@@ -73,14 +73,14 @@ class WaveNet(nn.Module):
     def __init__(self, n_channels, basic_block=wave_block):
         super().__init__()
         self.basic_block = basic_block
-        self.layer1 = self._make_layers(n_channels, 16, 3, 12)
-        self.pool1 = torch.nn.MaxPool1d(kernel_size=2)
-        self.layer2 = self._make_layers(16, 32, 3, 8)
-        self.pool2 = torch.nn.MaxPool1d(kernel_size=2)
-        self.layer3 = self._make_layers(32, 64, 3, 4)
-        self.pool3 = torch.nn.MaxPool1d(kernel_size=2)
+        self.layer1 = self._make_layers(n_channels, 32, 15, 1)
+        self.pool1 = torch.nn.MaxPool1d(kernel_size=4)
+        # self.layer2 = self._make_layers(128, 64, 3, 8)
+        # self.pool2 = torch.nn.MaxPool1d(kernel_size=2)
+        # self.layer3 = self._make_layers(64, 32, 3, 4)
+        # self.pool3 = torch.nn.MaxPool1d(kernel_size=2)
 
-        self.fc1 = nn.Linear(int(64 * 4500), 300)
+        self.fc1 = nn.Linear(int(32 * 9000), 300)
         self.fc2 = nn.Linear(300, 9)#
 
 
@@ -95,17 +95,14 @@ class WaveNet(nn.Module):
         x = x.permute(0, 2, 1)
         x = self.layer1(x)
         x = self.pool1(x)
-        x = self.layer2(x)
-        x = self.pool2(x)
-        x = self.layer3(x)
-        x = self.pool3(x)
+        # x = self.layer2(x)
+        # x = self.pool2(x)
 
         x = x.view(-1, int(x.shape[1] * x.shape[2]))
 
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
-        x = torch.sigmoid(x)
 
         return x
 

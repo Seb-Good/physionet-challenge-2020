@@ -1,5 +1,4 @@
 from Decompose.SBD import *
-from pykalman import KalmanFilter
 from config import DATA_PATH
 
 import pandas as pd
@@ -264,7 +263,8 @@ class PreProcessing:
 
         X = np.reshape(X, (X.shape[1], X.shape[0]))
 
-
+        # normalize signals
+        X = self.normalize_channels(X)
 
         if X.shape[0] < 36000:
             X_new = np.zeros((36000, 12))
@@ -274,14 +274,20 @@ class PreProcessing:
             X = X_new
         elif X.shape[0] > 36000:
             X = X[:36000, :]
+
+
+
         #downsample
         #X = self.resample(X)
 
+        #X = self.apply_sbd(X).astype(np.float32)
+
         return X
+
     #TODO: some issues with downsampling
     def resample(self, X):
         Fs = 500
-        F1 = 250
+        F1 = 125
         q = int(Fs / F1)
         q = int(X.shape[0]/q)
 
@@ -291,16 +297,17 @@ class PreProcessing:
 
         return X_dec
 
-    def normalize_channels(self, X_train, X_test):
+    def normalize_channels(self,X):
 
-        for i in range(X_train.shape[2]):
-            mean = np.mean(X_train[:, :, i])
-            std = np.std(X_train[:, :, i])
+        for i in range(X.shape[1]):
+            X[:, i] = (X[:, i] - np.mean(X[:, i])) / np.std(X[:, i])
 
-            X_train[:, :, i] = (X_train[:, :, i] - mean) / std
-            X_test[:, :, i] = (X_test[:, :, i] - mean) / std
+        return X
 
-        return X_train, X_test
     def apply_sbd(self, X):
-        SBD_arr = SBD(X)
-        return np.concatenate((X, SBD_arr), axis=2)
+        X = np.reshape(X,(1,X.shape[0],-1))
+        for i in range(1):
+            SBD_arr = SBD(X[:,:,i])
+            X = np.concatenate((X, SBD_arr), axis=2)
+        X = np.reshape(X, (X.shape[1], X.shape[2]))
+        return X
