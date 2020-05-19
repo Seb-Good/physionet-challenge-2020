@@ -45,10 +45,10 @@ def waveform_plot(filename_id, filenames, path):
 
     # ECG
     ax1.set_title('File Name: {}\nAge: {}\nSex: {}\nLabel: {}\nHR: {} BPM'.format(filename,
-                                                                                 meta_data['age'],
-                                                                                 meta_data['sex'],
-                                                                                 label,
-                                                                                 int(meta_data['hr'])),
+                                                                                  meta_data['age'],
+                                                                                  meta_data['sex'],
+                                                                                  label,
+                                                                                  int(meta_data['hr'])),
                   fontsize=20, loc='left',
                   x=0)
     shift = 0

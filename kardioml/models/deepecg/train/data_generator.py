@@ -13,12 +13,12 @@ import tensorflow as tf
 from scipy import signal
 
 # Local imports
-from kardioml import DATA_PATH, LABELS_COUNT, FS
+from kardioml import LABELS_COUNT, FS
 
 
 class DataGenerator(object):
 
-    def __init__(self, data_path, lookup_path, mode, shape, batch_size,
+    def __init__(self, data_path, lookup_path, mode, shape, batch_size, fs=FS,
                  prefetch_buffer=1, seed=0, num_parallel_calls=1):
 
         # Set parameters
@@ -27,6 +27,7 @@ class DataGenerator(object):
         self.mode = mode
         self.shape = shape
         self.batch_size = batch_size
+        self.fs = fs if fs <= FS else FS
         self.prefetch_buffer = prefetch_buffer
         self.seed = seed
         self.num_parallel_calls = num_parallel_calls
@@ -145,6 +146,9 @@ class DataGenerator(object):
         # Load numpy file
         waveform = tf.py_func(self._load_npy_file, [file_path], [tf.float32])
 
+        # Resample waveform
+        waveform = tf.py_func(self._resample, [waveform], [tf.float32])
+
         # Augment waveform
         if augment:
 
@@ -166,12 +170,29 @@ class DataGenerator(object):
 
         return waveform, label, age, sex
 
+    def _resample(self, waveform):
+        """Randomly resample waveform."""
+        if self.fs != FS:
+
+            # Get waveform duration
+            waveform = waveform.squeeze()
+
+            # Get number of samples
+            samples = int(waveform.shape[0] * self.fs / FS)
+
+            # Resample waveform
+            waveform = signal.resample_poly(waveform, samples, waveform.shape[0], axis=0).astype(np.float32)
+
+            return waveform
+        else:
+            return waveform
+
     @staticmethod
     def _load_npy_file(file_path):
         """Python function for loading a single .npy file as casting the data type as float32."""
         # Import waveform
         waveform = np.load(file_path.decode()).astype(np.float32)
-        waveform = waveform.reshape([waveform.shape[1], waveform.shape[0]])
+        waveform = np.transpose(waveform)
         return waveform
 
     @staticmethod
@@ -200,7 +221,7 @@ class DataGenerator(object):
         if hr != -1:
             # Get waveform duration
             waveform = waveform.squeeze()
-            duration = waveform.shape[0] / FS
+            duration = waveform.shape[0] / self.fs
 
             # Get new heart rate
             hr_new = int(hr * np.random.uniform(0.75, 1.25))
@@ -215,7 +236,7 @@ class DataGenerator(object):
             duration_new = duration * hr / hr_new
 
             # Get number of samples
-            samples = int(duration_new * FS)
+            samples = int(duration_new * self.fs)
             if samples > self.shape[0]:
                 samples = self.shape[0]
             else:

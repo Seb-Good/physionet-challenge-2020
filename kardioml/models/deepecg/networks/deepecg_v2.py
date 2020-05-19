@@ -1,5 +1,5 @@
 """
-deepecg_v1.py
+deepecg_v2.py
 -------------
 This module provides a class and methods for building a convolutional neural network with tensorflow.
 By: Sebastian D. Goodfellow, Ph.D., 2018
@@ -17,7 +17,7 @@ from kardioml.models.deepecg.networks.layers import fc_layer, conv_layer, dropou
     print_output_shape, max_pool_layer
 
 
-class DeepECGV1(object):
+class DeepECGV2(object):
 
     """
     Build the forward propagation computational graph for a WavNet inspired deep neural network.
@@ -59,7 +59,7 @@ class DeepECGV1(object):
                 # Convolution
                 net = conv_layer(input_layer=input_layer, kernel_size=self.hyper_params['kernel_size'],
                                  strides=1, dilation_rate=1, filters=self.hyper_params['conv_filts'],
-                                 padding='SAME', activation=tf.nn.relu, use_bias=False, name=layer_name + '_conv',
+                                 padding='SAME', activation=None, use_bias=False, name=layer_name + '_conv',
                                  seed=self.seed)
 
                 # Max pool
@@ -83,7 +83,7 @@ class DeepECGV1(object):
                 # Convolution
                 net = conv_layer(input_layer=net, kernel_size=self.hyper_params['kernel_size'], strides=1,
                                  dilation_rate=1, filters=self.hyper_params['conv_filts'], padding='SAME',
-                                 activation=tf.nn.relu, use_bias=False, name=layer_name + '_conv', seed=self.seed)
+                                 activation=None, use_bias=False, name=layer_name + '_conv', seed=self.seed)
 
                 # Max pool
                 net = max_pool_layer(input_layer=net, pool_size=3, strides=2, padding='SAME',
@@ -138,7 +138,7 @@ class DeepECGV1(object):
 
             # Dropout
             output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                   training=is_training, name='dropout0')
+                                   training=is_training, name='dropout1')
 
             # Convolution
             output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
@@ -159,7 +159,7 @@ class DeepECGV1(object):
 
             # Dropout
             output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                   training=is_training, name='dropout2')
+                                   training=is_training, name='dropout1')
 
             # Print shape
             print_output_shape(layer_name='output_conv2', net=output, print_shape=print_shape)

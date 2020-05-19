@@ -7,6 +7,7 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 
 # 3rd part imports
 import numpy as np
+import tensorflow as tf
 
 # Local imports
 from kardioml.models.deepecg.train.logger import Logger
@@ -21,6 +22,9 @@ def train(model, epochs, batch_size):
     # Start Tensorflow session context
     with model.sess as sess:
 
+        # Set seed
+        tf.set_random_seed(seed=0)
+
         # Get number of GPUs
         num_gpus = get_device_count(device_type='GPU')
 
@@ -32,12 +36,12 @@ def train(model, epochs, batch_size):
 
         # Initialize learning rate scheduler
         lr_scheduler = AnnealingWarmRestartScheduler(lr_min=1e-5, lr_max=1e-3, steps_per_epoch=steps_per_epoch,
-                                                     lr_max_decay=1., epochs_per_cycle=10, cycle_length_factor=1.5,
+                                                     lr_max_decay=1., epochs_per_cycle=epochs, cycle_length_factor=1.5,
                                                      warmup_factor=0.1)
 
         # Initialize model model_tracker
         monitor = Monitor(sess=sess, graph=model.graph, learning_rate=lr_scheduler.lr, batch_size=batch_size,
-                          save_path=model.save_path, early_stopping_epoch=10, num_gpus=num_gpus)
+                          save_path=model.save_path, early_stopping_epoch=15, num_gpus=num_gpus)
 
         # Initialize logger
         logger = Logger(monitor=monitor, epochs=epochs, save_path=model.save_path,
@@ -91,6 +95,8 @@ def train(model, epochs, batch_size):
             # Check for early stopping
             if monitor.early_stopping_check():
                 print('Early stopping at epoch {}'.format(epoch + 1))
+                monitor.best_state.plot_val_cams()
+                summary_writer.log_val_cam_plots_summaries(monitor=monitor)
                 break
 
             # Update learning rate scheduler

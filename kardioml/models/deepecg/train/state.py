@@ -10,13 +10,14 @@ import io
 import time
 import numpy as np
 import tensorflow as tf
+from scipy import signal
 from datetime import datetime
 import matplotlib.pylab as plt
 from scipy.special import expit
 from scipy.stats.mstats import gmean
 
 # Local imports
-from kardioml import LABELS_COUNT
+from kardioml import LABELS_COUNT, LABELS_LOOKUP, FS
 from kardioml.scoring.scoring_metrics import compute_beta_score
 
 
@@ -59,7 +60,7 @@ class State(object):
         self._compute_metrics()
 
         # Get validation class activation map plots
-        # self.val_cam_plots = self._plot_val_cams()
+        # self.val_cam_plots = self.plot_val_cams()
 
     def _compute_metrics(self):
         # Training metrics
@@ -167,7 +168,7 @@ class State(object):
 
         return metrics['loss'], f_beta, g_beta, gmean([f_beta, g_beta])
 
-    def _plot_val_cams(self):
+    def plot_val_cams(self):
         """Plot validation class activation maps."""
         # Empty list of cam plots as numpy arrays
         plots = list()
@@ -187,21 +188,21 @@ class State(object):
         # Stack tensors along batch dimension
         batch_plot_tensor = tf.stack(plots, axis=0)
 
-        return batch_plot_tensor
+        self.val_cam_plots = batch_plot_tensor
 
     def _plot_image(self, index):
 
         # Setup figure
         fig = plt.figure(figsize=(20., 8.), dpi=80)
         fig.subplots_adjust(wspace=0, hspace=0)
-        ax1 = plt.subplot2grid((2, 1), (0, 0))
-        ax2 = plt.subplot2grid((2, 1), (1, 0))
+        ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
+        ax2 = plt.subplot2grid((3, 1), (2, 0))
 
         # Label lookup
-        label_lookup = ['Normal Sinus Rhythm', 'Atrial Fibrillation', 'Other Rhythm', 'Noisy']
+        label_lookup = list(LABELS_LOOKUP.keys())
 
         # Get time array
-        time_array = np.arange(self.waveforms.shape[1]) * 1 / 300
+        time_array = np.arange(self.waveforms.shape[1]) * 1 / self.graph.network.hyper_params['fs']
 
         # Get labels
         label = self.labels[index]
@@ -210,23 +211,24 @@ class State(object):
         logits = self.logits[index, :]
 
         # Get softmax
-        softmax = self._softmax(scores=logits)
+        sigmoid = expit(logits)
 
         # Get prediction
-        prediction = int(np.squeeze(np.argmax(softmax)))
+        prediction = int(np.squeeze(np.argmax(sigmoid)))
 
         # Get non-zero-pad indices
         non_zero_index = np.where(self.waveforms[index, :, 0] != 0)[0]
 
         # Title
-        title_string = 'True Label: {}\nPredicted Label: {}\nN: {} %  A: {} %  O: {} %  ~: {} %'
-        ax1.set_title(title_string.format(label_lookup[int(label)], label_lookup[prediction],
-                                          np.round(softmax[0] * 100., 2), np.round(softmax[1] * 100., 2),
-                                          np.round(softmax[2] * 100., 2), np.round(softmax[3] * 100., 2)),
+        title_string = '{}\nLabel: {}\nPrediction: {}'
+        ax1.set_title(title_string.format(label_lookup, label, np.round(expit(self.logits[index, :])).astype(int)),
                       fontsize=20, y=1.03)
 
         # Plot ECG waveform
-        ax1.plot(time_array[non_zero_index], self.waveforms[index, non_zero_index, 0], '-k')
+        shift = 0
+        for channel_id in range(self.waveforms.shape[2]):
+            ax1.plot(time_array[non_zero_index], self.waveforms[index, non_zero_index, channel_id] + shift, '-k')
+            shift += 3
         ax1.set_xlim([time_array[non_zero_index].min(), time_array[non_zero_index].max()])
         ax1.axes.get_xaxis().set_visible(False)
         ax1.axes.get_yaxis().set_visible(False)
@@ -234,7 +236,8 @@ class State(object):
         # ax1.yaxis.set_tick_params(labelsize=16)
 
         # Plot Class Activation Map
-        ax2.plot(time_array[non_zero_index], self.cams[index, non_zero_index, prediction], '-k')
+        cams = signal.resample_poly(self.cams[index, :, :], 30000, self.cams.shape[1], axis=0).astype(np.float32)
+        ax2.plot(time_array[non_zero_index], cams[non_zero_index, prediction], '-k')
         ax2.set_xlim([time_array[non_zero_index].min(), time_array[non_zero_index].max()])
         ax2.axes.get_xaxis().set_visible(False)
         ax2.axes.get_yaxis().set_visible(False)

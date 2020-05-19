@@ -51,7 +51,7 @@ class Monitor(object):
 
     def _improvement_check(self):
         """Check for improvement in validation accuracy."""
-        if self.current_state.val_loss < self.best_state.val_loss:
+        if self.current_state.val_geometric_mean > self.best_state.val_geometric_mean:
             self.best_state = copy.copy(self.current_state)
 
     def _save_checkpoint(self):

@@ -19,11 +19,11 @@ class Graph(object):
     def __init__(self, network, save_path, data_path, lookup_path, max_to_keep):
 
         # Set input parameters
-        self.network = network          # network: neural network architecture
-        self.save_path = save_path      # save_path: checkpoints, summaries, and graphs
-        self.data_path = data_path      # data_path: waveforms, labels
-        self.lookup_path = lookup_path  # lookup_path: dictionary
-        self.max_to_keep = max_to_keep  # Maximum number of checkpoints to keep
+        self.network = network                # network: neural network architecture
+        self.save_path = save_path            # save_path: checkpoints, summaries, and graphs
+        self.data_path = data_path            # data_path: waveforms, labels
+        self.lookup_path = lookup_path        # lookup_path: dictionary
+        self.max_to_keep = max_to_keep        # Maximum number of checkpoints to keep
 
         # Set attributes
         self.waveforms = None
@@ -183,7 +183,7 @@ class Graph(object):
                     # Compute inference
                     logits, cams = self.network.inference(input_layer=waveforms, age=age, sex=sex,
                                                           reuse=tf.AUTO_REUSE, is_training=self.is_training,
-                                                          name='ECGNet', print_shape=False)
+                                                          name='ECGNet', print_shape=True)
 
                     # Compute loss
                     loss = self._compute_loss(logits=logits, labels=labels)
@@ -320,14 +320,16 @@ class Graph(object):
         """Computes the mean squared error for a given set of logits and labels."""
         with tf.variable_scope('loss'):
 
-            # Specify class weightings {'N': 0.42001576, 'A': 2.81266491, 'O': 0.88281573, '~': 7.64157706}
-            # class_weights = tf.constant([0.42001576, 2.81266491, 0.88281573, 1.0])
+            # Specify class weightings ['AF', 'I-AVB', 'LBBB', 'Normal', 'PAC', 'PVC', 'RBBB', 'STD', 'STE']
+            class_weights = tf.constant([0.17772318, 0.30055402, 0.91949153, 0.23638344,
+                                         0.35227273, 0.31,  0.11685514, 0.25057737, 1.])
 
             # Specify the weights for each sample in the batch
-            # weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
+            weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
 
             # compute the loss
-            losses = tf.losses.sigmoid_cross_entropy(logits=logits, multi_class_labels=tf.cast(labels, tf.int32))
+            losses = tf.losses.sigmoid_cross_entropy(logits=logits, multi_class_labels=tf.cast(labels, tf.int32),
+                                                     weights=weights)
             
             # Compute mean loss
             loss = tf.reduce_mean(losses)
