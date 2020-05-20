@@ -73,7 +73,7 @@ class DeepECGV1(object):
             # Print shape
             print_output_shape(layer_name=layer_name, net=net, print_shape=print_shape)
 
-            # --- StemLayer 2 (Convolution) -------------------------------------------------------------------------- #
+            # --- Stem Layer 2 (Convolution) ------------------------------------------------------------------------- #
 
             # Set name
             layer_name = 'stem_layer_2'

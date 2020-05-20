@@ -1,6 +1,6 @@
 """
-format_data.py
---------------
+format_data_physionet_2020.py
+-----------------------------
 This module provides classes and methods for formatting the Physionet2020 dataset.
 By: Sebastian D. Goodfellow, Ph.D., 2020
 """
@@ -19,7 +19,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from kardioml import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, AMP_CONVERSION, LABELS_LOOKUP, LABELS_COUNT, FS
 
 
-class FormatData(object):
+class FormatDataPhysionet2020(object):
 
     """
     Classification of 12-lead ECGs: the PhysioNet/Computing in Cardiology Challenge 2020
@@ -29,8 +29,8 @@ class FormatData(object):
     def __init__(self):
 
         # Set attributes
-        self.raw_path = os.path.join(DATA_PATH, 'raw')
-        self.formatted_path = os.path.join(DATA_PATH, 'formatted')
+        self.raw_path = os.path.join(DATA_PATH, 'physionet_2020', 'raw')
+        self.formatted_path = os.path.join(DATA_PATH, 'physionet_2020', 'formatted')
 
     def format(self, extract=True, debug=False):
         """Format Physionet2020 dataset."""
@@ -52,7 +52,7 @@ class FormatData(object):
                      os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAME)) if 'mat' in filename]
 
         if debug:
-            for filename in filenames:
+            for filename in filenames[0:10]:
                 self._format_sample(filename=filename)
 
         else:
@@ -78,7 +78,8 @@ class FormatData(object):
                        'hr': self._compute_heart_rate(waveforms=data)},
                       file, sort_keys=True)
 
-    def _compute_heart_rate(self, waveforms):
+    @staticmethod
+    def _compute_heart_rate(waveforms):
         """Calculate median heart rate."""
         hr = list()
         for channel in range(waveforms.shape[0]):

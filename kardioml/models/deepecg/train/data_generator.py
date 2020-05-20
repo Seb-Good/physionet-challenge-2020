@@ -64,7 +64,7 @@ class DataGenerator(object):
 
     def _get_file_paths(self):
         """Convert file names to full absolute file paths with .npy extension."""
-        return [os.path.join(self.data_path, '{}.npy'.format(file_name)) for file_name in self.file_names]
+        return ['{}.npy'.format(file_name) for file_name in self.file_names]
 
     def _get_lookup_dict(self):
         """Load lookup dictionary {'train': ['A0001', ...], 'val': ['A0012', ...]}."""
@@ -74,7 +74,7 @@ class DataGenerator(object):
         """Import meta data JSONs."""
         meta_data = dict()
         for filename in self.file_names:
-            meta_data[filename] = json.load(open(os.path.join(self.data_path, '{}.json'.format(filename))))
+            meta_data[filename] = json.load(open('{}.json'.format(filename)))
 
         # file_paths and labels should have same length
         assert len(self.file_names) == len(meta_data)
