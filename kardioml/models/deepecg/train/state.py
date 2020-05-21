@@ -158,8 +158,14 @@ class State(object):
         self.waveforms = np.concatenate(waveforms_all, axis=0)
         self.cams = np.concatenate(cams_all, axis=0)
 
+        # Get sigmoid
+        sigmoid = expit(self.logits)
+        for index in range(sigmoid.shape[0]):
+            if sigmoid[index, 3] >= 0.75:
+                sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
+
         # Compute f1 score
-        _, _, f_beta, g_beta = compute_beta_score(labels=self.labels, output=np.round(expit(self.logits)).astype(int),
+        _, _, f_beta, g_beta = compute_beta_score(labels=self.labels, output=np.round(sigmoid).astype(int),
                                                   beta=2, num_classes=LABELS_COUNT, check_errors=True)
 
         # Get metrics
