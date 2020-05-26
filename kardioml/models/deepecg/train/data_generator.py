@@ -364,6 +364,81 @@ class DataGenerator(object):
         probability = tf.random_uniform(shape=[], minval=0., maxval=1., dtype=tf.float32)
         return tf.less(x=probability, y=prob)
 
+    def _add_synthetic_noise(self, waveform, probability=0.5):
+        """Add different kinds of synthetic noise to the signal."""
+        waveform = self._generate_baseline_wandering_noise(waveform=waveform, fs=self.fs, probability=probability)
+        waveform = self._generate_high_frequency_noise(waveform=waveform, fs=self.fs, probability=probability)
+        waveform = self._generate_gaussian_noise(waveform=waveform, probability=probability)
+        waveform = self._generate_pulse_noise(waveform=waveform, probability=probability)
+        return waveform
+
+    def _generate_baseline_wandering_noise(self, waveform, fs, probability=0.5):
+        """Adds baseline wandering to the input signal."""
+        waveform = waveform.squeeze()
+        if self._coin_flip(probability):
+
+            # Generate time array
+            time = np.arange(len(waveform)) * 1 / fs
+
+            # Get number of baseline signals
+            baseline_signals = random.randint(1, 5)
+
+            # Loop through baseline signals
+            for baseline_signal in range(baseline_signals):
+                # Add noise
+                waveform += random.uniform(0.01, 0.3) * np.sin(
+                    2 * np.pi * random.uniform(0.001, 0.5) * time + random.uniform(0, 60))
+
+        return waveform
+
+    def _generate_high_frequency_noise(self, waveform, fs, probability=0.5):
+        """Adds high frequency sinusoidal noise to the input signal."""
+        waveform = waveform.squeeze()
+        if self._coin_flip(probability):
+            # Generate time array
+            time = np.arange(len(waveform)) * 1 / fs
+
+            # Add noise
+            waveform += random.uniform(0.001, 0.1) * np.sin(
+                2 * np.pi * random.uniform(50, 200) * time + random.uniform(0, 60))
+
+        return waveform
+
+    def _generate_gaussian_noise(self, waveform, probability=0.5):
+        """Adds white noise noise to the input signal."""
+        waveform = waveform.squeeze()
+        if self._coin_flip(probability):
+            waveform += np.random.normal(loc=0.0, scale=random.uniform(0.01, 0.1), size=len(waveform))
+
+        return waveform
+
+    def _generate_pulse_noise(self, waveform, probability=0.5):
+        """Adds gaussian pulse to the input signal."""
+        waveform = waveform.squeeze()
+        if self._coin_flip(probability):
+
+            # Get pulse
+            pulse = signal.gaussian(int(len(waveform) * random.uniform(0.05, 0.010)), std=random.randint(50, 200))
+            pulse = np.diff(pulse)
+
+            # Get remainder
+            remainder = len(waveform) - len(pulse)
+            if remainder >= 0:
+                left_pad = int(remainder * random.uniform(0., 1.))
+                right_pad = remainder - left_pad
+                pulse = np.pad(pulse, (left_pad, right_pad), 'constant', constant_values=0)
+                pulse = pulse / pulse.max()
+
+            waveform += pulse * random.uniform(waveform.max() * 1.5, waveform.max() * 3)
+
+        return waveform
+
+    @staticmethod
+    def _coin_flip(probability):
+        if random.random() < probability:
+            return True
+        return False
+
     def _get_dataset(self):
         """Retrieve tensorflow Dataset object."""
         if self.mode == 'train':

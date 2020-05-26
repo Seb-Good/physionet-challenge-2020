@@ -11,13 +11,12 @@ import json
 import shutil
 import numpy as np
 import pandas as pd
-import scipy.io as sio
-from biosppy.signals import ecg
 from joblib import Parallel, delayed
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
 from kardioml import DATA_PATH,  ECG_LEADS, LABELS_LOOKUP, LABELS_COUNT
+from kardioml import DATA_PATH, ECG_LEADS, LABELS_LOOKUP, LABELS_COUNT
 
 
 LABEL_MAPPINGS = {'1AVB': 'I-AVB',
