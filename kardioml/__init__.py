@@ -17,10 +17,10 @@ DATA_PATH = os.path.join(WORKING_PATH, 'data')
 OUTPUT_PATH = os.path.join(WORKING_PATH, 'output')
 
 # Dataset file name
-DATA_FILE_NAME = 'PhysioNetChallenge2020_Training_CPSC.tar.gz'
+DATA_FILE_NAMES = ['PhysioNetChallenge2020_Training_CPSC.tar.gz', 'PhysioNetChallenge2020_Training_2.tar.gz']
 
 # Extracted folder name
-EXTRACTED_FOLDER_NAME = 'Training_WFDB'
+EXTRACTED_FOLDER_NAMES = ['Training_WFDB', 'Training_2']
 
 # ECG ample rate (hz)
 FS = 500
@@ -38,6 +38,18 @@ LABELS_LOOKUP = {'AF': {'label_int': 0, 'label': 'AF', 'label_full': 'Atrial fib
                  'RBBB': {'label_int': 6, 'label': 'RBBB', 'label_full': 'Right bundle branch block'},
                  'STD': {'label_int': 7, 'label': 'STD', 'label_full': 'ST-segment depression'},
                  'STE': {'label_int': 8, 'label': 'STE', 'label_full': 'ST-segment elevation'}}
+
+# SNOMED-CT lookup
+SNOMEDCT_LOOKUP = {'164884008': 'PVC',
+                   '164889003': 'AF',
+                   '164909002': 'LBBB',
+                   '164931005': 'STE',
+                   '270492004': 'I-AVB',
+                   '284470004': 'PAC',
+                   '426783006': 'Normal',
+                   '429622005': 'STD',
+                   '59118001': 'RBBB'}
+SNOMEDCT_LOOKUP.update(dict(map(reversed, SNOMEDCT_LOOKUP.items())))
 
 # amplitude values per mV
 AMP_CONVERSION = 1000

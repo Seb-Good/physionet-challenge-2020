@@ -318,8 +318,15 @@ class DeepECGV1(object):
         """Computes the model accuracy for set of logits and labels."""
         with tf.variable_scope('metrics'):
 
+            # Get Sigmoid
+            sigmoid = tf.nn.sigmoid(logits)
+
+            # Apply Normal Rhythm correction
+            sigmoid = tf.reshape(tf.py_func(func=self._normal_rhythm_correction, inp=[sigmoid], Tout=[tf.float32]),
+                                 shape=[-1, self.classes])
+
             # Get prediction
-            predictions = tf.cast(tf.math.round(tf.nn.sigmoid(logits)), tf.int32)
+            predictions = tf.cast(tf.math.round(sigmoid), tf.int32)
 
             # Get label
             labels = tf.cast(labels, tf.int32)
@@ -330,3 +337,10 @@ class DeepECGV1(object):
                                               Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
 
             return f_beta, g_beta, tf.py_func(func=gmean, inp=[[f_beta, g_beta]], Tout=[tf.float64])
+
+    @staticmethod
+    def _normal_rhythm_correction(sigmoid):
+        for index in range(sigmoid.shape[0]):
+            if sigmoid[index, 3] >= 0.75 and np.argmax(sigmoid[index, :]) == 3:
+                sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
+        return sigmoid

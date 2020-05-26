@@ -158,8 +158,14 @@ class State(object):
         self.waveforms = np.concatenate(waveforms_all, axis=0)
         self.cams = np.concatenate(cams_all, axis=0)
 
+        # Apply Normal Rhythm correction
+        sigmoid = expit(self.logits)
+        for index in range(sigmoid.shape[0]):
+            if sigmoid[index, 3] >= 0.75 and np.argmax(sigmoid[index, :]) == 3:
+                sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
+
         # Compute f1 score
-        _, _, f_beta, g_beta = compute_beta_score(labels=self.labels, output=np.round(expit(self.logits)).astype(int),
+        _, _, f_beta, g_beta = compute_beta_score(labels=self.labels, output=np.round(sigmoid).astype(int),
                                                   beta=2, num_classes=LABELS_COUNT, check_errors=True)
 
         # Get metrics
@@ -220,8 +226,11 @@ class State(object):
         non_zero_index = np.where(self.waveforms[index, :, 0] != 0)[0]
 
         # Title
-        title_string = '{}\nLabel: {}\nPrediction: {}'
-        ax1.set_title(title_string.format(label_lookup, label, np.round(expit(self.logits[index, :])).astype(int)),
+        title_string = '{}\nLabel: {}\nPrediction: {}\n{}'
+        ax1.set_title(title_string.format(label_lookup,
+                                          label,
+                                          np.round(expit(self.logits[index, :])).astype(int),
+                                          np.round(expit(self.logits[index, :]), 2)),
                       fontsize=20, y=1.03)
 
         # Plot ECG waveform
@@ -236,7 +245,8 @@ class State(object):
         # ax1.yaxis.set_tick_params(labelsize=16)
 
         # Plot Class Activation Map
-        cams = signal.resample_poly(self.cams[index, :, :], 30000, self.cams.shape[1], axis=0).astype(np.float32)
+        cams = signal.resample_poly(self.cams[index, :, :], self.graph.network.length,
+                                    self.cams.shape[1], axis=0).astype(np.float32)
         ax2.plot(time_array[non_zero_index], cams[non_zero_index, prediction], '-k')
         ax2.set_xlim([time_array[non_zero_index].min(), time_array[non_zero_index].max()])
         ax2.axes.get_xaxis().set_visible(False)

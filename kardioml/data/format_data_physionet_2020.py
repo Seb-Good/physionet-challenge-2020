@@ -16,7 +16,8 @@ from joblib import Parallel, delayed
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from kardioml import DATA_PATH, DATA_FILE_NAME, EXTRACTED_FOLDER_NAME, AMP_CONVERSION, LABELS_LOOKUP, LABELS_COUNT, FS
+from kardioml import (DATA_PATH, DATA_FILE_NAMES, EXTRACTED_FOLDER_NAMES, AMP_CONVERSION,
+                      LABELS_LOOKUP, LABELS_COUNT, FS, SNOMEDCT_LOOKUP)
 
 
 class FormatDataPhysionet2020(object):
@@ -26,11 +27,14 @@ class FormatDataPhysionet2020(object):
     https://physionetchallenges.github.io/2020/
     """
 
-    def __init__(self):
+    def __init__(self, tranche):
+
+        # Set parameters
+        self.tranche = tranche
 
         # Set attributes
-        self.raw_path = os.path.join(DATA_PATH, 'physionet_2020', 'raw')
-        self.formatted_path = os.path.join(DATA_PATH, 'physionet_2020', 'formatted')
+        self.raw_path = os.path.join(DATA_PATH, 'physionet_2020_{}'.format(self.tranche), 'raw')
+        self.formatted_path = os.path.join(DATA_PATH, 'physionet_2020_{}'.format(self.tranche), 'formatted')
 
     def format(self, extract=True, debug=False):
         """Format Physionet2020 dataset."""
@@ -49,10 +53,11 @@ class FormatDataPhysionet2020(object):
 
         # Get a list of filenames
         filenames = [filename.split('.')[0] for filename in
-                     os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAME)) if 'mat' in filename]
+                     os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.tranche-1]))
+                     if 'mat' in filename]
 
         if debug:
-            for filename in filenames[0:10]:
+            for filename in filenames:
                 self._format_sample(filename=filename)
 
         else:
@@ -66,17 +71,28 @@ class FormatDataPhysionet2020(object):
         # Import header file
         channel_order, age, sex, labels = self._load_header_file(filename=filename)
 
-        # Save waveform data npy file
-        np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), data)
+        # Get labels for evaluation
+        labels = [label for label in labels if label in SNOMEDCT_LOOKUP.keys()]
 
-        # Save meta data JSON
-        with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
-            json.dump({'filename': filename, 'channel_order': channel_order, 'age': age, 'sex': sex,
-                       'labels': labels, 'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
-                       'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
-                       'label_train': self._get_training_label(labels=labels), 'shape': data.shape,
-                       'hr': self._compute_heart_rate(waveforms=data)},
-                      file, sort_keys=True)
+        if labels:
+
+            # Save waveform data npy file
+            np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), data)
+
+            # Save meta data JSON
+            with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
+                json.dump({'filename': filename,
+                           'channel_order': channel_order,
+                           'age': age,
+                           'sex': sex,
+                           'labels': [SNOMEDCT_LOOKUP[label] for label in labels],
+                           'labels_full': [LABELS_LOOKUP[SNOMEDCT_LOOKUP[label]]['label_full'] for label in labels],
+                           'labels_int': [LABELS_LOOKUP[SNOMEDCT_LOOKUP[label]]['label_int'] for label in labels],
+                           'labels_SNOMEDCT': labels,
+                           'label_train': self._get_training_label(labels=[SNOMEDCT_LOOKUP[label] for label in labels]),
+                           'shape': data.shape,
+                           'hr': self._compute_heart_rate(waveforms=data)},
+                          file, sort_keys=True)
 
     @staticmethod
     def _compute_heart_rate(waveforms):
@@ -95,16 +111,17 @@ class FormatDataPhysionet2020(object):
     def _extract_data(self):
         """Extract the raw dataset file."""
         print('Extracting dataset...')
-        shutil.unpack_archive(os.path.join(self.raw_path, DATA_FILE_NAME), self.raw_path)
+        shutil.unpack_archive(os.path.join(self.raw_path, DATA_FILE_NAMES[self.tranche-1]), self.raw_path)
 
     def _load_mat_file(self, filename):
         """Load Matlab waveform file."""
-        return sio.loadmat(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAME, '{}.mat'.format(filename)))['val']
+        return sio.loadmat(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.tranche-1],
+                                        '{}.mat'.format(filename)))['val']
 
     def _load_header_file(self, filename):
         """Load header file."""
         # Load file
-        file = open(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAME, '{}.hea'.format(filename)), 'r')
+        file = open(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.tranche-1], '{}.hea'.format(filename)), 'r')
         content = file.read().split('\n')
         file.close()
 

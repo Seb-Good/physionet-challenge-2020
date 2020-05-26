@@ -23,6 +23,7 @@ def waveform_plot(filename_id, filenames, path):
 
     # Import waveforms
     waveforms = np.load(os.path.join(path, '{}.npy'.format(filename)))
+    waveforms = (waveforms - waveforms.mean()) / waveforms.std()
 
     # Import meta data
     meta_data = json.load(open(os.path.join(path, '{}.json'.format(filename))))
@@ -67,10 +68,10 @@ def waveform_plot(filename_id, filenames, path):
     plt.show()
 
 
-def waveform_plot_interact():
+def waveform_plot_interact(dataset):
     """Launch interactive plotting widget."""
     # Set data path
-    path = os.path.join(DATA_PATH, 'formatted')
+    path = os.path.join(DATA_PATH, dataset, 'formatted')
 
     # Get filenames
     filenames = [filename.split('.')[0] for filename in os.listdir(path) if 'npy' in filename]

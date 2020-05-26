@@ -87,7 +87,6 @@ def train(model, epochs, batch_size):
 
             # Log summaries
             summary_writer.log_val_scalar_summaries(monitor=monitor)
-            # summary_writer.log_val_cam_plots_summaries(monitor=monitor)
 
             # Log progress
             logger.log_training(monitor=monitor)
