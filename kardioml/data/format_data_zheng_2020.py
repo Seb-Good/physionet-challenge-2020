@@ -7,16 +7,17 @@ By: Sebastian D. Goodfellow, Ph.D., 2020
 
 # 3rd party imports
 import os
+import copy
 import json
 import shutil
 import numpy as np
 import pandas as pd
+from biosppy.signals import ecg
 from joblib import Parallel, delayed
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from kardioml import DATA_PATH,  ECG_LEADS, LABELS_LOOKUP, LABELS_COUNT
-from kardioml import DATA_PATH, ECG_LEADS, LABELS_LOOKUP, LABELS_COUNT
+from kardioml import DATA_PATH, ECG_LEADS, LABELS_LOOKUP, LABELS_COUNT, SNOMEDCT_LOOKUP, FS
 
 
 LABEL_MAPPINGS = {'1AVB': 'I-AVB',
@@ -62,7 +63,7 @@ class FormatDataZheng2020(object):
         diagnostics = pd.read_excel(os.path.join(self.raw_path, 'Diagnostics.xlsx'))
 
         if debug:
-            for index in diagnostics.index[0:10]:
+            for index in diagnostics.index:
                 self._format_sample(index=index, diagnostics=diagnostics)
 
         else:
@@ -86,23 +87,54 @@ class FormatDataZheng2020(object):
             rhythm = list()
         labels = beats + rhythm
 
-        if labels:
+        try:
             # Import csv file
-            data = self._load_csv_file(filename=filename)
+            waveforms = self._load_csv_file(filename=filename)
+
+            # Get rpeaks
+            rpeaks = self._get_rpeaks(waveforms=waveforms)
+
+            # Normalize waveforms
+            waveforms = self._scale_waveforms(waveforms=waveforms, rpeaks=rpeaks)
 
             # Save waveform data npy file
-            np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), data)
+            np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
 
-            # Save meta data JSON
-            with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
-                json.dump({'filename': filename, 'channel_order': ECG_LEADS, 'age': int(age), 'sex': sex.capitalize(),
-                           'labels': labels, 'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
-                           'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
-                           'label_train': self._get_training_label(labels=labels), 'shape': data.shape,
-                           'hr': int(hr)},
-                          file, sort_keys=True)
+            if labels:
+                # Save meta data JSON
+                with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
+                    json.dump({'filename': filename,
+                               'channel_order': ECG_LEADS,
+                               'age': int(age),
+                               'sex': sex.capitalize(),
+                               'labels': labels,
+                               'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
+                               'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
+                               'labels_SNOMEDCT': [SNOMEDCT_LOOKUP[label] for label in labels],
+                               'label_train': self._get_training_label(labels=labels),
+                               'shape': waveforms.shape,
+                               'hr': int(hr),
+                               'rpeaks': rpeaks},
+                              file, sort_keys=True)
 
-        else:
+            else:
+                # Save meta data JSON
+                with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
+                    json.dump({'filename': filename,
+                               'channel_order': ECG_LEADS,
+                               'age': int(age),
+                               'sex': sex.capitalize(),
+                               'labels': None,
+                               'labels_full': None,
+                               'labels_int': None,
+                               'labels_SNOMEDCT': None,
+                               'label_train': None,
+                               'shape': waveforms.shape,
+                               'hr': int(hr),
+                               'rpeaks': rpeaks},
+                              file, sort_keys=True)
+
+        except Exception:
             pass
 
     def _extract_data(self):
@@ -113,7 +145,7 @@ class FormatDataZheng2020(object):
     def _load_csv_file(self, filename):
         """Load Matlab waveform file."""
         return np.loadtxt(open(os.path.join(self.raw_path, 'ECGDataDenoised', '{}.csv'.format(filename))),
-                          delimiter=',').T
+                          delimiter=',')
 
     @staticmethod
     def _get_training_label(labels):
@@ -123,4 +155,28 @@ class FormatDataZheng2020(object):
 
         return mlb.fit_transform([[LABELS_LOOKUP[label]['label_int'] for label in labels]])[0].tolist()
 
+    @staticmethod
+    def _get_rpeaks(waveforms):
+        """Calculate median heart rate."""
+        rpeaks = list()
+        length = waveforms.shape[0]
+        waveforms = np.pad(waveforms, ((200, 200), (0, 0)), 'constant', constant_values=0)
+        for channel in range(waveforms.shape[1]):
+            try:
+                ecg_object = ecg.ecg(signal=waveforms[:, channel], sampling_rate=FS, show=False)
+                peaks = ecg_object['rpeaks'] - 200
+                peak_ids = np.where((peaks > 2) & (peaks < length - 2))[0]
+                rpeaks.append(peaks[peak_ids].tolist())
+            except Exception:
+                pass
 
+        return rpeaks if len([rpeak for rpeak in rpeaks if len(rpeaks) > 0]) > 0 else None
+
+    @staticmethod
+    def _scale_waveforms(waveforms, rpeaks):
+        """Get rpeaks for each channel and scale waveform amplitude by median rpeak amplitude of lead I."""
+        if rpeaks:
+            for rpeak_array in rpeaks:
+                if rpeak_array:
+                    return waveforms / np.median(waveforms[rpeaks[0], 0])
+        return (waveforms - waveforms.mean()) / waveforms.std()

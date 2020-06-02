@@ -13,3 +13,4 @@ bayesian-optimization==1.1.0
 scikit-learn==0.22.1
 samplerate==0.1.0
 PyMedTermino==0.3.3
+iterative-stratification==0.1.6

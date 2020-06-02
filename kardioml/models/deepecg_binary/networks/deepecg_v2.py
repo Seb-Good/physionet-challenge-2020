@@ -1,5 +1,5 @@
 """
-deepecg_v1.py
+deepecg_v2.py
 -------------
 This module provides a class and methods for building a convolutional neural network with tensorflow.
 By: Sebastian D. Goodfellow, Ph.D., 2018
@@ -12,12 +12,12 @@ from scipy.stats.mstats import gmean
 
 # Local imports
 from kardioml.scoring.scoring_metrics import compute_beta_score
-from kardioml.models.deepecg.train.data_generator import DataGenerator
-from kardioml.models.deepecg.networks.layers import fc_layer, conv_layer, dropout_layer, \
-    print_output_shape, max_pool_layer
+from kardioml.models.deepecg_binary.train.data_generator import DataGenerator
+from kardioml.models.deepecg_binary.networks.layers import (fc_layer, conv_layer, dropout_layer,
+                                                            print_output_shape, max_pool_layer)
 
 
-class DeepECGV1(object):
+class DeepECGV2(object):
 
     """
     Build the forward propagation computational graph for a WavNet inspired deep neural network.
@@ -58,8 +58,8 @@ class DeepECGV1(object):
 
                 # Convolution
                 net = conv_layer(input_layer=input_layer, kernel_size=self.hyper_params['kernel_size'],
-                                 strides=1, dilation_rate=1, filters=32,
-                                 padding='SAME', activation=tf.nn.relu, use_bias=False, name=layer_name + '_conv',
+                                 strides=1, dilation_rate=1, filters=self.hyper_params['conv_filts'],
+                                 padding='SAME', activation=None, use_bias=False, name=layer_name + '_conv',
                                  seed=self.seed)
 
                 # Max pool
@@ -73,7 +73,7 @@ class DeepECGV1(object):
             # Print shape
             print_output_shape(layer_name=layer_name, net=net, print_shape=print_shape)
 
-            # --- Stem Layer 2 (Convolution) ------------------------------------------------------------------------- #
+            # --- StemLayer 2 (Convolution) -------------------------------------------------------------------------- #
 
             # Set name
             layer_name = 'stem_layer_2'
@@ -83,7 +83,7 @@ class DeepECGV1(object):
                 # Convolution
                 net = conv_layer(input_layer=net, kernel_size=self.hyper_params['kernel_size'], strides=1,
                                  dilation_rate=1, filters=self.hyper_params['conv_filts'], padding='SAME',
-                                 activation=tf.nn.relu, use_bias=False, name=layer_name + '_conv', seed=self.seed)
+                                 activation=None, use_bias=False, name=layer_name + '_conv', seed=self.seed)
 
                 # Max pool
                 net = max_pool_layer(input_layer=net, pool_size=3, strides=2, padding='SAME',
@@ -138,11 +138,11 @@ class DeepECGV1(object):
 
             # Dropout
             output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                   training=is_training, name='dropout0')
+                                   training=is_training, name='dropout1')
 
             # Convolution
             output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=128, padding='SAME', activation=tf.nn.relu, use_bias=False,
+                                dilation_rate=1, filters=256, padding='SAME', activation=tf.nn.relu, use_bias=False,
                                 name='conv1', seed=self.seed)
 
             # Dropout
@@ -154,12 +154,12 @@ class DeepECGV1(object):
 
             # Convolution
             output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=256, padding='SAME', activation=tf.nn.relu, use_bias=False,
+                                dilation_rate=1, filters=512, padding='SAME', activation=tf.nn.relu, use_bias=False,
                                 name='conv2', seed=self.seed)
 
             # Dropout
             output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                   training=is_training, name='dropout2')
+                                   training=is_training, name='dropout1')
 
             # Print shape
             print_output_shape(layer_name='output_conv2', net=output, print_shape=print_shape)
@@ -318,15 +318,8 @@ class DeepECGV1(object):
         """Computes the model accuracy for set of logits and labels."""
         with tf.variable_scope('metrics'):
 
-            # Get Sigmoid
-            sigmoid = tf.nn.sigmoid(logits)
-
-            # Apply Normal Rhythm correction
-            sigmoid = tf.reshape(tf.py_func(func=self._normal_rhythm_correction, inp=[sigmoid], Tout=[tf.float32]),
-                                 shape=[-1, self.classes])
-
             # Get prediction
-            predictions = tf.cast(tf.math.round(sigmoid), tf.int32)
+            predictions = tf.cast(tf.math.round(tf.nn.sigmoid(logits)), tf.int32)
 
             # Get label
             labels = tf.cast(labels, tf.int32)
@@ -337,10 +330,3 @@ class DeepECGV1(object):
                                               Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
 
             return f_beta, g_beta, tf.py_func(func=gmean, inp=[[f_beta, g_beta]], Tout=[tf.float64])
-
-    @staticmethod
-    def _normal_rhythm_correction(sigmoid):
-        for index in range(sigmoid.shape[0]):
-            if sigmoid[index, 3] >= 0.75 and np.argmax(sigmoid[index, :]) == 3:
-                sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
-        return sigmoid

@@ -23,21 +23,23 @@ def waveform_plot(filename_id, filenames, path):
 
     # Import waveforms
     waveforms = np.load(os.path.join(path, '{}.npy'.format(filename)))
-    waveforms = (waveforms - waveforms.mean()) / waveforms.std()
 
     # Import meta data
     meta_data = json.load(open(os.path.join(path, '{}.json'.format(filename))))
 
     # Get label
     label = ''
-    for idx, lab in enumerate(meta_data['labels']):
-        if idx == 0:
-            label += LABELS_LOOKUP[lab]['label_full']
-        else:
-            label += ' and ' + LABELS_LOOKUP[lab]['label_full']
+    if meta_data['labels']:
+        for idx, lab in enumerate(meta_data['labels']):
+            if idx == 0:
+                label += LABELS_LOOKUP[lab]['label_full']
+            else:
+                label += ' and ' + LABELS_LOOKUP[lab]['label_full']
+    else:
+        label = 'Other'
 
     # Time array
-    time = np.arange(waveforms.shape[1]) * 1 / FS
+    time = np.arange(waveforms.shape[0]) * 1 / FS
 
     # Setup figure
     fig = plt.figure(figsize=(15, 15), facecolor='w')
@@ -53,15 +55,18 @@ def waveform_plot(filename_id, filenames, path):
                   fontsize=20, loc='left',
                   x=0)
     shift = 0
-    for channel_id in range(waveforms.shape[0]):
-        ax1.plot(time, waveforms[channel_id, :] + shift, '-k', lw=2)
+    for channel_id in range(waveforms.shape[1]):
+        ax1.plot(time, waveforms[:, channel_id] + shift, '-k', lw=2)
+        ax1.plot(time[meta_data['rpeaks'][channel_id]],
+                 waveforms[meta_data['rpeaks'][channel_id], channel_id] + shift, 'ob')
         ax1.text(0.1, 0.25 + shift, ECG_LEADS[channel_id], color='red', fontsize=16, ha='left')
         shift += 3
+    ax1.plot(time, np.array(meta_data['rpeak_array']) + shift, '-k', lw=2)
 
     # Axes labels
     ax1.set_xlabel('Time, seconds', fontsize=24)
     ax1.set_ylabel('ECG Amplitude, mV', fontsize=24)
-    ax1.set_xlim([time.min(), time.max()])
+    ax1.set_xlim([time.min(), 2])
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
 

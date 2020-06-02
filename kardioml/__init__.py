@@ -59,3 +59,6 @@ ECG_LEADS = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5'
 
 # Filter band limits
 FILTER_BAND_LIMITS = [3, 45]
+
+# Number of leads
+NUM_LEADS = 12

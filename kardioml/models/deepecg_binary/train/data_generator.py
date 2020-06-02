@@ -12,10 +12,9 @@ import random
 import numpy as np
 import tensorflow as tf
 from scipy import signal
-from biosppy.signals import ecg
 
 # Local imports
-from kardioml import LABELS_COUNT, FS, NUM_LEADS
+from kardioml import FS
 
 
 class DataGenerator(object):
@@ -42,32 +41,17 @@ class DataGenerator(object):
         self.age = self._get_age()
         self.sex = self._get_sex()
         self.num_samples = len(self.file_names)
-        self.waveform_file_paths = self._get_file_paths(file_type='npy')
-        self.meta_file_paths = self._get_file_paths(file_type='json')
+        self.file_paths = self._get_file_paths()
         self.num_batches = (self.num_samples + self.batch_size - 1) // self.batch_size
         self.current_seed = 0
 
         # Get lambda functions
         self.import_waveforms_fn_train = \
-            lambda waveform_file_path, meta_file_path, label, hr, age, sex: self._import_waveform(
-                waveform_file_path=waveform_file_path,
-                meta_file_path=meta_file_path,
-                label=label,
-                hr=hr,
-                age=age,
-                sex=sex,
-                augment=True
-            )
+            lambda file_path, label, hr, age, sex: self._import_waveform(file_path=file_path, label=label, hr=hr,
+                                                                         age=age, sex=sex, augment=True)
         self.import_waveforms_fn_val = \
-            lambda waveform_file_path, meta_file_path, label, hr, age, sex: self._import_waveform(
-                waveform_file_path=waveform_file_path,
-                meta_file_path=meta_file_path,
-                label=label,
-                hr=hr,
-                age=age,
-                sex=sex,
-                augment=False
-            )
+            lambda file_path, label, hr, age, sex: self._import_waveform(file_path=file_path, label=label, hr=hr,
+                                                                         age=age, sex=sex, augment=False)
         # Get dataset
         self.dataset = self._get_dataset()
 
@@ -79,9 +63,9 @@ class DataGenerator(object):
         self.current_seed += 1
         return self.current_seed
 
-    def _get_file_paths(self, file_type):
+    def _get_file_paths(self):
         """Convert file names to full absolute file paths with .npy extension."""
-        return ['{}.{}'.format(file_name, file_type) for file_name in self.file_names]
+        return ['{}.npy'.format(file_name) for file_name in self.file_names]
 
     def _get_lookup_dict(self):
         """Load lookup dictionary {'train': ['A0001', ...], 'val': ['A0012', ...]}."""
@@ -103,7 +87,8 @@ class DataGenerator(object):
         # Get label from each file
         labels = list()
         for filename in self.file_names:
-            labels.append(self.meta_data[filename]['label_train'])
+            label = 0 if self.meta_data[filename]['labels'] and 'Normal' in self.meta_data[filename]['labels'] else 1
+            labels.append(label)
 
         # file_paths and labels should have same length
         assert len(self.file_names) == len(labels)
@@ -158,66 +143,37 @@ class DataGenerator(object):
         meta_data = json.load(open(file_path))
         return int(meta_data['hr']) if meta_data['hr'] != 'nan' else -1
 
-    def _import_waveform(self, waveform_file_path, meta_file_path, label, hr, age, sex, augment):
+    def _import_waveform(self, file_path, label, hr, age, sex, augment):
         """Import waveform file from file path string."""
         # Load numpy file
-        waveform = tf.py_func(self._load_npy_file, [waveform_file_path], tf.float32)
+        waveform = tf.py_func(self._load_npy_file, [file_path], [tf.float32])
 
         # Resample waveform
-        waveform = tf.py_func(self._resample, [waveform], tf.float32)
+        waveform = tf.py_func(self._resample, [waveform], [tf.float32])
 
         # Augment waveform
         if augment:
 
-            # Random resample
-            waveform = tf.py_func(self._random_resample, [waveform, hr], tf.float32)
-
-            # Get rpeak channel
-            rpeaks = tf.py_func(self._get_rpeak_channel, [waveform, meta_file_path], tf.float32)
-
             # Random amplitude scale
             waveform = self._random_scale(waveform=waveform, prob=0.75)
 
+            # Random resample
+            waveform = tf.py_func(self._random_resample, [waveform, hr], [tf.float32])
+
             # Apply synthetic noise
-            waveform = tf.py_func(self._add_synthetic_noise, [waveform, 0.25], tf.float32)
+            waveform = tf.py_func(self._add_synthetic_noise, [waveform, 0.25], [tf.float32])
 
             # Perturb age
             age = tf.py_func(self._random_age_perturbation, [age], tf.int32)
 
-        else:
-            # Get rpeak channel
-            rpeaks = tf.py_func(self._get_rpeak_channel, [waveform, meta_file_path], tf.float32)
-
-        # Combine waveform and rpeak
-        waveform = tf.concat([waveform, rpeaks], axis=1)
-
         # Pad waveform
-        waveform = tf.py_func(self._pad_waveform, [waveform], tf.float32)
+        waveform = tf.py_func(self._pad_waveform, [waveform], [tf.float32])
 
         # Set tensor shape
         waveform = tf.reshape(tensor=waveform, shape=self.shape)
         age = tf.reshape(tensor=age, shape=[1])
 
         return waveform, label, age, sex
-
-    def _get_rpeak_channel(self, waveform, meta_file_path):
-        """Get binary array of rpeak locations."""
-        waveform = waveform.squeeze()
-
-        # Import meta data
-        meta_data = json.load(open(meta_file_path))
-
-        # Get time array
-        time = np.arange(waveform.shape[0]) * 1 / self.fs
-
-        # Create empty array with length of waveform
-        rpeak_channel = np.zeros([waveform.shape[0], 1], dtype=np.float32)
-
-        # Set rpeak sections
-        for section in meta_data['rpeak_times']:
-            rpeak_channel[np.where((time >= section[0]) & (time <= section[1]))[0]] = 1
-
-        return rpeak_channel
 
     def _resample(self, waveform):
         """Randomly resample waveform."""
@@ -239,7 +195,11 @@ class DataGenerator(object):
     @staticmethod
     def _load_npy_file(file_path):
         """Python function for loading a single .npy file as casting the data type as float32."""
-        return np.load(file_path.decode()).astype(np.float32)
+        # Import waveform
+        waveform = np.load(file_path.decode()).astype(np.float32)
+        waveform = (waveform - waveform.mean()) / waveform.std()
+        waveform = np.transpose(waveform)
+        return waveform
 
     @staticmethod
     def _random_age_perturbation(age):
@@ -270,7 +230,7 @@ class DataGenerator(object):
             duration = waveform.shape[0] / self.fs
 
             # Get new heart rate
-            hr_new = int(hr * np.random.uniform(0.75, 1.25))
+            hr_new = int(hr * np.random.uniform(0.5, 1.5))
             if hr_new > 300:
                 hr_new = 300
             elif hr_new < 40:
@@ -410,9 +370,8 @@ class DataGenerator(object):
         if self.mode == 'train':
             return (
                 tf.data.Dataset.from_tensor_slices(
-                    tensors=(tf.constant(value=self.waveform_file_paths),
-                             tf.constant(value=self.meta_file_paths),
-                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1, LABELS_COUNT]),
+                    tensors=(tf.constant(value=self.file_paths),
+                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1]),
                              tf.constant(value=self.hr),
                              tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
                              tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))
@@ -426,9 +385,8 @@ class DataGenerator(object):
         else:
             return (
                 tf.data.Dataset.from_tensor_slices(
-                    tensors=(tf.constant(value=self.waveform_file_paths),
-                             tf.constant(value=self.meta_file_paths),
-                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1, LABELS_COUNT]),
+                    tensors=(tf.constant(value=self.file_paths),
+                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1]),
                              tf.constant(value=self.hr),
                              tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
                              tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))

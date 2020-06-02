@@ -9,8 +9,7 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 import tensorflow as tf
 
 # Local imports
-from kardioml.models.deepecg.utils.devices.device_check import get_device_count
-from kardioml import LABELS_COUNT
+from kardioml.models.deepecg_binary.utils.devices.device_check import get_device_count
 
 
 class Graph(object):
@@ -34,9 +33,7 @@ class Graph(object):
         self.global_step = None
         self.logits = None
         self.loss = None
-        self.f_beta = None
-        self.g_beta = None
-        self.geometric_mean = None
+        self.accuracy = None
         self.optimizer = None
         self.train_summary_all_op = None
         self.val_cam_plots_summary_op = None
@@ -57,9 +54,7 @@ class Graph(object):
         self.iterator = None
         self.cams = None
         self.tower_losses = None
-        self.tower_f_beta = None
-        self.tower_g_beta = None
-        self.tower_geometric_mean = None
+        self.tower_accuracy = None
         self.tower_gradients = None
         self.tower_waveforms = None
         self.tower_labels = None
@@ -150,12 +145,10 @@ class Graph(object):
                                                         name='ECGNet', print_shape=False)
 
         # Compute loss
-        self.loss = self._compute_competition_loss(logits=self.logits, labels=self.labels)
+        self.loss = self._compute_loss(logits=self.logits, labels=self.labels)
 
         # Compute metrics
-        self.f_beta = self._compute_f_beta(logits=self.logits, labels=self.labels)
-        self.g_beta = self._compute_g_beta(logits=self.logits, labels=self.labels)
-        self.geometric_mean = self._compute_geometric_mean(logits=self.logits, labels=self.labels)
+        self.accuracy = self._compute_accuracy(logits=self.logits, labels=self.labels)
 
         # Compute gradients
         self.gradients = self._compute_gradients(optimizer=self.optimizer, loss=self.loss)
@@ -164,9 +157,7 @@ class Graph(object):
         """Build parallel forward graph for training on more than one GPU."""
         # Initialize tower lists
         self.tower_losses = list()
-        self.tower_f_beta = list()
-        self.tower_g_beta = list()
-        self.tower_geometric_mean = list()
+        self.tower_accuracy = list()
         self.tower_gradients = list()
         self.tower_waveforms = list()
         self.tower_labels = list()
@@ -189,14 +180,8 @@ class Graph(object):
                     # Compute loss
                     loss = self._compute_loss(logits=logits, labels=labels)
 
-                    # Compute f-beta
-                    f_beta = self._compute_f_beta(logits=logits, labels=labels)
-
-                    # Compute g-beta
-                    g_beta = self._compute_g_beta(logits=logits, labels=labels)
-
-                    # Compute geometric mean
-                    geometric_mean = self._compute_geometric_mean(logits=logits, labels=labels)
+                    # Compute accuracy
+                    accuracy = self._compute_accuracy(logits=logits, labels=labels)
 
                     # Compute gradients
                     gradients = self._compute_gradients(optimizer=self.optimizer, loss=loss)
@@ -204,14 +189,8 @@ class Graph(object):
                     # Append losses
                     self.tower_losses.append(loss)
 
-                    # Append f_beta
-                    self.tower_f_beta.append(f_beta)
-
-                    # Append g_beta
-                    self.tower_g_beta.append(g_beta)
-
-                    # Append geometric mean
-                    self.tower_geometric_mean.append(geometric_mean)
+                    # Append accuracy
+                    self.tower_accuracy.append(accuracy)
 
                     # Append gradients
                     self.tower_gradients.append(gradients)
@@ -228,9 +207,7 @@ class Graph(object):
 
         # Merge towers
         self.loss = self._compute_mean_loss(tower_losses=self.tower_losses)
-        self.f_beta = self._compute_mean_f_beta(tower_f_beta=self.tower_f_beta)
-        self.g_beta = self._compute_mean_g_beta(tower_g_beta=self.tower_g_beta)
-        self.geometric_mean = self._compute_mean_geometric_mean(tower_geometric_mean=self.tower_geometric_mean)
+        self.accuracy = self._compute_mean_accuracy(tower_accuracy=self.tower_accuracy)
         self.gradients = self._compute_mean_gradients(tower_gradients=self.tower_gradients)
         self._group_data()
 
@@ -245,9 +222,7 @@ class Graph(object):
     def _compute_metrics(self):
         """Collect loss metric."""
         with tf.variable_scope('metrics'):
-            metrics = {'f_beta': tf.metrics.mean(values=self.f_beta),
-                       'g_beta': tf.metrics.mean(values=self.g_beta),
-                       'geometric_mean': tf.metrics.mean(values=self.geometric_mean),
+            metrics = {'accuracy': tf.metrics.mean(values=self.accuracy),
                        'loss': tf.metrics.mean(values=self.loss)}
         return metrics
 
@@ -321,111 +296,26 @@ class Graph(object):
         """Computes the mean squared error for a given set of logits and labels."""
         with tf.variable_scope('loss'):
 
-            # Specify class weightings ['AF', 'I-AVB', 'LBBB', 'Normal', 'PAC', 'PVC', 'RBBB', 'STD', 'STE']
-            class_weights = tf.constant([0.17772318, 0.30055402, 0.91949153, 0.23638344,
-                                         0.35227273, 0.31,  0.11685514, 0.25057737, 1.])
+            # Specify class weightings ['Normal', 'Other']
+            class_weights = tf.constant([1., 0.5])
 
             # Specify the weights for each sample in the batch
             weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
 
             # compute the loss
-            losses = tf.losses.sigmoid_cross_entropy(logits=logits, multi_class_labels=tf.cast(labels, tf.int32),
-                                                     weights=weights)
-            
+            losses = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits, weights=weights)
+
             # Compute mean loss
             loss = tf.reduce_mean(losses)
 
         return loss
 
-    def _compute_competition_loss(self, logits, labels):
-        """Computes competition loss for a given set of logits and labels."""
-        with tf.variable_scope('loss'):
-
-            # Apply sigmoid
-            logits = tf.nn.sigmoid(logits)
-
-            # Calculate average scores
-            f_beta = self._compute_f_beta_loss(y_true=labels, y_pred=logits, beta=2.)
-            # g_beta = self._compute_g_beta_loss(y_true=labels, y_pred=logits, beta=2.)
-
-        return f_beta
-
-    @staticmethod
-    def _compute_f_beta_loss(y_true, y_pred, beta):
-        """Calculate the class-weighted F-score."""
-        # Convert ints
-        y_true = tf.cast(y_true, tf.float32)
-        y_pred = tf.cast(y_pred, tf.float32)
-
-        # Calculate true-positive, true-negative, false-positive, and false-negative
-        tp = tf.reduce_sum(y_true * y_pred, axis=0)
-        fp = tf.reduce_sum((1 - y_true) * y_pred, axis=0)
-        tn = tf.reduce_sum((1 - y_pred) * (1 - y_true), axis=0)
-        fn = tf.reduce_sum(y_true * (1 - y_pred), axis=0)
-
-        # Calculate F-score for class 1
-        f_beta_1 = (1 + beta ** 2) * tp / ((1 + beta ** 2) * tp + fp + (beta ** 2 * fn) + 1e-16)
-        f_beta_1 = tf.where(tf.is_nan(f_beta_1), tf.zeros_like(f_beta_1), f_beta_1)
-
-        # Calculate F-score for class 0
-        f_beta_0 = (1 + beta ** 2) * tn / ((1 + beta ** 2) * tn + fp + (beta ** 2 * fn) + 1e-16)
-        f_beta_0 = tf.where(tf.is_nan(f_beta_0), tf.zeros_like(f_beta_0), f_beta_0)
-
-        # Get loss
-        f_beta_1_loss = 1 - f_beta_1
-        f_beta_0_loss = 1 - f_beta_0
-        f_beta_loss = 0.5 * (f_beta_1_loss + f_beta_0_loss)
-
-        return tf.reduce_mean(f_beta_loss)
-
-    @staticmethod
-    def _compute_g_beta_loss(y_true, y_pred, beta):
-        """Calculate the class-weighted F-score."""
-        # Convert ints
-        y_true = tf.cast(y_true, tf.float32)
-        y_pred = tf.cast(y_pred, tf.float32)
-
-        # Calculate true-positive, true-negative, false-positive, and false-negative
-        tp = tf.reduce_sum(y_true * y_pred, axis=0)
-        fp = tf.reduce_sum((1 - y_true) * y_pred, axis=0)
-        tn = tf.reduce_sum((1 - y_pred) * (1 - y_true), axis=0)
-        fn = tf.reduce_sum(y_true * (1 - y_pred), axis=0)
-
-        # Calculate F-score for class 1
-        g_beta_1 = tp / (tp + fp + beta * fn + 1e-16)
-        g_beta_1 = tf.where(tf.is_nan(g_beta_1), tf.zeros_like(g_beta_1), g_beta_1)
-
-        # Calculate F-score for class 1
-        g_beta_0 = tn / (tn + fp + beta * fn + 1e-16)
-        g_beta_0 = tf.where(tf.is_nan(g_beta_0), tf.zeros_like(g_beta_0), g_beta_0)
-
-        # Get loss
-        g_beta_1_loss = 1 - g_beta_1
-        g_beta_0_loss = 1 - g_beta_0
-        g_beta_loss = 0.5 * (g_beta_1_loss + g_beta_0_loss)
-
-        return tf.reduce_mean(g_beta_loss)
-
-    def _compute_f_beta(self, logits, labels):
-        """Computes the accuracy set of logits and labels."""
-        with tf.variable_scope('f_beta'):
-            f_beta, _, _ = self.network.compute_metrics(logits=logits, labels=labels)
-
-        return f_beta
-
-    def _compute_g_beta(self, logits, labels):
+    def _compute_accuracy(self, logits, labels):
         """Computes the f1 score set of logits and labels."""
-        with tf.variable_scope('g_beta'):
-            _, g_beta, _ = self.network.compute_metrics(logits=logits, labels=labels)
+        with tf.variable_scope('accuracy'):
+            accuracy = self.network.compute_accuracy(logits=logits, labels=labels)
 
-        return g_beta
-
-    def _compute_geometric_mean(self, logits, labels):
-        """Computes the f1 score set of logits and labels."""
-        with tf.variable_scope('g_beta'):
-            _, _, gmean = self.network.compute_metrics(logits=logits, labels=labels)
-
-        return gmean
+        return accuracy
 
     @staticmethod
     def _compute_gradients(optimizer, loss):
@@ -454,37 +344,15 @@ class Graph(object):
         return loss
 
     @staticmethod
-    def _compute_mean_f_beta(tower_f_beta):
-        """Compute mean f_beta across towers."""
-        with tf.variable_scope('f_beta'):
-            f_beta = tf.reduce_mean(tower_f_beta)
-
-        # Get summary
-        tf.summary.scalar(name='f_beta/f_beta', tensor=f_beta, collections=['train_metrics'])
-
-        return f_beta
-
-    @staticmethod
-    def _compute_mean_g_beta(tower_g_beta):
+    def _compute_mean_accuracy(tower_accuracy):
         """Compute mean f1 score across towers."""
-        with tf.variable_scope('g_beta'):
-            g_beta = tf.reduce_mean(tower_g_beta)
+        with tf.variable_scope('accuracy'):
+            accuracy = tf.reduce_mean(tower_accuracy)
 
         # Get summary
-        tf.summary.scalar(name='g_beta/g_beta', tensor=g_beta, collections=['train_metrics'])
+        tf.summary.scalar(name='accuracy/accuracy', tensor=accuracy, collections=['train_metrics'])
 
-        return g_beta
-
-    @staticmethod
-    def _compute_mean_geometric_mean(tower_geometric_mean):
-        """Compute mean f1 score across towers."""
-        with tf.variable_scope('geometric_mean'):
-            geometric_mean = tf.reduce_mean(tower_geometric_mean)
-
-        # Get summary
-        tf.summary.scalar(name='geometric_mean/geometric_mean', tensor=geometric_mean, collections=['train_metrics'])
-
-        return geometric_mean
+        return accuracy
 
     @staticmethod
     def _compute_mean_gradients(tower_gradients):

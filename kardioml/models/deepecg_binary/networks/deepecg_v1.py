@@ -12,9 +12,9 @@ from scipy.stats.mstats import gmean
 
 # Local imports
 from kardioml.scoring.scoring_metrics import compute_beta_score
-from kardioml.models.deepecg.train.data_generator import DataGenerator
-from kardioml.models.deepecg.networks.layers import fc_layer, conv_layer, dropout_layer, \
-    print_output_shape, max_pool_layer
+from kardioml.models.deepecg_binary.train.data_generator import DataGenerator
+from kardioml.models.deepecg_binary.networks.layers import (fc_layer, conv_layer, dropout_layer,
+                                                            print_output_shape, max_pool_layer)
 
 
 class DeepECGV1(object):
@@ -58,7 +58,7 @@ class DeepECGV1(object):
 
                 # Convolution
                 net = conv_layer(input_layer=input_layer, kernel_size=self.hyper_params['kernel_size'],
-                                 strides=1, dilation_rate=1, filters=32,
+                                 strides=1, dilation_rate=1, filters=self.hyper_params['conv_filts'],
                                  padding='SAME', activation=tf.nn.relu, use_bias=False, name=layer_name + '_conv',
                                  seed=self.seed)
 
@@ -142,7 +142,7 @@ class DeepECGV1(object):
 
             # Convolution
             output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=128, padding='SAME', activation=tf.nn.relu, use_bias=False,
+                                dilation_rate=1, filters=256, padding='SAME', activation=tf.nn.relu, use_bias=False,
                                 name='conv1', seed=self.seed)
 
             # Dropout
@@ -154,7 +154,7 @@ class DeepECGV1(object):
 
             # Convolution
             output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=256, padding='SAME', activation=tf.nn.relu, use_bias=False,
+                                dilation_rate=1, filters=512, padding='SAME', activation=tf.nn.relu, use_bias=False,
                                 name='conv2', seed=self.seed)
 
             # Dropout
@@ -304,7 +304,7 @@ class DeepECGV1(object):
             waveform = tf.placeholder(dtype=tf.float32, shape=[None, self.length, self.channels], name=scope.name)
 
         with tf.variable_scope('label') as scope:
-            label = tf.placeholder(dtype=tf.int32, shape=[None, self.classes], name=scope.name)
+            label = tf.placeholder(dtype=tf.int32, shape=[None], name=scope.name)
 
         return waveform, label
 
@@ -314,33 +314,8 @@ class DeepECGV1(object):
                              shape=[self.length, self.channels], batch_size=batch_size,
                              prefetch_buffer=200, seed=0, num_parallel_calls=32)
 
-    def compute_metrics(self, logits, labels):
-        """Computes the model accuracy for set of logits and labels."""
-        with tf.variable_scope('metrics'):
-
-            # Get Sigmoid
-            sigmoid = tf.nn.sigmoid(logits)
-
-            # Apply Normal Rhythm correction
-            sigmoid = tf.reshape(tf.py_func(func=self._normal_rhythm_correction, inp=[sigmoid], Tout=[tf.float32]),
-                                 shape=[-1, self.classes])
-
-            # Get prediction
-            predictions = tf.cast(tf.math.round(sigmoid), tf.int32)
-
-            # Get label
-            labels = tf.cast(labels, tf.int32)
-
-            # Get metrics
-            _, _, f_beta, g_beta = tf.py_func(func=compute_beta_score,
-                                              inp=[labels, predictions, 2, self.classes, False],
-                                              Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
-
-            return f_beta, g_beta, tf.py_func(func=gmean, inp=[[f_beta, g_beta]], Tout=[tf.float64])
-
     @staticmethod
-    def _normal_rhythm_correction(sigmoid):
-        for index in range(sigmoid.shape[0]):
-            if sigmoid[index, 3] >= 0.75 and np.argmax(sigmoid[index, :]) == 3:
-                sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
-        return sigmoid
+    def compute_accuracy(logits, labels):
+        """Computes the model accuracy for set of logits and labels."""
+        with tf.variable_scope('accuracy'):
+            return tf.reduce_mean(tf.cast(tf.equal(tf.argmax(logits, axis=1), tf.cast(labels, tf.int64)), 'float'))
