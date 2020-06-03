@@ -150,7 +150,7 @@ class Graph(object):
                                                         name='ECGNet', print_shape=False)
 
         # Compute loss
-        self.loss = self._compute_competition_loss(logits=self.logits, labels=self.labels)
+        self.loss = self._compute_loss(logits=self.logits, labels=self.labels)
 
         # Compute metrics
         self.f_beta = self._compute_f_beta(logits=self.logits, labels=self.labels)
@@ -346,9 +346,9 @@ class Graph(object):
 
             # Calculate average scores
             f_beta = self._compute_f_beta_loss(y_true=labels, y_pred=logits, beta=2.)
-            # g_beta = self._compute_g_beta_loss(y_true=labels, y_pred=logits, beta=2.)
+            g_beta = self._compute_g_beta_loss(y_true=labels, y_pred=logits, beta=2.)
 
-        return f_beta
+        return tf.sqrt(f_beta * g_beta)
 
     @staticmethod
     def _compute_f_beta_loss(y_true, y_pred, beta):

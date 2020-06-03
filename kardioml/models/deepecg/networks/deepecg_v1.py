@@ -58,7 +58,7 @@ class DeepECGV1(object):
 
                 # Convolution
                 net = conv_layer(input_layer=input_layer, kernel_size=self.hyper_params['kernel_size'],
-                                 strides=1, dilation_rate=1, filters=32,
+                                 strides=1, dilation_rate=1, filters=self.hyper_params['conv_filts'] / 2,
                                  padding='SAME', activation=tf.nn.relu, use_bias=False, name=layer_name + '_conv',
                                  seed=self.seed)
 
@@ -142,8 +142,8 @@ class DeepECGV1(object):
 
             # Convolution
             output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=128, padding='SAME', activation=tf.nn.relu, use_bias=False,
-                                name='conv1', seed=self.seed)
+                                dilation_rate=1, filters=self.hyper_params['conv_filts'] * 2, padding='SAME',
+                                activation=tf.nn.relu, use_bias=False, name='conv1', seed=self.seed)
 
             # Dropout
             output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
@@ -154,8 +154,8 @@ class DeepECGV1(object):
 
             # Convolution
             output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=256, padding='SAME', activation=tf.nn.relu, use_bias=False,
-                                name='conv2', seed=self.seed)
+                                dilation_rate=1, filters=self.hyper_params['conv_filts'] * 4, padding='SAME',
+                                activation=tf.nn.relu, use_bias=False, name='conv2', seed=self.seed)
 
             # Dropout
             output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,

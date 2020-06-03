@@ -41,7 +41,7 @@ def train(model, epochs, batch_size):
 
         # Initialize model model_tracker
         monitor = Monitor(sess=sess, graph=model.graph, learning_rate=lr_scheduler.lr, batch_size=batch_size,
-                          save_path=model.save_path, early_stopping_epoch=15, num_gpus=num_gpus)
+                          save_path=model.save_path, early_stopping_epoch=10, num_gpus=num_gpus)
 
         # Initialize logger
         logger = Logger(monitor=monitor, epochs=epochs, save_path=model.save_path,
