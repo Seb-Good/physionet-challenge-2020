@@ -5,10 +5,10 @@ Laussen Labs submission for the [2020 Physionet Challenge](https://physionetchal
 1. Download Physionet2020 tar.gz file from:
 https://storage.cloud.google.com/physionet-challenge-2020-12-lead-ecg-public/PhysioNetChallenge2020_Training_CPSC.tar.gz
 
-2. Place ```PhysioNetChallenge2020_Training_CPSC.tar.gz``` in path ```physionet-challenge-2020/data/raw```
+2. Place ```PhysioNetChallenge2020_Training_CPSC.tar.gz``` in path ```physionet-challenge-2020/data/physionet_2020_1/raw```
 
 3. Run Notebooks 1 ```physionet-challenge-2020/notebooks/1_format_data.ipynb```. This will extract the tar file and the 
-place the original ```.mat``` and ```.hea``` files in ```physionet-challenge-2020/data/raw/Training_WFDB```. The 
+place the original ```.mat``` and ```.hea``` files in ```physionet-challenge-2020/data/physionet_2020_1/raw/Training_WFDB```. The 
 ```.mat``` file contains an array of size ```[12, num_samples]```. Where the number of samples varies from 6 seconds 
 to 60 seconds at 500 Hz. The ```.hea``` contains information about the 12-lead signals, the patient (Age and Sex), and 
 the rhythm labels (```#Dx```). Below is an exampe for file ```A0001.hea```.   
