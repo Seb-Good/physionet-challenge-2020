@@ -66,7 +66,7 @@ def waveform_plot(filename_id, filenames, path):
     # Axes labels
     ax1.set_xlabel('Time, seconds', fontsize=24)
     ax1.set_ylabel('ECG Amplitude, mV', fontsize=24)
-    ax1.set_xlim([time.min(), 2])
+    ax1.set_xlim([time.min(), time.max()])
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
 
