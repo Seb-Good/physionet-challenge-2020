@@ -9,10 +9,6 @@ By: Sebastian D. Goodfellow, Ph.D., 2020
 import os
 import numpy as np
 from scipy.io import loadmat
-from sklearn.preprocessing import MultiLabelBinarizer
-
-# Locals imports
-from kardioml import ECG_LEADS, LABELS_LOOKUP, LABELS_COUNT
 
 
 def load_challenge_data(filename):
@@ -68,19 +64,48 @@ def load_challenge_data(filename):
 
 
 def parse_header(header_data):
-    """Parse header text."""
+    """Parse header text.
+    header_data: list of text rows
+    ['A0001 12 500 7500 05-Feb-2020 11:39:16\n',
+     'A0001.mat 16+24 1000/mV 16 0 28 -1716 0 I\n',
+     'A0001.mat 16+24 1000/mV 16 0 7 2029 0 II\n',
+     'A0001.mat 16+24 1000/mV 16 0 -21 3745 0 III\n',
+     'A0001.mat 16+24 1000/mV 16 0 -17 3680 0 aVR\n',
+     'A0001.mat 16+24 1000/mV 16 0 24 -2664 0 aVL\n',
+     'A0001.mat 16+24 1000/mV 16 0 -7 -1499 0 aVF\n',
+     'A0001.mat 16+24 1000/mV 16 0 -290 390 0 V1\n',
+     'A0001.mat 16+24 1000/mV 16 0 -204 157 0 V2\n',
+     'A0001.mat 16+24 1000/mV 16 0 -96 -2555 0 V3\n',
+     'A0001.mat 16+24 1000/mV 16 0 -112 49 0 V4\n',
+     'A0001.mat 16+24 1000/mV 16 0 -596 -321 0 V5\n',
+     'A0001.mat 16+24 1000/mV 16 0 -16 -3112 0 V6\n',
+     '#Age: 74\n',
+     '#Sex: Male\n',
+     '#Dx: 426664006,413444003\n',
+     '#Rx: Unknown\n',
+     '#Hx: Unknown\n',
+     '#Sx: Unknows\n']
+    """
     filename = header_data[0].split(' ')[0]
-    length = header_data[3].split(' ')[0]
+    num_leads = int(header_data[0].split(' ')[1])
+    fs = int(header_data[0].split(' ')[2])
+    length = int(header_data[0].split(' ')[3])
+    datetime = header_data[0].split(' ')[4]
+    amp_conversion = int(header_data[1].split(' ')[2].split('/')[0])
     channel_order = [row.split(' ')[-1].strip() for row in header_data[1:13]]
     age = header_data[13].split(':')[-1].strip()
-    sex = header_data[14].split(':')[-1].strip()
-    labels = [label for label in header_data[15].split(':')[-1].strip().split(',')]
+    sex = get_sex(sex=header_data[14].split(':')[-1].strip())
+    labels_snomedct = [int(label) for label in header_data[15].split(':')[-1].strip().split(',')]
 
-    # Get training labels
-    mlb = MultiLabelBinarizer(classes=np.arange(LABELS_COUNT).tolist())
-    label_train = mlb.fit_transform([[LABELS_LOOKUP[label]['label_int'] for label in labels]])[0].tolist()
+    return {'filename': filename, 'datetime': datetime, 'channel_order': channel_order, 'age': age, 'sex': sex,
+            'labels_SNOMEDCT': labels_snomedct, 'amp_conversion': amp_conversion, 'fs': fs,
+            'length': length, 'num_leads': num_leads}
 
-    return {'filename': filename, 'channel_order': channel_order, 'age': age, 'sex': sex,
-            'labels': labels, 'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
-            'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
-            'label_train': label_train, 'shape': [len(ECG_LEADS), length]}
+
+def get_sex(sex):
+    """Return a consistent sex notation (male, female)."""
+    if sex.lower() == 'm':
+        return 'male'
+    if sex.lower() == 'f':
+        return 'female'
+    return sex.lower()

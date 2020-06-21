@@ -7,7 +7,6 @@ By: Sebastian D. Goodfellow, Ph.D., 2020
 
 # 3rd party imports
 import os
-import copy
 import json
 import shutil
 import numpy as np
@@ -17,8 +16,9 @@ from joblib import Parallel, delayed
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from kardioml import (DATA_PATH, DATA_FILE_NAMES, EXTRACTED_FOLDER_NAMES, AMP_CONVERSION,
-                      LABELS_LOOKUP, LABELS_COUNT, FS, SNOMEDCT_LOOKUP)
+from kardioml import DATA_PATH, DATA_FILE_NAMES, EXTRACTED_FOLDER_NAMES, SNOMEDCT_LOOKUP
+from kardioml.data.utils import get_snomedct_concept_by_id
+from kardioml.data.data_loader import parse_header
 
 
 class FormatDataPhysionet2020(object):
@@ -28,14 +28,14 @@ class FormatDataPhysionet2020(object):
     https://physionetchallenges.github.io/2020/
     """
 
-    def __init__(self, tranche):
+    def __init__(self, dataset):
 
         # Set parameters
-        self.tranche = tranche
+        self.dataset = dataset
 
         # Set attributes
-        self.raw_path = os.path.join(DATA_PATH, 'physionet_2020_{}'.format(self.tranche), 'raw')
-        self.formatted_path = os.path.join(DATA_PATH, 'physionet_2020_{}'.format(self.tranche), 'formatted')
+        self.raw_path = os.path.join(DATA_PATH, self.dataset, 'raw')
+        self.formatted_path = os.path.join(DATA_PATH, self.dataset, 'formatted')
 
     def format(self, extract=True, debug=False):
         """Format Physionet2020 dataset."""
@@ -54,7 +54,7 @@ class FormatDataPhysionet2020(object):
 
         # Get a list of filenames
         filenames = [filename.split('.')[0] for filename in
-                     os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.tranche-1]))
+                     os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset]))
                      if 'mat' in filename]
 
         if debug:
@@ -66,19 +66,16 @@ class FormatDataPhysionet2020(object):
 
     def _format_sample(self, filename):
         """Format individual .mat and .hea sample."""
+        # Import header file
+        header = self._load_header_file(filename=filename)
+
         # Import matlab file
-        waveforms = self._load_mat_file(filename=filename) / AMP_CONVERSION
+        waveforms = self._load_mat_file(filename=filename) / header['amp_conversion']
 
         # Get rpeaks
-        rpeaks = self._get_rpeaks(waveforms=waveforms)
+        rpeaks = self._get_rpeaks(waveforms=waveforms, fs=header['fs'])
         rpeak_array = self._get_peak_array(waveforms=waveforms, peaks=rpeaks)
-        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array)
-
-        # Import header file
-        channel_order, age, sex, labels = self._load_header_file(filename=filename)
-
-        # Get labels for evaluation
-        labels = [label for label in labels if label in SNOMEDCT_LOOKUP.keys()]
+        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=header['fs'])
 
         # Normalize waveforms
         waveforms = self._scale_waveforms(waveforms=waveforms, rpeaks=rpeaks)
@@ -86,51 +83,36 @@ class FormatDataPhysionet2020(object):
         # Save waveform data npy file
         np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
 
-        if labels:
-            # Save meta data JSON
-            with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
-                json.dump({'filename': filename,
-                           'channel_order': channel_order,
-                           'age': age,
-                           'sex': sex,
-                           'labels': [SNOMEDCT_LOOKUP[label] for label in labels],
-                           'labels_full': [LABELS_LOOKUP[SNOMEDCT_LOOKUP[label]]['label_full'] for label in labels],
-                           'labels_int': [LABELS_LOOKUP[SNOMEDCT_LOOKUP[label]]['label_int'] for label in labels],
-                           'labels_SNOMEDCT': labels,
-                           'label_train': self._get_training_label(labels=[SNOMEDCT_LOOKUP[label] for label in labels]),
-                           'shape': waveforms.shape,
-                           'hr': self._compute_heart_rate(waveforms=waveforms),
-                           'rpeaks': rpeaks,
-                           'rpeak_array': rpeak_array.tolist(),
-                           'rpeak_times': rpeak_times},
-                          file, sort_keys=True)
-
-        else:
-            # Save meta data JSON
-            with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
-                json.dump({'filename': filename,
-                           'channel_order': channel_order,
-                           'age': age,
-                           'sex': sex,
-                           'labels': None,
-                           'labels_full': None,
-                           'labels_int': None,
-                           'labels_SNOMEDCT': None,
-                           'label_train': None,
-                           'shape': waveforms.shape,
-                           'hr': self._compute_heart_rate(waveforms=waveforms),
-                           'rpeaks': rpeaks,
-                           'rpeak_array': rpeak_array.tolist(),
-                           'rpeak_times': rpeak_times},
-                          file, sort_keys=True)
+        # Save meta data JSON
+        with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
+            json.dump({'filename': filename,
+                       'datetime': header['datetime'],
+                       'channel_order': header['channel_order'],
+                       'age': header['age'],
+                       'sex': header['sex'],
+                       'labels_SNOMEDCT': header['labels_SNOMEDCT'],
+                       'amp_conversion': header['amp_conversion'],
+                       'fs': header['fs'],
+                       'length': header['length'],
+                       'num_leads': header['num_leads'],
+                       'labels': [SNOMEDCT_LOOKUP[label]['label'] if label in SNOMEDCT_LOOKUP.keys() else
+                                  get_snomedct_concept_by_id(label) for label in header['labels_SNOMEDCT']],
+                       'labels_full': [SNOMEDCT_LOOKUP[label]['label_full'] if label in SNOMEDCT_LOOKUP.keys() else
+                                       get_snomedct_concept_by_id(label) for label in header['labels_SNOMEDCT']],
+                       'shape': waveforms.shape,
+                       'hr': self._compute_heart_rate(waveforms=waveforms, fs=header['fs']),
+                       'rpeaks': rpeaks,
+                       'rpeak_array': rpeak_array.tolist(),
+                       'rpeak_times': rpeak_times},
+                      file, sort_keys=False)
 
     @staticmethod
-    def _compute_heart_rate(waveforms):
+    def _compute_heart_rate(waveforms, fs):
         """Calculate median heart rate."""
         hr = list()
         for channel in range(waveforms.shape[1]):
             try:
-                ecg_object = ecg.ecg(signal=waveforms[:, channel], sampling_rate=FS, show=False)
+                ecg_object = ecg.ecg(signal=waveforms[:, channel], sampling_rate=fs, show=False)
                 hr.extend(ecg_object['heart_rate'])
             except Exception:
                 pass
@@ -138,14 +120,14 @@ class FormatDataPhysionet2020(object):
         return np.median(hr) if len(hr) > 0 else 'nan'
 
     @staticmethod
-    def _get_rpeaks(waveforms):
+    def _get_rpeaks(waveforms, fs):
         """Calculate median heart rate."""
         rpeaks = list()
         length = waveforms.shape[0]
         waveforms = np.pad(waveforms, ((200, 200), (0, 0)), 'constant', constant_values=0)
         for channel in range(waveforms.shape[1]):
             try:
-                ecg_object = ecg.ecg(signal=waveforms[:, channel], sampling_rate=FS, show=False)
+                ecg_object = ecg.ecg(signal=waveforms[:, channel], sampling_rate=fs, show=False)
                 peaks = ecg_object['rpeaks'] - 200
                 peak_ids = np.where((peaks > 2) & (peaks < length - 2))[0]
                 rpeaks.append(peaks[peak_ids].tolist())
@@ -176,48 +158,33 @@ class FormatDataPhysionet2020(object):
 
         return peak_array
 
-    def _get_peak_times(self, waveforms, peak_array):
+    def _get_peak_times(self, waveforms, peak_array, fs):
         """Get list of start and end times for peaks."""
         # Get contiguous sections
         sections = self._contiguous_regions(peak_array == 1).tolist()
 
         # Get time array
-        time = np.arange(waveforms.shape[0]) * 1 / FS
+        time = np.arange(waveforms.shape[0]) * 1 / fs
 
         return [[time[section[0]], time[section[1]-1]] for section in sections]
 
     def _extract_data(self):
         """Extract the raw dataset file."""
         print('Extracting dataset...')
-        shutil.unpack_archive(os.path.join(self.raw_path, DATA_FILE_NAMES[self.tranche-1]), self.raw_path)
+        shutil.unpack_archive(os.path.join(self.raw_path, DATA_FILE_NAMES[self.dataset]), self.raw_path)
 
     def _load_mat_file(self, filename):
         """Load Matlab waveform file."""
-        return sio.loadmat(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.tranche-1],
+        return sio.loadmat(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset],
                                         '{}.mat'.format(filename)))['val'].T
 
     def _load_header_file(self, filename):
         """Load header file."""
         # Load file
-        file = open(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.tranche-1], '{}.hea'.format(filename)), 'r')
+        file = open(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset], '{}.hea'.format(filename)), 'r')
         content = file.read().split('\n')
         file.close()
-
-        # Get patient attributes
-        channel_order = [row.split(' ')[-1].strip() for row in content[1:13]]
-        age = content[13].split(':')[-1].strip()
-        sex = content[14].split(':')[-1].strip()
-        labels = [label for label in content[15].split(':')[-1].strip().split(',')]
-
-        return channel_order, age, sex, labels
-
-    @staticmethod
-    def _get_training_label(labels):
-        """Return one-hot training label."""
-        # Initialize binarizer
-        mlb = MultiLabelBinarizer(classes=np.arange(LABELS_COUNT).tolist())
-
-        return mlb.fit_transform([[LABELS_LOOKUP[label]['label_int'] for label in labels]])[0].tolist()
+        return parse_header(header_data=content)
 
     @staticmethod
     def _scale_waveforms(waveforms, rpeaks):

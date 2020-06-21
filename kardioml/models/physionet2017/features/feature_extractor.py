@@ -25,10 +25,11 @@ from kardioml.models.physionet2017.features.full_waveform_features import FullWa
 
 class Features:
 
-    def __init__(self, filename, waveform_data=None, header_data=None):
+    def __init__(self, filename, path, waveform_data=None, header_data=None):
 
         # Set parameters
         self.filename = filename
+        self.path = path
         self.waveform_data = waveform_data
         self.header_data = header_data
 
@@ -82,7 +83,7 @@ class Features:
     def _import_meta_data(self):
         """Import meta data JSON files."""
         if self.header_data is None:
-            return json.load(open(os.path.join(DATA_PATH, 'formatted', '{}.json'.format(self.filename))))
+            return json.load(open(os.path.join(DATA_PATH, self.path, 'formatted', '{}.json'.format(self.filename))))
         else:
             meta_data = parse_header(self.header_data)
             self.filename = meta_data['filename']
@@ -91,7 +92,7 @@ class Features:
     def _load_waveform_file(self):
         """Loads ECG signal to numpy array from .mat file."""
         if self.waveform_data is None:
-            return np.load(os.path.join(DATA_PATH, 'formatted', '{}.npy'.format(self.filename)))
+            return np.load(os.path.join(DATA_PATH, self.path, 'formatted', '{}.npy'.format(self.filename)))
         else:
             return self.waveform_data
 

@@ -7,7 +7,6 @@ By: Sebastian D. Goodfellow, Ph.D., 2020
 
 # 3rd party imports
 import os
-import copy
 import json
 import shutil
 import numpy as np
@@ -17,7 +16,7 @@ from joblib import Parallel, delayed
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from kardioml import DATA_PATH, ECG_LEADS, LABELS_LOOKUP, LABELS_COUNT, SNOMEDCT_LOOKUP, FS
+from kardioml import DATA_PATH, ECG_LEADS, SNOMEDCT_LOOKUP
 
 
 LABEL_MAPPINGS = {'1AVB': 'I-AVB',
