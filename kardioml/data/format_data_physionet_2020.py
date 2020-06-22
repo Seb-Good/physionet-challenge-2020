@@ -127,12 +127,24 @@ class FormatDataPhysionet2020(object):
         waveforms = np.pad(waveforms, ((200, 200), (0, 0)), 'constant', constant_values=0)
         for channel in range(waveforms.shape[1]):
             try:
+                # Get + peaks
                 ecg_object = ecg.ecg(signal=waveforms[:, channel], sampling_rate=fs, show=False)
-                peaks = ecg_object['rpeaks'] - 200
-                peak_ids = np.where((peaks > 2) & (peaks < length - 2))[0]
-                rpeaks.append(peaks[peak_ids].tolist())
+                median_plus = np.median(ecg_object['filtered'][ecg_object['rpeaks']])
+                peaks_plus = ecg_object['rpeaks'] - 200
+                peak_ids_plus = np.where((peaks_plus > 2) & (peaks_plus < length - 2))[0]
+
+                # Get - peaks
+                ecg_object = ecg.ecg(signal=-waveforms[:, channel], sampling_rate=fs, show=False)
+                median_minus = np.median(ecg_object['filtered'][ecg_object['rpeaks']])
+                peaks_minus = ecg_object['rpeaks'] - 200
+                peak_ids_minus = np.where((peaks_minus > 2) & (peaks_minus < length - 2))[0]
+
+                if median_plus >= median_minus:
+                    rpeaks.append(peaks_plus[peak_ids_plus].tolist())
+                else:
+                    rpeaks.append(peaks_minus[peak_ids_minus].tolist())
             except Exception:
-                pass
+                rpeaks.append([])
 
         return rpeaks if len([rpeak for rpeak in rpeaks if len(rpeaks) > 0]) > 0 else None
 
