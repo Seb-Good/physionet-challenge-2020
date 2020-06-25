@@ -16,7 +16,7 @@ from joblib import Parallel, delayed
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from kardioml import DATA_PATH, ECG_LEADS, SNOMEDCT_LOOKUP
+from kardioml import DATA_PATH, ECG_LEADS
 
 
 LABEL_MAPPINGS = {'1AVB': 'I-AVB',

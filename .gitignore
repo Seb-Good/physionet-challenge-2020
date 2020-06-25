@@ -169,5 +169,10 @@ ENV/
 .mypy_cache/
 
 # folders
-/data/
+/data/A/
+/data/B/
+/data/C/
+/data/D/
+/data/E/
+/data/F/
 /output/

@@ -10,14 +10,13 @@ import os
 import json
 import shutil
 import numpy as np
+import pandas as pd
 import scipy.io as sio
 from biosppy.signals import ecg
 from joblib import Parallel, delayed
-from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
-from kardioml import DATA_PATH, DATA_FILE_NAMES, EXTRACTED_FOLDER_NAMES, SNOMEDCT_LOOKUP
-from kardioml.data.utils import get_snomedct_concept_by_id
+from kardioml import DATA_PATH, DATA_FILE_NAMES, EXTRACTED_FOLDER_NAMES
 from kardioml.data.data_loader import parse_header
 
 
@@ -36,6 +35,8 @@ class FormatDataPhysionet2020(object):
         # Set attributes
         self.raw_path = os.path.join(DATA_PATH, self.dataset, 'raw')
         self.formatted_path = os.path.join(DATA_PATH, self.dataset, 'formatted')
+        self.labels_scored = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
+        self.labels_unscored = pd.read_csv(os.path.join(DATA_PATH, 'labels_unscored.csv'))
 
     def format(self, extract=True, debug=False):
         """Format Physionet2020 dataset."""
@@ -69,6 +70,10 @@ class FormatDataPhysionet2020(object):
         # Import header file
         header = self._load_header_file(filename=filename)
 
+        # Get labels
+        labels_scored = self._get_scored_labels(labels=header['labels_SNOMEDCT'])
+        labels_unscored = self._get_unscored_labels(labels=header['labels_SNOMEDCT'])
+
         # Import matlab file
         waveforms = self._load_mat_file(filename=filename) / header['amp_conversion']
 
@@ -90,21 +95,49 @@ class FormatDataPhysionet2020(object):
                        'channel_order': header['channel_order'],
                        'age': header['age'],
                        'sex': header['sex'],
-                       'labels_SNOMEDCT': header['labels_SNOMEDCT'],
                        'amp_conversion': header['amp_conversion'],
                        'fs': header['fs'],
                        'length': header['length'],
                        'num_leads': header['num_leads'],
-                       'labels': [SNOMEDCT_LOOKUP[label]['label'] if label in SNOMEDCT_LOOKUP.keys() else
-                                  get_snomedct_concept_by_id(label) for label in header['labels_SNOMEDCT']],
-                       'labels_full': [SNOMEDCT_LOOKUP[label]['label_full'] if label in SNOMEDCT_LOOKUP.keys() else
-                                       get_snomedct_concept_by_id(label) for label in header['labels_SNOMEDCT']],
+                       'labels_SNOMEDCT': [label['SNOMED CT Code'] for label in
+                                           labels_scored] if labels_scored else None,
+                       'labels': [label['Abbreviation'] for label in labels_scored] if labels_scored else None,
+                       'labels_full': [label['Dx'] for label in labels_scored] if labels_scored else None,
                        'shape': waveforms.shape,
                        'hr': self._compute_heart_rate(waveforms=waveforms, fs=header['fs']),
                        'rpeaks': rpeaks,
                        'rpeak_array': rpeak_array.tolist(),
-                       'rpeak_times': rpeak_times},
-                      file, sort_keys=False)
+                       'rpeak_times': rpeak_times,
+                       'labels_unscored_SNOMEDCT': [label['SNOMED CT Code'] for label in
+                                                    labels_unscored] if labels_unscored else None,
+                       'labels_unscored': [label['Abbreviation'] for label in
+                                           labels_unscored] if labels_unscored else None,
+                       'labels_unscored_full': [label['Dx'] for label in
+                                                labels_unscored] if labels_unscored else None,
+                       },
+                      file, sort_keys=False, indent=4)
+
+    def _get_scored_labels(self, labels):
+        """Return a list scored labels."""
+        labels_list = list()
+        for label in labels:
+            row = self.labels_scored[self.labels_scored['SNOMED CT Code'] == label]
+            if row.shape[0] > 0:
+                labels_list.append(row.to_dict(orient='row')[0])
+        if len(labels_list) > 0:
+            return labels_list
+        return None
+
+    def _get_unscored_labels(self, labels):
+        """Return a list scored labels."""
+        labels_list = list()
+        for label in labels:
+            row = self.labels_unscored[self.labels_unscored['SNOMED CT Code'] == label]
+            if row.shape[0] > 0:
+                labels_list.append(row.to_dict(orient='row')[0])
+        if len(labels_list) > 0:
+            return labels_list
+        return None
 
     @staticmethod
     def _compute_heart_rate(waveforms, fs):
