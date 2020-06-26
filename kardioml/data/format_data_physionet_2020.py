@@ -123,6 +123,8 @@ class FormatDataPhysionet2020(object):
         for label in labels:
             row = self.labels_scored[self.labels_scored['SNOMED CT Code'] == label]
             if row.shape[0] > 0:
+                if label == 251180001:
+                    print('ventricular trigeminy')
                 labels_list.append(row.to_dict(orient='row')[0])
         if len(labels_list) > 0:
             return labels_list
