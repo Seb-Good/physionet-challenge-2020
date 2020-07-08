@@ -82,9 +82,6 @@ class FormatDataPhysionet2020(object):
         rpeak_array = self._get_peak_array(waveforms=waveforms, peaks=rpeaks)
         rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=header['fs'])
 
-        # Normalize waveforms
-        waveforms = self._scale_waveforms(waveforms=waveforms, rpeaks=rpeaks)
-
         # Save waveform data npy file
         np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
 
