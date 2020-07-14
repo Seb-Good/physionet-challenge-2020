@@ -14,10 +14,12 @@ import pandas as pd
 import scipy.io as sio
 from biosppy.signals import ecg
 from joblib import Parallel, delayed
+from scipy.signal.windows import blackmanharris
 
 # Local imports
 from kardioml import DATA_PATH, DATA_FILE_NAMES, EXTRACTED_FOLDER_NAMES
 from kardioml.data.data_loader import parse_header
+from kardioml.data.p_t_wave_detector import PTWaveDetection
 
 
 class FormatDataPhysionet2020(object):
@@ -38,7 +40,7 @@ class FormatDataPhysionet2020(object):
         self.labels_scored = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
         self.labels_unscored = pd.read_csv(os.path.join(DATA_PATH, 'labels_unscored.csv'))
 
-    def format(self, extract=True, debug=False):
+    def format(self, extract=True, debug=False, p_and_t_waves=False):
         """Format Physionet2020 dataset."""
         print('Formatting Physionet2020 dataset...')
         # Extract data file
@@ -46,9 +48,9 @@ class FormatDataPhysionet2020(object):
             self._extract_data()
 
         # Format data
-        self._format_data(debug=debug)
+        self._format_data(debug=debug, p_and_t_waves=p_and_t_waves)
 
-    def _format_data(self, debug):
+    def _format_data(self, debug, p_and_t_waves):
         """Format raw data to standard structure."""
         # Create directory for formatted data
         os.makedirs(self.formatted_path, exist_ok=True)
@@ -60,12 +62,12 @@ class FormatDataPhysionet2020(object):
 
         if debug:
             for filename in filenames[0:10]:
-                self._format_sample(filename=filename)
+                self._format_sample(filename=filename, p_and_t_waves=p_and_t_waves)
 
         else:
-            _ = Parallel(n_jobs=-1)(delayed(self._format_sample)(filename) for filename in filenames)
+            _ = Parallel(n_jobs=-1)(delayed(self._format_sample)(filename, p_and_t_waves) for filename in filenames)
 
-    def _format_sample(self, filename):
+    def _format_sample(self, filename, p_and_t_waves):
         """Format individual .mat and .hea sample."""
         # Import header file
         header = self._load_header_file(filename=filename)
@@ -81,6 +83,23 @@ class FormatDataPhysionet2020(object):
         rpeaks = self._get_rpeaks(waveforms=waveforms, fs=header['fs'])
         rpeak_array = self._get_peak_array(waveforms=waveforms, peaks=rpeaks)
         rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=header['fs'])
+
+        # Get P-waves and T-waves
+        if p_and_t_waves:
+            p_waves, t_waves = self._get_p_and_t_waves(waveforms=waveforms, rpeaks=rpeaks)
+            p_wave_array = self._get_peak_array(waveforms=waveforms, peaks=p_waves)
+            p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=header['fs'])
+            t_wave_array = self._get_peak_array(waveforms=waveforms, peaks=t_waves)
+            t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=header['fs'])
+        else:
+            p_waves = None
+            t_waves = None
+            p_wave_array = None
+            p_wave_times = None
+            t_wave_array = None
+            t_wave_times = None
+
+        # rpeak_array, p_wave_array, t_wave_array = self._other_p_and_t_wave(waveforms=waveforms, fs=header['fs'])
 
         # Save waveform data npy file
         np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
@@ -105,6 +124,12 @@ class FormatDataPhysionet2020(object):
                        'rpeaks': rpeaks,
                        'rpeak_array': rpeak_array.tolist(),
                        'rpeak_times': rpeak_times,
+                       'p_waves': p_waves,
+                       'p_wave_array': p_wave_array.tolist(),
+                       'p_wave_times': p_wave_times,
+                       't_waves': t_waves,
+                       't_wave_array': t_wave_array.tolist(),
+                       't_wave_times': t_wave_times,
                        'labels_unscored_SNOMEDCT': [label['SNOMED CT Code'] for label in
                                                     labels_unscored] if labels_unscored else None,
                        'labels_unscored': [label['Abbreviation'] for label in
@@ -120,8 +145,6 @@ class FormatDataPhysionet2020(object):
         for label in labels:
             row = self.labels_scored[self.labels_scored['SNOMED CT Code'] == label]
             if row.shape[0] > 0:
-                if label == 251180001:
-                    print('ventricular trigeminy')
                 labels_list.append(row.to_dict(orient='row')[0])
         if len(labels_list) > 0:
             return labels_list
@@ -153,7 +176,7 @@ class FormatDataPhysionet2020(object):
 
     @staticmethod
     def _get_rpeaks(waveforms, fs):
-        """Calculate median heart rate."""
+        """Find rpeaks."""
         rpeaks = list()
         length = waveforms.shape[0]
         waveforms = np.pad(waveforms, ((200, 200), (0, 0)), 'constant', constant_values=0)
@@ -184,21 +207,27 @@ class FormatDataPhysionet2020(object):
         """Return a binary array of contiguous peak sections."""
         # Create empty array with length of waveform
         peak_array = np.zeros(waveforms.shape[0], dtype=np.float32)
+        window = blackmanharris(21)
 
         if peaks:
             for peak_ids in peaks:
                 if peak_ids:
-                    peak_array[peak_ids] = 1
+                    for peak_id in peak_ids:
+                        if len(peak_array[peak_id - 10:peak_id + 11]) >= 21:
+                            peak_array[peak_id-10:peak_id+11] += window
 
-        sections = self._contiguous_regions(peak_array == 0)
-        for section in sections.tolist():
-            if section[1] - section[0] <= 30:
-                peak_array[section[0]:section[1]] = 1
-
-        sections = self._contiguous_regions(peak_array == 1)
-        for section in sections.tolist():
-            if section[1] - section[0] == 1:
-                peak_array[section[0]:section[1]] = 0
+            peak_array /= np.max(peak_array)
+        #     peak_array[peak_array <= 1] = 0
+        #     peak_array[peak_array > 1] = 1
+        #
+        # sections = self._contiguous_regions(peak_array == 0)
+        # for section in sections.tolist():
+        #     if section[1] - section[0] <= 30:
+        #         peak_array[section[0]:section[1]] = 1
+        # sections = self._contiguous_regions(peak_array == 1)
+        # for section in sections.tolist():
+        #     if section[1] - section[0] <= 2:
+        #         peak_array[section[0]:section[1]] = 0
 
         return peak_array
 
@@ -211,6 +240,37 @@ class FormatDataPhysionet2020(object):
         time = np.arange(waveforms.shape[0]) * 1 / fs
 
         return [[time[section[0]], time[section[1]-1]] for section in sections]
+
+    @staticmethod
+    def _get_p_and_t_waves(waveforms, rpeaks):
+        """Calculate median heart rate."""
+        p_waves = list()
+        t_waves = list()
+        for channel in range(waveforms.shape[1]):
+            try:
+                waves = PTWaveDetection().run(waveforms[:, channel], rpeaks[channel])
+                p_waves.append(waves[0])
+                t_waves.append(waves[1])
+            except Exception:
+                p_waves.append([])
+                t_waves.append([])
+
+        return (p_waves if len([p_wave for p_wave in p_waves if len(p_waves) > 0]) > 0 else None,
+                t_waves if len([t_wave for t_wave in t_waves if len(t_waves) > 0]) > 0 else None)
+
+    @staticmethod
+    def _other_p_and_t_wave(waveforms, rpeaks, fs):
+        waveform_stacked = np.sum(waveforms, axis=1) / waveforms.shape[1]
+        ecg_object = ecg.ecg(signal=waveform_stacked, sampling_rate=fs, show=False)
+        rpeaks = ecg_object['rpeaks']
+        waves = PTWaveDetection().run(waveform_stacked, rpeaks)
+        rpeak_array = np.zeros(waveforms.shape[0], dtype=np.float32)
+        p_wave_array = np.zeros(waveforms.shape[0], dtype=np.float32)
+        t_wave_array = np.zeros(waveforms.shape[0], dtype=np.float32)
+        rpeak_array[rpeaks] = 1
+        p_wave_array[waves[0]] = 1
+        t_wave_array[waves[1]] = 1
+        return rpeak_array, p_wave_array, t_wave_array
 
     def _extract_data(self):
         """Extract the raw dataset file."""

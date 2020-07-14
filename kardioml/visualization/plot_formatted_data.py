@@ -10,7 +10,7 @@ import os
 import json
 import numpy as np
 import matplotlib.pylab as plt
-from ipywidgets import interact, fixed
+from ipywidgets import interact, fixed, IntSlider
 
 # Local imports
 from kardioml import DATA_PATH, ECG_LEADS
@@ -59,9 +59,24 @@ def waveform_plot(filename_id, filenames, path):
         ax1.plot(time, waveforms[:, channel_id] + shift, '-k', lw=2)
         ax1.plot(time[meta_data['rpeaks'][channel_id]],
                  waveforms[meta_data['rpeaks'][channel_id], channel_id] + shift, 'ob')
-        ax1.text(0.1, 0.25 + shift, ECG_LEADS[channel_id], color='red', fontsize=16, ha='left')
+        try:
+            ax1.plot(time[meta_data['p_waves'][channel_id]],
+                     waveforms[meta_data['p_waves'][channel_id], channel_id] + shift, 'or')
+            ax1.plot(time[meta_data['t_waves'][channel_id]],
+                     waveforms[meta_data['t_waves'][channel_id], channel_id] + shift, 'og')
+            ax1.text(0.1, 0.25 + shift, ECG_LEADS[channel_id], color='red', fontsize=16, ha='left')
+        except:
+            pass
         shift += 3
     ax1.plot(time, np.array(meta_data['rpeak_array']) + shift, '-k', lw=2)
+    ax1.text(0.1, -1.25 + shift, 'R-Peaks', color='red', fontsize=16, ha='left')
+    try:
+        ax1.plot(time, np.array(meta_data['p_wave_array']) + shift + 3, '-k', lw=2)
+        ax1.text(0.1, -1.25 + shift + 3, 'P-Waves', color='red', fontsize=16, ha='left')
+        ax1.plot(time, np.array(meta_data['t_wave_array']) + shift + 6, '-k', lw=2)
+        ax1.text(0.1, -1.25 + shift + 6, 'T-Waves', color='red', fontsize=16, ha='left')
+    except:
+        pass
 
     # Axes labels
     ax1.set_xlabel('Time, seconds', fontsize=24)
@@ -82,6 +97,6 @@ def waveform_plot_interact(dataset):
     filenames = [filename.split('.')[0] for filename in os.listdir(path) if 'npy' in filename]
 
     interact(waveform_plot,
-             filename_id=(0, len(filenames) - 1, 1),
+             filename_id=IntSlider(value=0, min=0, max=len(filenames) - 1, step=1,),
              filenames=fixed(filenames),
              path=fixed(path))
