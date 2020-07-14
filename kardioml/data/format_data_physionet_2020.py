@@ -217,7 +217,7 @@ class FormatDataPhysionet2020(object):
                             peak_array[peak_id-10:peak_id+11] += window
 
             peak_array /= np.max(peak_array)
-        #     peak_array[peak_array <= 1] = 0
+            peak_array[peak_array <= 1] = 0
         #     peak_array[peak_array > 1] = 1
         #
         # sections = self._contiguous_regions(peak_array == 0)
