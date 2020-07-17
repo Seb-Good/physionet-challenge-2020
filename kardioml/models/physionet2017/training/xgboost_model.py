@@ -40,9 +40,7 @@ class Model(object):
     def tune_hyper_parameters(self, param_bounds, n_iter=10):
         """Run hyper-parameter optimization."""
         # Initialize optimizer
-        self.optimizer = BayesianOptimization(f=self.cross_validate,
-                                              pbounds=param_bounds,
-                                              random_state=0)
+        self.optimizer = BayesianOptimization(f=self.cross_validate, pbounds=param_bounds, random_state=0)
 
         # Run optimization
         self.optimizer.maximize(init_points=5, n_iter=n_iter, acq='ucb', kappa=3, alpha=1e-10)
@@ -56,7 +54,7 @@ class Model(object):
         # Train final model
         self.train_final_model(params=self.params)
 
-    def cross_validate(self, learning_rate, n_estimators, max_depth, subsample, colsample,
+    def cross_validate(self, learning_rate, n_estimators, max_depth, subsample, colsample_bytree,
                        gamma, min_child_weight, max_delta_step):
         """Run cross validation."""
         # Force data type
@@ -65,7 +63,7 @@ class Model(object):
 
         # Set parameters
         params = {'learning_rate': learning_rate, 'n_estimators': n_estimators, 'max_depth': max_depth,
-                  'subsample': subsample, 'colsample': colsample, 'gamma': gamma,
+                  'subsample': subsample, 'colsample_bytree': colsample_bytree, 'gamma': gamma,
                   'min_child_weight': min_child_weight, 'max_delta_step': max_delta_step}
 
         # Initialize model
@@ -73,7 +71,7 @@ class Model(object):
                                                   n_estimators=n_estimators,
                                                   max_depth=max_depth,
                                                   subsample=subsample,
-                                                  colsample=colsample,
+                                                  colsample_bytree=colsample_bytree,
                                                   gamma=gamma,
                                                   min_child_weight=min_child_weight,
                                                   max_delta_step=max_delta_step,
@@ -83,7 +81,7 @@ class Model(object):
         cv_scores = self.compute_cv_scores(model=model, params=params)
 
         # Compute score for optimization
-        return np.mean([cv_score['cv_score'].test_f_measure for cv_index, cv_score in cv_scores.items()])
+        return np.mean([cv_score['cv_score'].test_challenge_metric for cv_index, cv_score in cv_scores.items()])
 
     def compute_cv_scores(self, model, params):
         """Compute cross validation metrics."""
@@ -116,7 +114,7 @@ class Model(object):
                                                   n_estimators=int(self.params['n_estimators']),
                                                   max_depth=int(self.params['max_depth']),
                                                   subsample=self.params['subsample'],
-                                                  colsample=self.params['colsample'],
+                                                  colsample_bytree=self.params['colsample_bytree'],
                                                   gamma=self.params['gamma'],
                                                   min_child_weight=self.params['min_child_weight'],
                                                   max_delta_step=self.params['max_delta_step'],
@@ -134,7 +132,7 @@ class Model(object):
                                                        n_estimators=int(params['n_estimators']),
                                                        max_depth=int(params['max_depth']),
                                                        subsample=params['subsample'],
-                                                       colsample=params['colsample'],
+                                                       colsample_bytree=params['colsample_bytree'],
                                                        gamma=params['gamma'],
                                                        min_child_weight=params['min_child_weight'],
                                                        max_delta_step=params['max_delta_step'],
@@ -156,12 +154,11 @@ class Model(object):
         with open(os.path.join(WORKING_PATH, 'models', 'physionet2017', 'physionet2017.model'), 'wb') as f:
             pickle.dump(self, f)
 
-    def challenge_prediction(self, data, header_data):
+    def challenge_prediction(self, data, header_data, lead):
         """Get final predictions for competition inference."""
         # Get features
-        features = Features(filename=None, waveform_data=data, header_data=header_data)
-        features.extract_features(lead='I', feature_groups=['full_waveform_features',
-                                                            'rri_features', 'template_features'],
+        features = Features(filename=None, waveform_data=data, header_data=header_data, lead=lead)
+        features.extract_features(feature_groups=['full_waveform_features', 'rri_features', 'template_features'],
                                   filter_bandwidth=FILTER_BAND_LIMITS)
 
         # Get prediction output

@@ -16,6 +16,9 @@ DATA_PATH = os.path.join(WORKING_PATH, 'data')
 # Set output directory
 OUTPUT_PATH = os.path.join(WORKING_PATH, 'output')
 
+# Set weights directory
+WEIGHTS_PATH = os.path.join(WORKING_PATH, 'kardioml', 'scoring', 'weights.csv')
+
 # Dataset file name
 DATA_FILE_NAMES = {'A': 'PhysioNetChallenge2020_Training_CPSC.tar.gz',
                    'B': 'PhysioNetChallenge2020_Training_2.tar.gz',

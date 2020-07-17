@@ -235,30 +235,30 @@ class TemplateFeatures:
         """
         Debug
         """
-        import matplotlib.pylab as plt
-        plt.plot(self.templates, '-', c=[0.7, 0.7, 0.7])
-        plt.plot(self.median_template, '-k')
-        plt.plot([qrs_start_sp, qrs_start_sp], [self.median_template.min(), self.median_template.max()], '-r')
-        plt.plot([qrs_end_sp, qrs_end_sp], [self.median_template.min(), self.median_template.max()], '-r')
-
-        plt.plot(self.q_times_sp, self.q_amps, '.r')
-        plt.plot(self.q_time_sp, self.q_amp, '.b', ms=10)
-
-        plt.plot(self.p_times_sp, self.p_amps, '.r')
-        plt.plot(self.p_time_sp, self.p_amp, '.b', ms=10)
-
-        plt.plot(self.s_times_sp, self.s_amps, '.r')
-        plt.plot(self.s_time_sp, self.s_amp, '.b', ms=10)
-
-        plt.plot(self.t_times_sp, self.t_amps, '.r')
-        plt.plot(self.t_time_sp, self.t_amp, '.b', ms=10)
-
-        plt.plot([self.p_time_sp-10, self.p_time_sp+10], [0, 0], '-g')
-        plt.plot([self.t_time_sp-10, self.t_time_sp+10], [0, 0], '-g')
-
-        plt.ylim([self.median_template.min(), self.median_template.max()])
-
-        plt.show()
+        # import matplotlib.pylab as plt
+        # plt.plot(self.templates, '-', c=[0.7, 0.7, 0.7])
+        # plt.plot(self.median_template, '-k')
+        # plt.plot([qrs_start_sp, qrs_start_sp], [self.median_template.min(), self.median_template.max()], '-r')
+        # plt.plot([qrs_end_sp, qrs_end_sp], [self.median_template.min(), self.median_template.max()], '-r')
+        #
+        # plt.plot(self.q_times_sp, self.q_amps, '.r')
+        # plt.plot(self.q_time_sp, self.q_amp, '.b', ms=10)
+        #
+        # plt.plot(self.p_times_sp, self.p_amps, '.r')
+        # plt.plot(self.p_time_sp, self.p_amp, '.b', ms=10)
+        #
+        # plt.plot(self.s_times_sp, self.s_amps, '.r')
+        # plt.plot(self.s_time_sp, self.s_amp, '.b', ms=10)
+        #
+        # plt.plot(self.t_times_sp, self.t_amps, '.r')
+        # plt.plot(self.t_time_sp, self.t_amp, '.b', ms=10)
+        #
+        # plt.plot([self.p_time_sp-10, self.p_time_sp+10], [0, 0], '-g')
+        # plt.plot([self.t_time_sp-10, self.t_time_sp+10], [0, 0], '-g')
+        #
+        # plt.ylim([self.median_template.min(), self.median_template.max()])
+        #
+        # plt.show()
 
     """
     Feature Methods
