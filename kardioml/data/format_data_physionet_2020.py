@@ -77,7 +77,7 @@ class FormatDataPhysionet2020(object):
         labels_unscored = self._get_unscored_labels(labels=header['labels_SNOMEDCT'])
 
         # Import matlab file
-        waveforms = self._load_mat_file(filename=filename) / header['amp_conversion']
+        waveforms = self._load_mat_file(filename=filename)
 
         # Get rpeaks
         rpeaks = self._get_rpeaks(waveforms=waveforms, fs=header['fs'])
