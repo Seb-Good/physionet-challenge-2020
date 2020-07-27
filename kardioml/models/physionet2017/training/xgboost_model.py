@@ -81,7 +81,7 @@ class Model(object):
         cv_scores = self.compute_cv_scores(model=model, params=params)
 
         # Compute score for optimization
-        return np.mean([cv_score['cv_score'].test_challenge_metric for cv_index, cv_score in cv_scores.items()])
+        return np.mean([cv_score['cv_score'].test_accuracy for cv_index, cv_score in cv_scores.items()])
 
     def compute_cv_scores(self, model, params):
         """Compute cross validation metrics."""
