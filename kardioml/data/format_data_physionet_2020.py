@@ -87,19 +87,13 @@ class FormatDataPhysionet2020(object):
         # Get P-waves and T-waves
         if p_and_t_waves:
             p_waves, t_waves = self._get_p_and_t_waves(waveforms=waveforms, rpeaks=rpeaks)
-            p_wave_array = self._get_peak_array(waveforms=waveforms, peaks=p_waves)
-            p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=header['fs'])
-            t_wave_array = self._get_peak_array(waveforms=waveforms, peaks=t_waves)
-            t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=header['fs'])
         else:
-            p_waves = None
-            t_waves = None
-            p_wave_array = None
-            p_wave_times = None
-            t_wave_array = None
-            t_wave_times = None
-
-        # rpeak_array, p_wave_array, t_wave_array = self._other_p_and_t_wave(waveforms=waveforms, fs=header['fs'])
+            p_waves = [None for _ in range(header['num_leads'])]
+            t_waves = [None for _ in range(header['num_leads'])]
+        p_wave_array = self._get_peak_array(waveforms=waveforms, peaks=p_waves)
+        p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=header['fs'])
+        t_wave_array = self._get_peak_array(waveforms=waveforms, peaks=t_waves)
+        t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=header['fs'])
 
         # Save waveform data npy file
         np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
@@ -136,6 +130,7 @@ class FormatDataPhysionet2020(object):
                                            labels_unscored] if labels_unscored else None,
                        'labels_unscored_full': [label['Dx'] for label in
                                                 labels_unscored] if labels_unscored else None,
+                       'p_and_t_waves': p_and_t_waves
                        },
                       file, sort_keys=False, indent=4)
 
@@ -203,32 +198,20 @@ class FormatDataPhysionet2020(object):
 
         return rpeaks if len([rpeak for rpeak in rpeaks if len(rpeaks) > 0]) > 0 else None
 
-    def _get_peak_array(self, waveforms, peaks):
+    @staticmethod
+    def _get_peak_array(waveforms, peaks):
         """Return a binary array of contiguous peak sections."""
         # Create empty array with length of waveform
         peak_array = np.zeros(waveforms.shape[0], dtype=np.float32)
         window = blackmanharris(21)
-
-        if peaks:
+        if len([True for peak_ids in peaks if peak_ids is not None]) >= 1:
             for peak_ids in peaks:
                 if peak_ids:
                     for peak_id in peak_ids:
                         if len(peak_array[peak_id - 10:peak_id + 11]) >= 21:
                             peak_array[peak_id-10:peak_id+11] += window
-
-            peak_array /= np.max(peak_array)
             peak_array[peak_array <= 1] = 0
-        #     peak_array[peak_array > 1] = 1
-        #
-        # sections = self._contiguous_regions(peak_array == 0)
-        # for section in sections.tolist():
-        #     if section[1] - section[0] <= 30:
-        #         peak_array[section[0]:section[1]] = 1
-        # sections = self._contiguous_regions(peak_array == 1)
-        # for section in sections.tolist():
-        #     if section[1] - section[0] <= 2:
-        #         peak_array[section[0]:section[1]] = 0
-
+            peak_array /= np.max(peak_array)
         return peak_array
 
     def _get_peak_times(self, waveforms, peak_array, fs):

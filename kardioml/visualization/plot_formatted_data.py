@@ -27,6 +27,9 @@ def waveform_plot(filename_id, filenames, path):
     # Import meta data
     meta_data = json.load(open(os.path.join(path, '{}.json'.format(filename))))
 
+    # Scale waveforms
+    waveforms = waveforms / np.median(waveforms[meta_data['rpeaks'][0], 0])
+
     # Get label
     label = ''
     if meta_data['labels']:
@@ -59,24 +62,20 @@ def waveform_plot(filename_id, filenames, path):
         ax1.plot(time, waveforms[:, channel_id] + shift, '-k', lw=2)
         ax1.plot(time[meta_data['rpeaks'][channel_id]],
                  waveforms[meta_data['rpeaks'][channel_id], channel_id] + shift, 'ob')
-        try:
+        if meta_data['p_and_t_waves']:
             ax1.plot(time[meta_data['p_waves'][channel_id]],
                      waveforms[meta_data['p_waves'][channel_id], channel_id] + shift, 'or')
             ax1.plot(time[meta_data['t_waves'][channel_id]],
                      waveforms[meta_data['t_waves'][channel_id], channel_id] + shift, 'og')
             ax1.text(0.1, 0.25 + shift, ECG_LEADS[channel_id], color='red', fontsize=16, ha='left')
-        except:
-            pass
         shift += 3
     ax1.plot(time, np.array(meta_data['rpeak_array']) + shift, '-k', lw=2)
     ax1.text(0.1, -1.25 + shift, 'R-Peaks', color='red', fontsize=16, ha='left')
-    try:
+    if meta_data['p_and_t_waves']:
         ax1.plot(time, np.array(meta_data['p_wave_array']) + shift + 3, '-k', lw=2)
         ax1.text(0.1, -1.25 + shift + 3, 'P-Waves', color='red', fontsize=16, ha='left')
         ax1.plot(time, np.array(meta_data['t_wave_array']) + shift + 6, '-k', lw=2)
         ax1.text(0.1, -1.25 + shift + 6, 'T-Waves', color='red', fontsize=16, ha='left')
-    except:
-        pass
 
     # Axes labels
     ax1.set_xlabel('Time, seconds', fontsize=24)
