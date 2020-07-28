@@ -11,10 +11,10 @@ class PTWaveDetection(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.weights_LPF = torch.Tensor(np.array([1] * 31)).cuda()
+        self.weights_LPF = torch.Tensor(np.array([1] * 61))
         self.weights_LPF = self.weights_LPF.view(1, 1, self.weights_LPF.shape[0])
         self.padding_LPF = int((self.weights_LPF.shape[2] - 1) / 2)
-        self.padding_LPF = torch.Tensor(np.zeros((self.padding_LPF))).cuda()
+        self.padding_LPF = torch.Tensor(np.zeros((self.padding_LPF)))
 
     def FIR_filt(self, input, weight, padding_vector):
         input = torch.cat((input, padding_vector), 0)
@@ -40,11 +40,10 @@ class PTWaveDetection(nn.Module):
 
         self.eval()
         X = torch.tensor(X, dtype=torch.float)
-        X = X.cuda()
         X_filt = self.forward(X)
 
-        X_filt = X_filt.cpu().detach().numpy()
-        X = X.cpu().detach().numpy()
+        X_filt = X_filt.numpy()
+        X = X.numpy()
 
         twaves = []
         pwaves = []
@@ -72,7 +71,7 @@ class PTWaveDetection(nn.Module):
                 twaves.append(rpeaks[i] + T_wave[0])
 
             if len(P_wave) > 0:
-                if len(PR) - P_wave[-1][0] < 45:
+                if len(PR) - P_wave[-1][0] < 90:
                     del P_wave[-1]
                 if len(P_wave) > 0:
                     P_wave = P_wave[-1]
@@ -91,7 +90,8 @@ class PTWaveDetection(nn.Module):
 
         twaves = np.array(twaves)
         pwaves = np.array(pwaves)
-        return twaves, pwaves, X_filt
+
+        return twaves, pwaves
 
 
 @numba.jit(nopython=False, parallel=False)

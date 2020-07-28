@@ -112,10 +112,10 @@ class Resampling(nn.Module):
                 -0.0003963,
                 0.0003753,
             ]
-        ).cuda()
+        )
         self.weights_LPF_2 = self.weights_LPF_2.view(1, 1, self.weights_LPF_2.shape[0])
         self.padding_LPF_2 = int((self.weights_LPF_2.shape[2] - 1) / 2)
-        self.padding_LPF_2 = torch.Tensor(np.zeros((self.padding_LPF_2))).cuda()
+        self.padding_LPF_2 = torch.Tensor(np.zeros((self.padding_LPF_2)))
 
         self.weights_LPF_4 = torch.Tensor(
             [
@@ -220,10 +220,10 @@ class Resampling(nn.Module):
                 0.0005240119228498987,
                 0.00023329518048871125,
             ]
-        ).cuda()
+        )
         self.weights_LPF_4 = self.weights_LPF_4.view(1, 1, self.weights_LPF_4.shape[0])
         self.padding_LPF_4 = int((self.weights_LPF_4.shape[2] - 1) / 2)
-        self.padding_LPF_4 = torch.Tensor(np.zeros((self.padding_LPF_4))).cuda()
+        self.padding_LPF_4 = torch.Tensor(np.zeros((self.padding_LPF_4)))
 
     def FIR_filt(self, input, weight, padding_vector):
         input = torch.cat((input, padding_vector), 0)
@@ -253,9 +253,9 @@ class Resampling(nn.Module):
 
             self.eval()
             resampled = torch.tensor(resampled, dtype=torch.float)
-            resampled = resampled.cuda()
+            resampled = resampled
             resampled = self.forward(resampled, order=2)
-            resampled = resampled.cpu().detach().numpy()
+            resampled = resampled.numpy()
 
         elif order == int(4):
             resampled = np.zeros((X.shape[0]) * 4)
@@ -264,8 +264,8 @@ class Resampling(nn.Module):
 
             self.eval()
             resampled = torch.tensor(resampled, dtype=torch.float)
-            resampled = resampled.cuda()
+            resampled = resampled
             resampled = self.forward(resampled, order=4)
-            resampled = resampled.cpu().detach().numpy()
+            resampled = resampled.numpy()
 
         return resampled
