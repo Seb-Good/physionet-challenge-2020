@@ -11,6 +11,7 @@ import json
 import shutil
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 import scipy.io as sio
 from biosppy.signals import ecg
 from joblib import Parallel, delayed
@@ -40,7 +41,7 @@ class FormatDataPhysionet2020(object):
         self.labels_scored = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
         self.labels_unscored = pd.read_csv(os.path.join(DATA_PATH, 'labels_unscored.csv'))
 
-    def format(self, extract=True, debug=False, p_and_t_waves=False):
+    def format(self, extract=True, debug=False, p_and_t_waves=False, parallel=False):
         """Format Physionet2020 dataset."""
         print('Formatting Physionet2020 dataset...')
         # Extract data file
@@ -48,9 +49,9 @@ class FormatDataPhysionet2020(object):
             self._extract_data()
 
         # Format data
-        self._format_data(debug=debug, p_and_t_waves=p_and_t_waves)
+        self._format_data(debug=debug, p_and_t_waves=p_and_t_waves, parallel=parallel)
 
-    def _format_data(self, debug, p_and_t_waves):
+    def _format_data(self, debug, p_and_t_waves, parallel):
         """Format raw data to standard structure."""
         # Create directory for formatted data
         os.makedirs(self.formatted_path, exist_ok=True)
@@ -63,9 +64,11 @@ class FormatDataPhysionet2020(object):
         if debug:
             for filename in filenames[0:10]:
                 self._format_sample(filename=filename, p_and_t_waves=p_and_t_waves)
-
-        else:
+        elif parallel:
             _ = Parallel(n_jobs=-1)(delayed(self._format_sample)(filename, p_and_t_waves) for filename in filenames)
+        else:
+            for idx in tqdm(range(len(filenames))):
+                self._format_sample(filename=filenames[idx], p_and_t_waves=p_and_t_waves)
 
     def _format_sample(self, filename, p_and_t_waves):
         """Format individual .mat and .hea sample."""
