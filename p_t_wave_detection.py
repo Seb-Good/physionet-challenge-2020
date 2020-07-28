@@ -60,6 +60,8 @@ class PTWaveDetection(nn.Module):
                 PR = X_filt[int(rpeaks[i] - 1 * (rpeaks[i] - rpeaks[i - 1]) / 4) : rpeaks[i]].copy()
                 RT = X_filt[rpeaks[i] : int(rpeaks[i] + 3 * (rpeaks[i + 1] - rpeaks[i]) / 4)].copy()
 
+
+
             PR /= max(PR)
             RT /= max(RT)
 
