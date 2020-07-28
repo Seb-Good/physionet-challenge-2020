@@ -56,12 +56,12 @@ def compute_beta_score(labels, output, beta, num_classes, check_errors=True):
                 tn += 1 / num_labels
 
         # Summarize contingency table.
-        if ((1 + beta ** 2) * tp + (fn * beta ** 2) + fp):
+        if (1 + beta ** 2) * tp + (fn * beta ** 2) + fp:
             fbeta_l[j] = float((1 + beta ** 2) * tp) / float(((1 + beta ** 2) * tp) + (fn * beta ** 2) + fp)
         else:
             fbeta_l[j] = 1.0
 
-        if (tp + fp + beta * fn):
+        if tp + fp + beta * fn:
             gbeta_l[j] = float(tp) / float(tp + fp + beta * fn)
         else:
             gbeta_l[j] = 1.0
@@ -113,7 +113,7 @@ def compute_auc(labels, probabilities, num_classes, check_errors=True):
     auprc = 0
 
     # Weight function - this will change
-    C_l = np.ones(num_classes);
+    C_l = np.ones(num_classes)
 
     # Populate contingency table.
     num_recordings = len(labels)

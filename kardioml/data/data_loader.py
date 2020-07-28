@@ -97,9 +97,18 @@ def parse_header(header_data):
     sex = get_sex(sex=header_data[14].split(':')[-1].strip())
     labels_snomedct = [int(label) for label in header_data[15].split(':')[-1].strip().split(',')]
 
-    return {'filename': filename, 'datetime': datetime, 'channel_order': channel_order, 'age': age, 'sex': sex,
-            'labels_SNOMEDCT': labels_snomedct, 'amp_conversion': amp_conversion, 'fs': fs,
-            'length': length, 'num_leads': num_leads}
+    return {
+        'filename': filename,
+        'datetime': datetime,
+        'channel_order': channel_order,
+        'age': age,
+        'sex': sex,
+        'labels_SNOMEDCT': labels_snomedct,
+        'amp_conversion': amp_conversion,
+        'fs': fs,
+        'length': length,
+        'num_leads': num_leads,
+    }
 
 
 def get_sex(sex):

@@ -10,6 +10,7 @@ in a guided way.
 @author: T. Teijeiro
 """
 
+
 def choice(seq):
     """
     Return a user-selected element from the non-empty sequence seq. If seq is
@@ -19,15 +20,16 @@ def choice(seq):
         raise IndexError('Empty seq')
     elif len(seq) == 1:
         return seq[0]
-    #If seq has more than one element, we show all the elements, and ask for an
-    #index to return.
+    # If seq has more than one element, we show all the elements, and ask for an
+    # index to return.
     for i in range(len(seq)):
-        print i,': ', seq[i]
+        print i, ': ', seq[i]
     idx = input('Select index: ')
     return seq[idx]
-    
-    
+
+
 if __name__ == "__main__":
     import random
+
     seq = random.sample(range(10), 3)
     print ('Selected item: ' + str(choice(seq)))

@@ -19,9 +19,10 @@ class CardiacCycle(Observable):
 
     def __init__(self):
         super(CardiacCycle, self).__init__()
-        #All rhythms have some representative measurements of their constituent
-        #cycles.
+        # All rhythms have some representative measurements of their constituent
+        # cycles.
         self.meas = CycleMeasurements((0, 0), (0, 0), (0, 0))
+
 
 @singleton_observable
 class FirstBeat(CardiacCycle):
@@ -29,10 +30,11 @@ class FirstBeat(CardiacCycle):
     Class to represent the first heartbeat in a interpretation, used to
     break the recursion in the search for the previous beat.
     """
+
     pass
 
 
 class Normal_Cycle(CardiacCycle):
     """This class represents a normal cardiac cycle, with all its components"""
-    pass
 
+    pass

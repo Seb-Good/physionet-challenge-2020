@@ -17,8 +17,9 @@ def filter_signal(x, fs, fmin, fmax):
 
 # assumes that x is an np.array
 def reflect_signal(x, window_len):
-    return np.concatenate((np.concatenate((x[window_len:0:-1], x)),
-                           x[(len(x) - 2):(len(x) - 2 - window_len):-1]))
+    return np.concatenate(
+        (np.concatenate((x[window_len:0:-1], x)), x[(len(x) - 2) : (len(x) - 2 - window_len) : -1])
+    )
 
 
 # returns a list with [time result_applying_fun_by_windows]
@@ -30,8 +31,7 @@ def reflect_and_rollapply(x, window_len, fun):
     xr = reflect_signal(x, reflect_len)
     yr = rollapply(xr, window_len, fun, 1, True)
     # remove first reflect_len and last reflect_len samples, they are not 'real'
-    return [range(len(x)),
-            yr[1][reflect_len:(len(yr[0]) - reflect_len)]]
+    return [range(len(x)), yr[1][reflect_len : (len(yr[0]) - reflect_len)]]
 
 
 def rollapply(x, window_len, fun, window_shift=1, do_extend=False):
@@ -48,9 +48,11 @@ def rollapply(x, window_len, fun, window_shift=1, do_extend=False):
         # so we have to add len(x) - 1 - (ver_idx[-1] + int(window_len / 2.0))
         # + 1 samples at the end
         result = np.concatenate(
-            (np.concatenate((np.repeat(result[0], int(window_len / 2.0) - 1),
-                             result)), np.repeat(result[-1], len(x)
-                                       - ver_idx[-1] - int(window_len / 2.0))))
+            (
+                np.concatenate((np.repeat(result[0], int(window_len / 2.0) - 1), result)),
+                np.repeat(result[-1], len(x) - ver_idx[-1] - int(window_len / 2.0)),
+            )
+        )
         # add time indices to the result
         result = [range(len(x)), result]
     else:
@@ -59,8 +61,7 @@ def rollapply(x, window_len, fun, window_shift=1, do_extend=False):
     return result
 
 
-def is_valid_amplitude(x, min_limit, max_limit, min_range, max_range,
-                                                         tolerance, block_len):
+def is_valid_amplitude(x, min_limit, max_limit, min_range, max_range, tolerance, block_len):
     x_min = np.min(x)
     x_max = np.max(x)
     x_range = x_max - x_min
@@ -82,12 +83,12 @@ def is_valid_amplitude(x, min_limit, max_limit, min_range, max_range,
     left_block = x[:block_len]
     right_block = x[block_len:]
     if (x_range > x_range / 10) and (
-                (np.min(right_block) > th and np.max(left_block) < tl) or
-                (np.min(left_block) > th and np.max(right_block) < tl)):
+        (np.min(right_block) > th and np.max(left_block) < tl)
+        or (np.min(left_block) > th and np.max(right_block) < tl)
+    ):
         return False
     # avoid repeated values
-    if (np.min(left_block) == np.max(left_block)
-                                or np.min(right_block) == np.max(right_block)):
+    if np.min(left_block) == np.max(left_block) or np.min(right_block) == np.max(right_block):
         return False
     # signal oscillation between 2 values
     if np.percentile(x, 60) == x_max or np.percentile(x, 40) == x_min:
@@ -103,8 +104,8 @@ def is_valid_histogram(x):
     hist, _ = np.histogram(x, nbins)
     sum_perifery = hist[0] + hist[nbins - 1]
     sum_center = np.sum(hist[range(1, nbins - 1)])
-    return (sum_center > sum_perifery or hist[0] < sum_center * per
-                                         or hist[nbins - 1] < sum_center * per)
+    return sum_center > sum_perifery or hist[0] < sum_center * per or hist[nbins - 1] < sum_center * per
+
 
 def mean_profile(x):
     return np.mean(np.abs(np.diff(x)))
@@ -114,21 +115,22 @@ def update_result(result, indices, win_len):
     half_win_len = int(win_len / 2.0)
     if win_len % 2 == 0:
         for i in indices:
-            result[(i - half_win_len + 1):(i + half_win_len + 1)] = True
+            result[(i - half_win_len + 1) : (i + half_win_len + 1)] = True
     else:
         for i in indices:
-            result[(i - half_win_len):(i + half_win_len + 1)] = True
+            result[(i - half_win_len) : (i + half_win_len + 1)] = True
+
 
 def get_episode_info(result):
     # find the start an end of episodes by using diff
     diff_result = np.diff(result.astype(int))
     episode_limits = [i for i, val in enumerate(diff_result) if val != 0]
     # There is an episode at the beginning of result.
-    #Add an additional mark representing the beginning of this episode
+    # Add an additional mark representing the beginning of this episode
     if result[0]:
         episode_limits.insert(0, -1)
     # There is an episode at the end of result.
-    #Add an additional mark representing the end of this episode
+    # Add an additional mark representing the end of this episode
     if result[-1]:
         episode_limits.append(len(episode_limits) - 1)
     # print jumps
@@ -138,6 +140,7 @@ def get_episode_info(result):
     # odd positions are the distances between episodes
     distances = np.diff(episode_limits)
     return distances, episode_limits
+
 
 def join_close_episodes(result, invalid_connect_len):
     episode_limits, jumps = get_episode_info(result)
@@ -162,8 +165,7 @@ def remove_small_episodes(result, minimum_episode_len):
             result[episode_beg:episode_end] = False
 
 
-def validity_test(tested_signal, min_value, max_value, min_range, max_range,
-                                                       min_range_large_window):
+def validity_test(tested_signal, min_value, max_value, min_range, max_range, min_range_large_window):
     profile_window = int(2 * SAMPLING_FREQ)
     profile_threshold = 0.02
     win_len = 240
@@ -177,45 +179,40 @@ def validity_test(tested_signal, min_value, max_value, min_range, max_range,
     # True means invalid signal
     result = np.repeat(False, len(tested_signal))
 
-
     hf_signal = filter_signal(tested_signal, SAMPLING_FREQ, 70.0, 90.0)
 
     # Amplitude-based tests
-    test_indices = rollapply(tested_signal, larger_win_len,
-                             lambda x: (np.max(x) - np.min(x))
-                                         < min_range_large_window
-                                             or np.isnan(x).any()
-                                             or np.isinf(x).any(),
-                                                               larger_win_step)
+    test_indices = rollapply(
+        tested_signal,
+        larger_win_len,
+        lambda x: (np.max(x) - np.min(x)) < min_range_large_window or np.isnan(x).any() or np.isinf(x).any(),
+        larger_win_step,
+    )
     update_result(result, test_indices[0][test_indices[1]], larger_win_len)
 
     invalid_indices = set()
     # Profile-based tests
-    _, profile_signal = reflect_and_rollapply(tested_signal, profile_window,
-                                                                  mean_profile)
-    #plt.plot(tested_signal)
-    #plt.plot(profile_signal * 100)
+    _, profile_signal = reflect_and_rollapply(tested_signal, profile_window, mean_profile)
+    # plt.plot(tested_signal)
+    # plt.plot(profile_signal * 100)
     result = np.logical_or(result, profile_signal > profile_threshold)
 
     # Amplitude-based tests with smaller window and additional tests
-    test_indices = rollapply(tested_signal, win_len,
-                             lambda x: not is_valid_amplitude(x, min_value,
-                                                              max_value,
-                                                              min_range,
-                                                              max_range,
-                                                              tolerance,
-                                                              block_len),
-                                                                      win_step)
+    test_indices = rollapply(
+        tested_signal,
+        win_len,
+        lambda x: not is_valid_amplitude(
+            x, min_value, max_value, min_range, max_range, tolerance, block_len
+        ),
+        win_step,
+    )
     invalid_indices.update(set(test_indices[0][test_indices[1]].flatten()))
     # High-frequency test
-    test_indices = rollapply(hf_signal, win_len,
-                             lambda x: np.min(np.abs(hf_signal)) > 0.005,
-                             win_step)
+    test_indices = rollapply(hf_signal, win_len, lambda x: np.min(np.abs(hf_signal)) > 0.005, win_step)
     invalid_indices.update(set(test_indices[0][test_indices[1]].flatten()))
 
     # Histogram based tests
-    test_indices = rollapply(tested_signal, win_len,
-                             lambda (x): not is_valid_histogram(x), win_step)
+    test_indices = rollapply(tested_signal, win_len, lambda (x): not is_valid_histogram(x), win_step)
     invalid_indices.update(set(test_indices[0][test_indices[1]].flatten()))
 
     update_result(result, invalid_indices, win_len)
@@ -226,10 +223,12 @@ def validity_test(tested_signal, min_value, max_value, min_range, max_range,
 
     return result
 
+
 # input signal is supposed to be in physical units!!!
 def detect_invalid_areas(input_signal):
     # return validity_test(input_signal, -7, 7, 0.005, 8, 0.02)
     return validity_test(input_signal, -4, 4, 0.005, 8, 0.02)
+
 
 def get_intervals(invalid):
     """
@@ -238,38 +237,39 @@ def get_intervals(invalid):
     if len(invalid) == 0:
         return []
     intervals = []
-    tp = np.where(np.diff(invalid)!=0)[0]
+    tp = np.where(np.diff(invalid) != 0)[0]
     for i in range(len(tp)):
         if invalid[tp[i]]:
-            beg = tp[i-1] if i > 0 else 0
+            beg = tp[i - 1] if i > 0 else 0
             intervals.append(Iv(beg, tp[i]))
     if invalid[-1]:
         beg = tp[-1] if len(tp) > 0 else 0
-        intervals.append(Iv(beg, len(invalid)-1))
+        intervals.append(Iv(beg, len(invalid) - 1))
     return intervals
+
 
 def noise_autoxcorr(fragment):
     xcoefs = []
     if np.mean(fragment) > np.median(fragment):
-        #Positive peaks
+        # Positive peaks
         tp = signal.argrelmax(fragment, order=50)[0]
         pc = np.percentile(fragment, range(50, 100))
-        pkthres = pc[np.argmax(np.diff(pc))+1]
+        pkthres = pc[np.argmax(np.diff(pc)) + 1]
         tp = tp[fragment[tp] > pkthres]
     else:
-        #Negative peaks
+        # Negative peaks
         tp = signal.argrelmin(fragment, order=50)[0]
         pc = np.percentile(fragment, range(1, 51))
-        pkthres = pc[np.argmax(np.diff(pc))+1]
+        pkthres = pc[np.argmax(np.diff(pc)) + 1]
         tp = tp[fragment[tp] < pkthres]
     if len(tp) < 2:
         return 0.0
     for i in range(1, len(tp)):
-        delay = tp[i]-tp[0]
+        delay = tp[i] - tp[0]
         tr1, tr2 = fragment[:-delay], fragment[delay:]
-        xcoefs.append((np.correlate(tr1, tr2)/
-                      np.sqrt(np.dot(tr1,tr1) * np.dot(tr2,tr2)))[0])
+        xcoefs.append((np.correlate(tr1, tr2) / np.sqrt(np.dot(tr1, tr1) * np.dot(tr2, tr2)))[0])
     return np.median(xcoefs)
+
 
 def noise_intervals(signal):
     """
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     plt.plot(time, invalid)
     intervs = get_intervals(invalid)
     for iv in intervs:
-        fragment = series[iv.start:iv.end+1]
+        fragment = series[iv.start : iv.end + 1]
         xc = noise_autoxcorr(fragment)
         plt.text(time[iv.start], 1.05, '{0:.3f}'.format(xc))
     plt.show()

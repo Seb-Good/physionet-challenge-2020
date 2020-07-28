@@ -11,6 +11,7 @@ http://stackoverflow.com/questions/1966591/hasnext-in-python-iterators
 @author: T. Teijeiro
 """
 
+
 class PredictableIter(object):
     """
     This class supports the iteration protocol, adding the common routine (in
@@ -19,7 +20,7 @@ class PredictableIter(object):
     items, forwarding the *next()* call when possible.
     """
 
-    #We may create a lot of iterators, so we have to keep low mem consumption.
+    # We may create a lot of iterators, so we have to keep low mem consumption.
     __slots__ = ('iter', '_hasnext', '_thenext')
 
     def __init__(self, iterator):

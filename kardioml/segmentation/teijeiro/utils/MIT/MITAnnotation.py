@@ -9,14 +9,15 @@ Module with definition of classes to work with annotations in the MIT format.
 """
 import struct
 
+
 class MITAnnotation(object):
     """
     This class represents an annotation in the MIT format. Currently only
     standard 2-byte annotations are supported.
     """
 
-    #We use slots instead of __dict__ to save memory space when a lot of
-    #annotations are created and managed.
+    # We use slots instead of __dict__ to save memory space when a lot of
+    # annotations are created and managed.
     __slots__ = ('code', 'time', 'subtype', 'chan', 'num', 'aux')
 
     def __init__(self):
@@ -27,11 +28,10 @@ class MITAnnotation(object):
         self.num = 0
         self.aux = None
 
-
     def __str__(self):
-        return '{0} {1} {2} {3} {4} {5}'.format(self.time,    self.code,
-                                                self.subtype, self.chan,
-                                                self.num,     repr(self.aux))
+        return '{0} {1} {2} {3} {4} {5}'.format(
+            self.time, self.code, self.subtype, self.chan, self.num, repr(self.aux)
+        )
 
     def __repr__(self):
         return str(self)
@@ -39,7 +39,8 @@ class MITAnnotation(object):
     def __lt__(self, other):
         return self.time < other.time
 
-#MIT format special codes
+
+# MIT format special codes
 SKIP_TIME = 1023
 AUX_CODE = 63
 SKIP_CODE = 59
@@ -71,8 +72,7 @@ def is_qrs_annotation(annot):
     APC
     RONT
     """
-    return annot.code in (1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13,
-                          25, 30, 34, 35, 38, 41)
+    return annot.code in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 25, 30, 34, 35, 38, 41)
 
 
 def read_annotations(path):
@@ -100,13 +100,12 @@ def read_annotations(path):
         if not bann:
             break
         (b0, b1) = struct.unpack('bb', bann)
-        A = (b1 & 0xff) >> 2
-        I = ((b1 & 0x03) << 8) | (0xff & b0)
-        #Special codes parsing
+        A = (b1 & 0xFF) >> 2
+        I = ((b1 & 0x03) << 8) | (0xFF & b0)
+        # Special codes parsing
         if A is SKIP_CODE and I is 0:
             (b0, b1, b2, b3) = struct.unpack('4b', f.read(4))
-            displ = ((b1 << 24) | ((b0 & 0xff) << 16) |
-                                  ((b3 & 0xff) << 8)  | (b2 & 0xff))
+            displ = (b1 << 24) | ((b0 & 0xFF) << 16) | ((b3 & 0xFF) << 8) | (b2 & 0xFF)
         elif A is NUM_CODE:
             num = I
             result[-1].num = num
@@ -130,12 +129,13 @@ def read_annotations(path):
             result.append(annot)
             displ = 0
     f.close()
-    #Now, for each annotation we put the absolute time
+    # Now, for each annotation we put the absolute time
     abs_time = 0
     for annot in result:
         abs_time += annot.time
         annot.time = max(0, abs_time)
     return result
+
 
 def save_annotations(annots, path):
     """
@@ -154,39 +154,38 @@ def save_annotations(annots, path):
     prev_num = 0
     prev_chn = 0
 
-
     for anot in annots:
         rel_time = anot.time - prev_time
-        #If the distance is greater than 1023 (what we can express with 10
-        #bits), we should write an skip code in the file.
+        # If the distance is greater than 1023 (what we can express with 10
+        # bits), we should write an skip code in the file.
         if rel_time > SKIP_TIME:
-            #A = SKIP_CODE, I = 0; Then 4 byte PDP-11 long integer
+            # A = SKIP_CODE, I = 0; Then 4 byte PDP-11 long integer
             f.write(struct.pack('>H', SKIP_CODE << 2))
             f.write(struct.pack('<H', rel_time >> 16))
             f.write(struct.pack('<H', rel_time & 0xFFFF))
-            #The next written position is 0
-            rel_time=0
-        #We write the annotation code and the timestamp
+            # The next written position is 0
+            rel_time = 0
+        # We write the annotation code and the timestamp
         f.write(struct.pack('<H', anot.code << 10 | rel_time))
         prev_time = anot.time
-        #Write the NUM annotation, if changes
+        # Write the NUM annotation, if changes
         if anot.num != prev_num:
             f.write(struct.pack('<H', NUM_CODE << 10 | anot.num))
             prev_num = anot.num
-        #Write the SUBTYPE annotation, if != 0
+        # Write the SUBTYPE annotation, if != 0
         if anot.subtype != 0:
             f.write(struct.pack('<H', SUB_CODE << 10 | anot.subtype))
-        #Write the CHAN annotation, if changes
+        # Write the CHAN annotation, if changes
         if anot.chan != prev_chn:
             f.write(struct.pack('<H', CHN_CODE << 10 | anot.chan))
             prev_chn = anot.chan
-        #Write the AUX field, if present
+        # Write the AUX field, if present
         if anot.aux != None:
             f.write(struct.pack('<H', AUX_CODE << 10 | len(anot.aux)))
             f.write(anot.aux)
-            if (len(anot.aux) % 2 != 0):
-                f.write(struct.pack('<b',0))
-    #Finish the file with a 00
+            if len(anot.aux) % 2 != 0:
+                f.write(struct.pack('<b', 0))
+    # Finish the file with a 00
     f.write(struct.pack('<h', 0))
     f.close()
 
@@ -208,10 +207,9 @@ def convert_annots_freq(spath, sfreq, dpath, dfreq):
     """
     annots = read_annotations(spath)
     for ann in annots:
-        ann.time = int(ann.time/float(sfreq)*float(dfreq))
+        ann.time = int(ann.time / float(sfreq) * float(dfreq))
     save_annotations(annots, dpath)
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     pass

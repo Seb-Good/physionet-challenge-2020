@@ -11,7 +11,6 @@ from kardioml.scoring.scoring_metrics import compute_beta_score, compute_auc
 
 
 class CVScore(object):
-
     def __init__(self, model, cv_index, train_index, test_index, x, y):
 
         # Set parameters
@@ -56,38 +55,59 @@ class CVScore(object):
 
     def get_cv_score(self):
         """Return a dictionary of final scores."""
-        return {'train': {'accuracy': self.train_accuracy,
-                          'f_measure': self.train_f_measure,
-                          'f_beta': self.train_f_beta,
-                          'g_beta': self.train_g_beta,
-                          'auroc': self.train_auroc,
-                          'auprc': self.train_auprc},
-                'test': {'accuracy': self.test_accuracy,
-                         'f_measure': self.test_f_measure,
-                         'f_beta': self.test_f_beta,
-                         'g_beta': self.test_g_beta,
-                         'auroc': self.test_auroc,
-                         'auprc': self.test_auprc}}
+        return {
+            'train': {
+                'accuracy': self.train_accuracy,
+                'f_measure': self.train_f_measure,
+                'f_beta': self.train_f_beta,
+                'g_beta': self.train_g_beta,
+                'auroc': self.train_auroc,
+                'auprc': self.train_auprc,
+            },
+            'test': {
+                'accuracy': self.test_accuracy,
+                'f_measure': self.test_f_measure,
+                'f_beta': self.test_f_beta,
+                'g_beta': self.test_g_beta,
+                'auroc': self.test_auroc,
+                'auprc': self.test_auprc,
+            },
+        }
 
     def _compute_score(self):
         """Compute the CV score."""
         """Train Scores"""
         # Compute beta scores
         self.train_accuracy, self.train_f_measure, self.train_f_beta, self.train_g_beta = compute_beta_score(
-            labels=self.y_train.values.tolist(), output=self.y_train_pred.tolist(), beta=2,
-            num_classes=LABELS_COUNT, check_errors=True)
+            labels=self.y_train.values.tolist(),
+            output=self.y_train_pred.tolist(),
+            beta=2,
+            num_classes=LABELS_COUNT,
+            check_errors=True,
+        )
 
         # Compute AUC
-        self.train_auroc, self.train_auprc = compute_auc(labels=self.y_train.values,
-                                                         probabilities=self.y_train_proba,
-                                                         num_classes=LABELS_COUNT, check_errors=True)
+        self.train_auroc, self.train_auprc = compute_auc(
+            labels=self.y_train.values,
+            probabilities=self.y_train_proba,
+            num_classes=LABELS_COUNT,
+            check_errors=True,
+        )
 
         """Test Scores"""
         # Compute beta scores
         self.test_accuracy, self.test_f_measure, self.test_f_beta, self.test_g_beta = compute_beta_score(
-            labels=self.y_test.values.tolist(), output=self.y_test_pred.tolist(), beta=2,
-            num_classes=LABELS_COUNT, check_errors=True)
+            labels=self.y_test.values.tolist(),
+            output=self.y_test_pred.tolist(),
+            beta=2,
+            num_classes=LABELS_COUNT,
+            check_errors=True,
+        )
 
         # Compute AUC
-        self.test_auroc, self.test_auprc = compute_auc(labels=self.y_test.values, probabilities=self.y_test_proba,
-                                                       num_classes=LABELS_COUNT, check_errors=True)
+        self.test_auroc, self.test_auprc = compute_auc(
+            labels=self.y_test.values,
+            probabilities=self.y_test_proba,
+            num_classes=LABELS_COUNT,
+            check_errors=True,
+        )

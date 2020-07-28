@@ -26,7 +26,9 @@ class Summaries(object):
         self.val_summary_path = os.path.join(self.path, 'val')
 
         # Initialize Tensorboard writers
-        self.train_summary_writer = tf.summary.FileWriter(logdir=self.train_summary_path, graph=self.sess.graph)
+        self.train_summary_writer = tf.summary.FileWriter(
+            logdir=self.train_summary_path, graph=self.sess.graph
+        )
         self.val_summary_writer = tf.summary.FileWriter(logdir=self.val_summary_path)
 
     def log_train_summaries(self, summary, global_step):
@@ -72,8 +74,10 @@ class Summaries(object):
         val_cam_plots = self.sess.run([monitor.best_state.val_cam_plots])[0]
 
         # Get summary
-        summary = self.sess.run(fetches=[self.graph.val_cam_plots_summary_op],
-                                feed_dict={self.graph.val_cam_plots: val_cam_plots})
+        summary = self.sess.run(
+            fetches=[self.graph.val_cam_plots_summary_op],
+            feed_dict={self.graph.val_cam_plots: val_cam_plots},
+        )
 
         # Write summary
         self.val_summary_writer.add_summary(summary=summary[0], global_step=monitor.best_state.global_step)

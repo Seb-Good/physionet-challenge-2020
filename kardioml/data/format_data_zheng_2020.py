@@ -19,15 +19,17 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from kardioml import DATA_PATH, ECG_LEADS
 
 
-LABEL_MAPPINGS = {'1AVB': 'I-AVB',
-                  'APB': 'PAC',
-                  'VPB': 'PVC',
-                  'STDD': 'STD',
-                  'STTU': 'STE',
-                  'LBBB': 'LBBB',
-                  'RBBB': 'RBBB',
-                  'SR': 'Normal',
-                  'AFIB': 'AF'}
+LABEL_MAPPINGS = {
+    '1AVB': 'I-AVB',
+    'APB': 'PAC',
+    'VPB': 'PVC',
+    'STDD': 'STD',
+    'STTU': 'STE',
+    'LBBB': 'LBBB',
+    'RBBB': 'RBBB',
+    'SR': 'Normal',
+    'AFIB': 'AF',
+}
 
 
 class FormatDataZheng2020(object):
@@ -66,7 +68,9 @@ class FormatDataZheng2020(object):
                 self._format_sample(index=index, diagnostics=diagnostics)
 
         else:
-            _ = Parallel(n_jobs=-1)(delayed(self._format_sample)(index, diagnostics) for index in diagnostics.index)
+            _ = Parallel(n_jobs=-1)(
+                delayed(self._format_sample)(index, diagnostics) for index in diagnostics.index
+            )
 
     def _format_sample(self, index, diagnostics):
         """Format individual .mat and .hea sample."""
@@ -102,36 +106,46 @@ class FormatDataZheng2020(object):
             if labels:
                 # Save meta data JSON
                 with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
-                    json.dump({'filename': filename,
-                               'channel_order': ECG_LEADS,
-                               'age': int(age),
-                               'sex': sex.capitalize(),
-                               'labels': labels,
-                               'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
-                               'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
-                               'labels_SNOMEDCT': [SNOMEDCT_LOOKUP[label] for label in labels],
-                               'label_train': self._get_training_label(labels=labels),
-                               'shape': waveforms.shape,
-                               'hr': int(hr),
-                               'rpeaks': rpeaks},
-                              file, sort_keys=True)
+                    json.dump(
+                        {
+                            'filename': filename,
+                            'channel_order': ECG_LEADS,
+                            'age': int(age),
+                            'sex': sex.capitalize(),
+                            'labels': labels,
+                            'labels_full': [LABELS_LOOKUP[label]['label_full'] for label in labels],
+                            'labels_int': [LABELS_LOOKUP[label]['label_int'] for label in labels],
+                            'labels_SNOMEDCT': [SNOMEDCT_LOOKUP[label] for label in labels],
+                            'label_train': self._get_training_label(labels=labels),
+                            'shape': waveforms.shape,
+                            'hr': int(hr),
+                            'rpeaks': rpeaks,
+                        },
+                        file,
+                        sort_keys=True,
+                    )
 
             else:
                 # Save meta data JSON
                 with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
-                    json.dump({'filename': filename,
-                               'channel_order': ECG_LEADS,
-                               'age': int(age),
-                               'sex': sex.capitalize(),
-                               'labels': None,
-                               'labels_full': None,
-                               'labels_int': None,
-                               'labels_SNOMEDCT': None,
-                               'label_train': None,
-                               'shape': waveforms.shape,
-                               'hr': int(hr),
-                               'rpeaks': rpeaks},
-                              file, sort_keys=True)
+                    json.dump(
+                        {
+                            'filename': filename,
+                            'channel_order': ECG_LEADS,
+                            'age': int(age),
+                            'sex': sex.capitalize(),
+                            'labels': None,
+                            'labels_full': None,
+                            'labels_int': None,
+                            'labels_SNOMEDCT': None,
+                            'label_train': None,
+                            'shape': waveforms.shape,
+                            'hr': int(hr),
+                            'rpeaks': rpeaks,
+                        },
+                        file,
+                        sort_keys=True,
+                    )
 
         except Exception:
             pass
@@ -143,8 +157,9 @@ class FormatDataZheng2020(object):
 
     def _load_csv_file(self, filename):
         """Load Matlab waveform file."""
-        return np.loadtxt(open(os.path.join(self.raw_path, 'ECGDataDenoised', '{}.csv'.format(filename))),
-                          delimiter=',')
+        return np.loadtxt(
+            open(os.path.join(self.raw_path, 'ECGDataDenoised', '{}.csv'.format(filename))), delimiter=','
+        )
 
     @staticmethod
     def _get_training_label(labels):

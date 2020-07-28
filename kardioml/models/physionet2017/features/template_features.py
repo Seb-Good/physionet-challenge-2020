@@ -18,8 +18,18 @@ class TemplateFeatures:
 
     """Extract template features for one ECG signal."""
 
-    def __init__(self, ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
-                 fs, template_before, template_after):
+    def __init__(
+        self,
+        ts,
+        signal_raw,
+        signal_filtered,
+        rpeaks,
+        templates_ts,
+        templates,
+        fs,
+        template_before,
+        template_after,
+    ):
 
         # Input variables
         self.ts = ts
@@ -76,6 +86,7 @@ class TemplateFeatures:
     """
     Compile Features
     """
+
     def get_template_features(self):
         return self.template_features
 
@@ -95,6 +106,7 @@ class TemplateFeatures:
     """
     Pre Processing
     """
+
     def calculate_qrs_bounds(self):
 
         # Empty lists of QRS start and end times
@@ -105,7 +117,9 @@ class TemplateFeatures:
         for template in range(self.templates.shape[1]):
 
             # Get zero crossings before the R-Peak
-            pre_qrs_zero_crossings = np.where(np.diff(np.sign(self.templates[0:self.template_rpeak_sp, template])))[0]
+            pre_qrs_zero_crossings = np.where(
+                np.diff(np.sign(self.templates[0 : self.template_rpeak_sp, template]))
+            )[0]
 
             # Check length
             if len(pre_qrs_zero_crossings) >= 2:
@@ -122,7 +136,9 @@ class TemplateFeatures:
                 self.qrs_start_sp = int(self.template_before_sp / 2.0)
 
             # Get zero crossings after the R-Peak
-            post_qrs_zero_crossings = np.where(np.diff(np.sign(self.templates[self.template_rpeak_sp:-1, template])))[0]
+            post_qrs_zero_crossings = np.where(
+                np.diff(np.sign(self.templates[self.template_rpeak_sp : -1, template]))
+            )[0]
 
             # Check length
             if len(post_qrs_zero_crossings) >= 2:
@@ -150,16 +166,16 @@ class TemplateFeatures:
         self.median_template = np.median(self.templates, axis=1)
 
         # Get QR median template
-        qr_median_template = self.median_template[qrs_start_sp:self.template_rpeak_sp]
+        qr_median_template = self.median_template[qrs_start_sp : self.template_rpeak_sp]
 
         # Get RS median template
-        rs_median_template = self.median_template[self.template_rpeak_sp:qrs_end_sp]
+        rs_median_template = self.median_template[self.template_rpeak_sp : qrs_end_sp]
 
         # Get QR templates
-        qr_templates = self.templates[qrs_start_sp:self.template_rpeak_sp, :]
+        qr_templates = self.templates[qrs_start_sp : self.template_rpeak_sp, :]
 
         # Get RS templates
-        rs_templates = self.templates[self.template_rpeak_sp:qrs_end_sp, :]
+        rs_templates = self.templates[self.template_rpeak_sp : qrs_end_sp, :]
 
         """
         Q-Wave
@@ -170,7 +186,9 @@ class TemplateFeatures:
         )
 
         # Get array of Q-wave amplitudes
-        self.q_amps = np.array([self.templates[self.q_times_sp[col], col] for col in range(self.templates.shape[1])])
+        self.q_amps = np.array(
+            [self.templates[self.q_times_sp[col], col] for col in range(self.templates.shape[1])]
+        )
 
         # Get array of Q-wave times (sp)
         self.q_time_sp = qrs_start_sp + np.argmin(qr_median_template)
@@ -182,16 +200,20 @@ class TemplateFeatures:
         P-Wave
         """
         # Get array of Q-wave times (sp)
-        self.p_times_sp = np.array([
-            np.argmax(self.templates[0:self.q_times_sp[col], col])
-            for col in range(self.templates.shape[1])
-        ])
+        self.p_times_sp = np.array(
+            [
+                np.argmax(self.templates[0 : self.q_times_sp[col], col])
+                for col in range(self.templates.shape[1])
+            ]
+        )
 
         # Get array of Q-wave amplitudes
-        self.p_amps = np.array([self.templates[self.p_times_sp[col], col] for col in range(self.templates.shape[1])])
+        self.p_amps = np.array(
+            [self.templates[self.p_times_sp[col], col] for col in range(self.templates.shape[1])]
+        )
 
         # Get array of Q-wave times (sp)
-        self.p_time_sp = np.argmax(self.median_template[0:self.q_time_sp])
+        self.p_time_sp = np.argmax(self.median_template[0 : self.q_time_sp])
 
         # Get array of Q-wave amplitudes
         self.p_amp = self.median_template[self.p_time_sp]
@@ -200,13 +222,17 @@ class TemplateFeatures:
         S-Wave
         """
         # Get array of Q-wave times (sp)
-        self.s_times_sp = np.array([
-            self.template_rpeak_sp + np.argmin(rs_templates[:, col])
-            for col in range(rs_templates.shape[1])
-        ])
+        self.s_times_sp = np.array(
+            [
+                self.template_rpeak_sp + np.argmin(rs_templates[:, col])
+                for col in range(rs_templates.shape[1])
+            ]
+        )
 
         # Get array of Q-wave amplitudes
-        self.s_amps = np.array([self.templates[self.s_times_sp[col], col] for col in range(self.templates.shape[1])])
+        self.s_amps = np.array(
+            [self.templates[self.s_times_sp[col], col] for col in range(self.templates.shape[1])]
+        )
 
         # Get array of Q-wave times (sp)
         self.s_time_sp = self.template_rpeak_sp + np.argmin(rs_median_template)
@@ -218,16 +244,20 @@ class TemplateFeatures:
         T-Wave
         """
         # Get array of Q-wave times (sp)
-        self.t_times_sp = np.array([
-            self.s_times_sp[col] + np.argmax(self.templates[self.s_times_sp[col]:, col])
-            for col in range(self.templates.shape[1])
-        ])
+        self.t_times_sp = np.array(
+            [
+                self.s_times_sp[col] + np.argmax(self.templates[self.s_times_sp[col] :, col])
+                for col in range(self.templates.shape[1])
+            ]
+        )
 
         # Get array of Q-wave amplitudes
-        self.t_amps = np.array([self.templates[self.t_times_sp[col], col] for col in range(self.templates.shape[1])])
+        self.t_amps = np.array(
+            [self.templates[self.t_times_sp[col], col] for col in range(self.templates.shape[1])]
+        )
 
         # Get array of Q-wave times (sp)
-        self.t_time_sp = self.s_time_sp + np.argmax(self.median_template[self.s_time_sp:])
+        self.t_time_sp = self.s_time_sp + np.argmax(self.median_template[self.s_time_sp :])
 
         # Get array of Q-wave amplitudes
         self.t_amp = self.median_template[self.t_time_sp]
@@ -236,9 +266,12 @@ class TemplateFeatures:
         Debug
         """
         import matplotlib.pylab as plt
+
         plt.plot(self.templates, '-', c=[0.7, 0.7, 0.7])
         plt.plot(self.median_template, '-k')
-        plt.plot([qrs_start_sp, qrs_start_sp], [self.median_template.min(), self.median_template.max()], '-r')
+        plt.plot(
+            [qrs_start_sp, qrs_start_sp], [self.median_template.min(), self.median_template.max()], '-r'
+        )
         plt.plot([qrs_end_sp, qrs_end_sp], [self.median_template.min(), self.median_template.max()], '-r')
 
         plt.plot(self.q_times_sp, self.q_amps, '.r')
@@ -253,8 +286,8 @@ class TemplateFeatures:
         plt.plot(self.t_times_sp, self.t_amps, '.r')
         plt.plot(self.t_time_sp, self.t_amp, '.b', ms=10)
 
-        plt.plot([self.p_time_sp-10, self.p_time_sp+10], [0, 0], '-g')
-        plt.plot([self.t_time_sp-10, self.t_time_sp+10], [0, 0], '-g')
+        plt.plot([self.p_time_sp - 10, self.p_time_sp + 10], [0, 0], '-g')
+        plt.plot([self.t_time_sp - 10, self.t_time_sp + 10], [0, 0], '-g')
 
         plt.ylim([self.median_template.min(), self.median_template.max()])
 
@@ -263,6 +296,7 @@ class TemplateFeatures:
     """
     Feature Methods
     """
+
     @staticmethod
     def safe_check(value):
 
@@ -304,7 +338,7 @@ class TemplateFeatures:
                 sample_entropy(
                     self.templates[0:start_sp, col],
                     sample_length=2,
-                    tolerance=0.1*np.std(self.templates[0:start_sp, col])
+                    tolerance=0.1 * np.std(self.templates[0:start_sp, col]),
                 )[0]
             )
             for col in range(self.templates.shape[1])
@@ -376,7 +410,7 @@ class TemplateFeatures:
                 sample_entropy(
                     self.templates[end_sp:, col],
                     sample_length=2,
-                    tolerance=0.1*np.std(self.templates[end_sp:, col])
+                    tolerance=0.1 * np.std(self.templates[end_sp:, col]),
                 )[0]
             )
             for col in range(self.templates.shape[1])
@@ -443,7 +477,9 @@ class TemplateFeatures:
         pqrst_wave_features['pt_time_std'] = np.std(pti, ddof=1)
 
         # QRS energy
-        pqrst_wave_features['qrs_energy'] = np.sum(np.power(self.median_template[self.q_time_sp:self.s_time_sp], 2))
+        pqrst_wave_features['qrs_energy'] = np.sum(
+            np.power(self.median_template[self.q_time_sp : self.s_time_sp], 2)
+        )
 
         return pqrst_wave_features
 
@@ -459,10 +495,8 @@ class TemplateFeatures:
         r_peak_negative = self.templates[self.template_rpeak_sp, :] < 0
 
         # Calculate polarity statistics
-        r_peak_polarity_features['positive_r_peaks'] = \
-            np.sum(r_peak_positive) / self.templates.shape[1]
-        r_peak_polarity_features['negative_r_peaks'] = \
-            np.sum(r_peak_negative) / self.templates.shape[1]
+        r_peak_polarity_features['positive_r_peaks'] = np.sum(r_peak_positive) / self.templates.shape[1]
+        r_peak_polarity_features['negative_r_peaks'] = np.sum(r_peak_negative) / self.templates.shape[1]
 
         return r_peak_polarity_features
 
@@ -482,10 +516,9 @@ class TemplateFeatures:
         r_peak_amplitude_features['rpeak_kurtosis'] = sp.stats.kurtosis(rpeak_amplitudes)
 
         # Non-linear statistics
-        r_peak_amplitude_features['rpeak_entropy'] = \
-            self.safe_check(
-                sample_entropy(rpeak_amplitudes, sample_length=2, tolerance=0.1*np.std(rpeak_amplitudes))[0]
-            )
+        r_peak_amplitude_features['rpeak_entropy'] = self.safe_check(
+            sample_entropy(rpeak_amplitudes, sample_length=2, tolerance=0.1 * np.std(rpeak_amplitudes))[0]
+        )
         r_peak_amplitude_features['rpeak_higuchi_fractal_dimension'] = hfd(rpeak_amplitudes, k_max=10)
 
         return r_peak_amplitude_features

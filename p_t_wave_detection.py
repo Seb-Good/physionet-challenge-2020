@@ -1,16 +1,5 @@
 # basic libs
-import pandas as pd
 import numpy as np
-import json
-from sklearn.model_selection import KFold
-import os
-import gc
-from tqdm import tqdm
-from shutil import rmtree
-from sklearn.preprocessing import MinMaxScaler
-from scipy.signal import resample
-from scipy.signal import medfilt
-from time import time
 import numba
 
 # pytorch
@@ -26,8 +15,6 @@ class PTWaveDetection(nn.Module):
         self.weights_LPF = self.weights_LPF.view(1, 1, self.weights_LPF.shape[0])
         self.padding_LPF = int((self.weights_LPF.shape[2] - 1) / 2)
         self.padding_LPF = torch.Tensor(np.zeros((self.padding_LPF))).cuda()
-
-
 
     def FIR_filt(self, input, weight, padding_vector):
         input = torch.cat((input, padding_vector), 0)
@@ -51,8 +38,6 @@ class PTWaveDetection(nn.Module):
 
     def run(self, X, rpeaks):
 
-
-
         self.eval()
         X = torch.tensor(X, dtype=torch.float)
         X = X.cuda()
@@ -61,11 +46,8 @@ class PTWaveDetection(nn.Module):
         X_filt = X_filt.cpu().detach().numpy()
         X = X.cpu().detach().numpy()
 
-
-
         twaves = []
         pwaves = []
-
 
         for i in range(len(rpeaks)):
 
@@ -90,8 +72,6 @@ class PTWaveDetection(nn.Module):
                 twaves.append(rpeaks[i] + T_wave[0])
 
             if len(P_wave) > 0:
-                # print(len(PR))
-                # print(P_wave[-1][0])
                 if len(PR) - P_wave[-1][0] < 45:
                     del P_wave[-1]
                 if len(P_wave) > 0:
@@ -101,7 +81,6 @@ class PTWaveDetection(nn.Module):
                     else:
                         pwaves.append(int(rpeaks[i] - 1 * (rpeaks[i] - rpeaks[i - 1]) / 4) + P_wave[0])
 
-
         for i in range(len(twaves)):
             twaves[i] = [twaves[i], X[int(twaves[i])]]
 
@@ -110,50 +89,48 @@ class PTWaveDetection(nn.Module):
         for i in range(len(pwaves)):
             pwaves[i] = [pwaves[i], X[int(pwaves[i])]]
 
-
-
         twaves = np.array(twaves)
         pwaves = np.array(pwaves)
         return twaves, pwaves, X_filt
 
 
-@numba.jit(nopython=False,parallel=False)
+@numba.jit(nopython=False, parallel=False)
 def peakdet(v, delta: float):
 
-        # list of peaks
-        maxtab = []
-        mintab = []
+    # list of peaks
+    maxtab = []
+    mintab = []
 
-        x = np.arange(v.shape[0])
+    x = np.arange(v.shape[0])
 
-        assert delta > 0, 'Delta should be positive'
+    assert delta > 0, 'Delta should be positive'
 
-        mn = np.inf
-        mx = -np.inf
-        mnpos = np.nan
-        mxpos = np.nan
+    mn = np.inf
+    mx = -np.inf
+    mnpos = np.nan
+    mxpos = np.nan
 
-        lookformax = True
+    lookformax = True
 
-        for i in range(v.shape[0]):
-            this = v[i]
-            if this > mx:
-                mx = this
-                mxpos = x[i]
-            if this < mn:
+    for i in range(v.shape[0]):
+        this = v[i]
+        if this > mx:
+            mx = this
+            mxpos = x[i]
+        if this < mn:
+            mn = this
+            mnpos = x[i]
+        if lookformax:
+            if this < mx - delta:
+                maxtab.append([mxpos, mx])
                 mn = this
                 mnpos = x[i]
-            if lookformax:
-                if this < mx - delta:
-                    maxtab.append([mxpos, mx])
-                    mn = this
-                    mnpos = x[i]
-                    lookformax = False
-            else:
-                if this > mn + delta:
-                    mintab.append([mnpos, mn])
-                    mx = this
-                    mxpos = x[i]
-                    lookformax = True
+                lookformax = False
+        else:
+            if this > mn + delta:
+                mintab.append([mnpos, mn])
+                mx = this
+                mxpos = x[i]
+                lookformax = True
 
-        return maxtab, mintab
+    return maxtab, mintab

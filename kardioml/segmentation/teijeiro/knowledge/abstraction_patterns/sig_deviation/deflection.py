@@ -12,8 +12,7 @@ energy intervals over a signal fragment.
 import kardioml.segmentation.teijeiro.knowledge.observables as o
 import kardioml.segmentation.teijeiro.acquisition.signal_buffer as sig_buf
 import kardioml.segmentation.teijeiro.acquisition.obs_buffer as obs_buf
-from kardioml.segmentation.teijeiro.knowledge.base_evidence.energy import (get_energy_intervals,
-                                                                       TWINDOW)
+from kardioml.segmentation.teijeiro.knowledge.base_evidence.energy import get_energy_intervals, TWINDOW
 from kardioml.segmentation.teijeiro.knowledge.constants import DEF_DUR, TMARGIN
 from kardioml.segmentation.teijeiro.model.constraint_network import verify
 from kardioml.segmentation.teijeiro.model.automata import PatternAutomata
@@ -47,72 +46,76 @@ def generate_Deflection_Patterns(npats):
         pat = PatternAutomata()
         pat.name = "Deflection"
         pat.Hypothesis = o.Deflection
-        pat.add_transition(0, 1, tconst= _def_tconst, gconst= get_gconst(i))
+        pat.add_transition(0, 1, tconst=_def_tconst, gconst=get_gconst(i))
         pat.final_states.add(1)
         pat.freeze()
         pats.append(pat)
     return pats
+
 
 def _def_tconst(pattern, _):
     """Temporal constraints for the energy interval abstraction pattern"""
     deflection = pattern.hypothesis
     pattern.last_tnet.add_constraint(deflection.start, deflection.end, DEF_DUR)
 
+
 def get_gconst(int_idx):
     """
     Obtains the general constraints function for a specific level.
     """
+
     def _def_gconst(pattern, _):
         """General constraints for the energy interval abstraction pattern"""
         verify(pattern.hypothesis.lateend < np.inf)
-        #The margin to group consecutive fragments is 1 mm
-        #Limits for the detection.
+        # The margin to group consecutive fragments is 1 mm
+        # Limits for the detection.
         beg = int(pattern.hypothesis.earlystart)
         end = int(pattern.hypothesis.lateend)
-        #Now we get the energy accumulated in all leads.
+        # Now we get the energy accumulated in all leads.
         energy = None
         for lead in sig_buf.get_available_leads():
-            lenerg, fbeg, fend = sig_buf.get_energy_fragment(beg, end,
-                                                                 TWINDOW, lead)
+            lenerg, fbeg, fend = sig_buf.get_energy_fragment(beg, end, TWINDOW, lead)
             energy = lenerg if energy is None else energy + lenerg
         if energy is None:
             return 0.0
-        #We get the already published fragments affecting our temporal support.
+        # We get the already published fragments affecting our temporal support.
         conflictive = []
         published = SortedList(obs_buf.get_observations(o.Deflection))
         idx = published.bisect_left(pattern.hypothesis)
-        if idx > 0 and published[idx-1].lateend > beg:
+        if idx > 0 and published[idx - 1].lateend > beg:
             idx -= 1
-        while (idx < len(published) and Iv(beg, end).overlap(
-                       Iv(published[idx].earlystart, published[idx].lateend))):
-            conflictive.append(Iv(published[idx].earlystart - beg + fbeg,
-                                  published[idx].lateend - beg + fbeg))
+        while idx < len(published) and Iv(beg, end).overlap(
+            Iv(published[idx].earlystart, published[idx].lateend)
+        ):
+            conflictive.append(
+                Iv(published[idx].earlystart - beg + fbeg, published[idx].lateend - beg + fbeg)
+            )
             idx += 1
-        #We obtain the relative limits of the energy interval wrt the fragment
+        # We obtain the relative limits of the energy interval wrt the fragment
         iv_start = Iv(fbeg, fbeg + int(pattern.hypothesis.latestart - beg))
         iv_end = Iv(fend - int(end - pattern.hypothesis.earlyend), fend)
-        #We look for the highest-level interval satisfying the limits.
+        # We look for the highest-level interval satisfying the limits.
         interval = None
         lev = 0
         while interval is None and lev <= 20:
-            areas = [iv for iv in get_energy_intervals(energy, lev,
-                                                                 group=TMARGIN)
-                            if iv.start in iv_start and iv.end in iv_end and
-                              all(not iv.overlapm(ein) for ein in conflictive)]
-            #We sort the areas by energy, with the highest energy first.
-            areas.sort(key = lambda interv :
-                                     np.sum(energy[interv.start:interv.end+1]),
-                                                                reverse = True)
-            #Now we take the element indicated by the index.
+            areas = [
+                iv
+                for iv in get_energy_intervals(energy, lev, group=TMARGIN)
+                if iv.start in iv_start
+                and iv.end in iv_end
+                and all(not iv.overlapm(ein) for ein in conflictive)
+            ]
+            # We sort the areas by energy, with the highest energy first.
+            areas.sort(key=lambda interv: np.sum(energy[interv.start : interv.end + 1]), reverse=True)
+            # Now we take the element indicated by the index.
             if len(areas) > int_idx:
                 interval = areas[int_idx]
             else:
                 lev += 1
         verify(interval is not None)
-        pattern.hypothesis.start.value = Iv(interval.start + beg - fbeg,
-                                         interval.start + beg - fbeg)
-        pattern.hypothesis.end.value = Iv(interval.end + beg - fbeg,
-                                       interval.end + beg - fbeg)
+        pattern.hypothesis.start.value = Iv(interval.start + beg - fbeg, interval.start + beg - fbeg)
+        pattern.hypothesis.end.value = Iv(interval.end + beg - fbeg, interval.end + beg - fbeg)
         for lead in sig_buf.get_available_leads():
             pattern.hypothesis.level[lead] = lev
+
     return _def_gconst

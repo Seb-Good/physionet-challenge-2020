@@ -20,8 +20,18 @@ class RRIFeatures:
 
     """Extract RRI features for one ECG signal."""
 
-    def __init__(self, ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
-                 fs, template_before, template_after):
+    def __init__(
+        self,
+        ts,
+        signal_raw,
+        signal_filtered,
+        rpeaks,
+        templates_ts,
+        templates,
+        fs,
+        template_before,
+        template_after,
+    ):
 
         # Set parameters
         self.ts = ts
@@ -70,12 +80,17 @@ class RRIFeatures:
     """
     Compile Features
     """
+
     def get_rri_features(self):
         return self.rri_features
 
     def extract_rri_features(self):
-        self.rri_features.update(self.calculate_rri_temporal_features(self.rri, self.diff_rri, self.diff2_rri))
-        self.rri_features.update(self.calculate_rri_nonlinear_features(self.rri, self.diff_rri, self.diff2_rri))
+        self.rri_features.update(
+            self.calculate_rri_temporal_features(self.rri, self.diff_rri, self.diff2_rri)
+        )
+        self.rri_features.update(
+            self.calculate_rri_nonlinear_features(self.rri, self.diff_rri, self.diff2_rri)
+        )
         self.rri_features.update(self.calculate_pearson_correlation_features(self.rri))
         self.rri_features.update(self.calculate_rri_spectral_features(self.rri, self.rri_ts))
         self.rri_features.update(self.calculate_rpeak_detection_features())
@@ -83,6 +98,7 @@ class RRIFeatures:
     """
     Pre Processing
     """
+
     def r_peak_check(self, correlation_threshold=0.9):
 
         # Check lengths
@@ -93,8 +109,8 @@ class RRIFeatures:
 
             # Calculate correlation coefficient
             correlation_coefficient = np.corrcoef(
-                self.median_template[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25],
-                self.templates[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25, template_id]
+                self.median_template[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25],
+                self.templates[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25, template_id],
             )
 
             # Check correlation
@@ -102,15 +118,15 @@ class RRIFeatures:
 
                 # Compute cross correlation
                 cross_correlation = signal.correlate(
-                    self.median_template[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25],
-                    self.templates[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25, template_id]
+                    self.median_template[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25],
+                    self.templates[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25, template_id],
                 )
 
                 # Correct rpeak
-                rpeak_corrected = \
-                    self.rpeaks[template_id] - \
-                    (np.argmax(cross_correlation) -
-                     len(self.median_template[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25]))
+                rpeak_corrected = self.rpeaks[template_id] - (
+                    np.argmax(cross_correlation)
+                    - len(self.median_template[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25])
+                )
 
                 # Check to see if shifting the R-Peak improved the correlation coefficient
                 if self.check_improvement(rpeak_corrected, correlation_threshold):
@@ -180,8 +196,8 @@ class RRIFeatures:
 
             # Calculate correlation coefficient
             correlation_coefficient = np.corrcoef(
-                self.median_template[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25],
-                template_corrected[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25]
+                self.median_template[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25],
+                template_corrected[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25],
             )
 
             # Check new correlation
@@ -202,8 +218,8 @@ class RRIFeatures:
 
             # Calculate correlation coefficient
             correlation_coefficient = np.corrcoef(
-                self.median_template[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25],
-                self.templates[self.template_rpeak_sp - 25:self.template_rpeak_sp + 25, template_id]
+                self.median_template[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25],
+                self.templates[self.template_rpeak_sp - 25 : self.template_rpeak_sp + 25, template_id],
             )
 
             # Check correlation
@@ -260,6 +276,7 @@ class RRIFeatures:
     """
     Feature Methods
     """
+
     def calculate_rri_temporal_features(self, rri, diff_rri, diff2_rri):
 
         # Empty dictionary
@@ -341,7 +358,7 @@ class RRIFeatures:
         # Avoid IndexError for  random_list[i+1]
         for i in range(len(random_list) - 1):
             # Check if the next number is consecutive
-            if random_list[i] + 1 == random_list[i+1]:
+            if random_list[i] + 1 == random_list[i + 1]:
                 count += 1
             else:
                 # If it is not append the count and restart counting
@@ -359,8 +376,9 @@ class RRIFeatures:
 
         # Non-linear RR statistics
         if len(rri) > 1:
-            rri_nonlinear_features['rri_entropy'] = \
-                self.safe_check(sample_entropy(rri, sample_length=2, tolerance=0.1*np.std(rri))[0])
+            rri_nonlinear_features['rri_entropy'] = self.safe_check(
+                sample_entropy(rri, sample_length=2, tolerance=0.1 * np.std(rri))[0]
+            )
             rri_nonlinear_features['rri_higuchi_fractal_dimension'] = self.safe_check(hfd(rri, k_max=10))
         else:
             rri_nonlinear_features['rri_entropy'] = np.nan
@@ -368,18 +386,24 @@ class RRIFeatures:
 
         # Non-linear RR difference statistics
         if len(diff_rri) > 1:
-            rri_nonlinear_features['diff_rri_entropy'] = \
-                self.safe_check(sample_entropy(diff_rri, sample_length=2, tolerance=0.1*np.std(diff_rri))[0])
-            rri_nonlinear_features['diff_rri_higuchi_fractal_dimension'] = self.safe_check(hfd(diff_rri, k_max=10))
+            rri_nonlinear_features['diff_rri_entropy'] = self.safe_check(
+                sample_entropy(diff_rri, sample_length=2, tolerance=0.1 * np.std(diff_rri))[0]
+            )
+            rri_nonlinear_features['diff_rri_higuchi_fractal_dimension'] = self.safe_check(
+                hfd(diff_rri, k_max=10)
+            )
         else:
             rri_nonlinear_features['diff_rri_entropy'] = np.nan
             rri_nonlinear_features['diff_rri_higuchi_fractal_dimension'] = np.nan
 
         # Non-linear RR difference difference statistics
         if len(diff2_rri) > 1:
-            rri_nonlinear_features['diff2_rri_entropy'] = \
-                self.safe_check(sample_entropy(diff2_rri, sample_length=2, tolerance=0.1*np.std(diff2_rri))[0])
-            rri_nonlinear_features['diff2_rri_higuchi_fractal_dimension'] = self.safe_check(hfd(diff2_rri, k_max=10))
+            rri_nonlinear_features['diff2_rri_entropy'] = self.safe_check(
+                sample_entropy(diff2_rri, sample_length=2, tolerance=0.1 * np.std(diff2_rri))[0]
+            )
+            rri_nonlinear_features['diff2_rri_higuchi_fractal_dimension'] = self.safe_check(
+                hfd(diff2_rri, k_max=10)
+            )
         else:
             rri_nonlinear_features['diff2_rri_entropy'] = np.nan
             rri_nonlinear_features['diff2_rri_higuchi_fractal_dimension'] = np.nan
@@ -403,7 +427,7 @@ class RRIFeatures:
         # Empty dictionary
         pearson_correlation_features = dict()
 
-        if len(rri[0:-2]) == len(rri[1:-1]) and len(rri[0:-2]) > 2 and  len(rri[0:-2]) > 2:
+        if len(rri[0:-2]) == len(rri[1:-1]) and len(rri[0:-2]) > 2 and len(rri[0:-2]) > 2:
 
             # Calculate Pearson correlation
             pearson_coeff_p1, pearson_p_value_p1 = sp.stats.pearsonr(rri[0:-2], rri[1:-1])
@@ -442,10 +466,10 @@ class RRIFeatures:
             rri_interp = interpolate.splev(rri_ts_interp, tck, der=0)
 
             # Set frequency band limits [Hz]
-            vlf_band = (0, 0.04)    # Very low frequency
+            vlf_band = (0, 0.04)  # Very low frequency
             lf_band = (0.04, 0.15)  # Low frequency
-            hf_band = (0.15, 0.6)   # High frequency
-            vhf_band = (0.6, 2)     # High frequency
+            hf_band = (0.15, 0.6)  # High frequency
+            vhf_band = (0.6, 2)  # High frequency
 
             # Compute Welch periodogram
             fxx, pxx = signal.welch(x=rri_interp, fs=fs)
@@ -471,10 +495,12 @@ class RRIFeatures:
             rri_spectral_features['rri_low_frequency_power'] = (lf_power / total_power) * 100
             rri_spectral_features['rri_high_frequency_power'] = (hf_power / total_power) * 100
             rri_spectral_features['rri_very_high_frequency_power'] = (vhf_power / total_power) * 100
-            rri_spectral_features['rri_freq_max_frequency_power'] = \
-                fxx[np.argmax(pxx[np.logical_and(fxx >= lf_band[0], fxx < vhf_band[1])])]
-            rri_spectral_features['rri_power_max_frequency_power'] = \
-                np.max(pxx[np.logical_and(fxx >= lf_band[0], fxx < vhf_band[1])])
+            rri_spectral_features['rri_freq_max_frequency_power'] = fxx[
+                np.argmax(pxx[np.logical_and(fxx >= lf_band[0], fxx < vhf_band[1])])
+            ]
+            rri_spectral_features['rri_power_max_frequency_power'] = np.max(
+                pxx[np.logical_and(fxx >= lf_band[0], fxx < vhf_band[1])]
+            )
 
         else:
             # Compute spectral ratios

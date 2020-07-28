@@ -24,7 +24,6 @@ from kardioml.models.physionet2017.features.full_waveform_features import FullWa
 
 
 class Features:
-
     def __init__(self, filename, path, waveform_data=None, header_data=None):
 
         # Set parameters
@@ -48,11 +47,22 @@ class Features:
         os.makedirs(os.path.join(DATA_PATH, 'physionet_2017', 'features', lead), exist_ok=True)
 
         # Save meta data JSON
-        with open(os.path.join(DATA_PATH, 'physionet_2017', 'features', lead, '{}.json'.format(self.filename)), 'w') as file:
+        with open(
+            os.path.join(DATA_PATH, 'physionet_2017', 'features', lead, '{}.json'.format(self.filename)), 'w'
+        ) as file:
             json.dump(self.features, file, ignore_nan=True)
 
-    def extract_features(self, lead, feature_groups, filter_bandwidth, normalize=True, polarity_check=True,
-                         template_before=0.2, template_after=0.4, show=False):
+    def extract_features(
+        self,
+        lead,
+        feature_groups,
+        filter_bandwidth,
+        normalize=True,
+        polarity_check=True,
+        template_before=0.2,
+        template_after=0.4,
+        show=False,
+    ):
 
         # Get start time
         t_start = time.time()
@@ -62,28 +72,46 @@ class Features:
 
         # Preprocess signal
         ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates = self._preprocess_signal(
-            signal_raw=signal_raw, filter_bandwidth=filter_bandwidth, normalize=normalize,
-            polarity_check=polarity_check, template_before=template_before, template_after=template_after
+            signal_raw=signal_raw,
+            filter_bandwidth=filter_bandwidth,
+            normalize=normalize,
+            polarity_check=polarity_check,
+            template_before=template_before,
+            template_after=template_after,
         )
 
         # Extract features from waveform
-        self.features = self._group_features(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
-                                             rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
-                                             template_before=template_before, template_after=template_after,
-                                             feature_groups=feature_groups)
+        self.features = self._group_features(
+            ts=ts,
+            signal_raw=signal_raw,
+            signal_filtered=signal_filtered,
+            rpeaks=rpeaks,
+            templates_ts=templates_ts,
+            templates=templates,
+            template_before=template_before,
+            template_after=template_after,
+            feature_groups=feature_groups,
+        )
 
         # Get end time
         t_end = time.time()
 
         # Print progress
         if show:
-            print('Finished extracting features from ' + self.meta_data['filename'] + ' | Extraction time: ' +
-                  str(np.round((t_end - t_start) / 60, 3)) + ' minutes')
+            print(
+                'Finished extracting features from '
+                + self.meta_data['filename']
+                + ' | Extraction time: '
+                + str(np.round((t_end - t_start) / 60, 3))
+                + ' minutes'
+            )
 
     def _import_meta_data(self):
         """Import meta data JSON files."""
         if self.header_data is None:
-            return json.load(open(os.path.join(DATA_PATH, self.path, 'formatted', '{}.json'.format(self.filename))))
+            return json.load(
+                open(os.path.join(DATA_PATH, self.path, 'formatted', '{}.json'.format(self.filename)))
+            )
         else:
             meta_data = parse_header(self.header_data)
             self.filename = meta_data['filename']
@@ -96,8 +124,9 @@ class Features:
         else:
             return self.waveform_data
 
-    def _preprocess_signal(self, signal_raw, filter_bandwidth, normalize, polarity_check,
-                           template_before, template_after):
+    def _preprocess_signal(
+        self, signal_raw, filter_bandwidth, normalize, polarity_check, template_before, template_after
+    ):
 
         # Filter signal
         signal_filtered = self._apply_filter(signal_raw, filter_bandwidth)
@@ -106,7 +135,7 @@ class Features:
         ecg_object = ecg.ecg(signal=signal_raw, sampling_rate=FS, show=False)
 
         # Get BioSPPy output
-        ts = ecg_object['ts']          # Signal time array
+        ts = ecg_object['ts']  # Signal time array
         rpeaks = ecg_object['rpeaks']  # rpeak indices
 
         # Get templates and template time array
@@ -114,15 +143,16 @@ class Features:
         templates_ts = np.linspace(-template_before, template_after, templates.shape[1], endpoint=False)
 
         # Polarity check
-        signal_raw, signal_filtered, templates = self._check_waveform_polarity(polarity_check=polarity_check,
-                                                                               signal_raw=signal_raw,
-                                                                               signal_filtered=signal_filtered,
-                                                                               templates=templates)
+        signal_raw, signal_filtered, templates = self._check_waveform_polarity(
+            polarity_check=polarity_check,
+            signal_raw=signal_raw,
+            signal_filtered=signal_filtered,
+            templates=templates,
+        )
         # Normalize waveform
-        signal_raw, signal_filtered, templates = self._normalize_waveform_amplitude(normalize=normalize,
-                                                                                    signal_raw=signal_raw,
-                                                                                    signal_filtered=signal_filtered,
-                                                                                    templates=templates)
+        signal_raw, signal_filtered, templates = self._normalize_waveform_amplitude(
+            normalize=normalize, signal_raw=signal_raw, signal_filtered=signal_filtered, templates=templates
+        )
         return ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates
 
     @staticmethod
@@ -196,13 +226,28 @@ class Features:
     @staticmethod
     def _apply_filter(signal_raw, filter_bandwidth):
         """Apply FIR bandpass filter to waveform."""
-        signal_filtered, _, _ = filter_signal(signal=signal_raw, ftype='FIR', band='bandpass',
-                                              order=int(0.3 * FS), frequency=filter_bandwidth,
-                                              sampling_rate=FS)
+        signal_filtered, _, _ = filter_signal(
+            signal=signal_raw,
+            ftype='FIR',
+            band='bandpass',
+            order=int(0.3 * FS),
+            frequency=filter_bandwidth,
+            sampling_rate=FS,
+        )
         return signal_filtered
 
-    def _group_features(self, ts, signal_raw, signal_filtered, rpeaks, templates_ts, templates,
-                        template_before, template_after, feature_groups):
+    def _group_features(
+        self,
+        ts,
+        signal_raw,
+        signal_filtered,
+        rpeaks,
+        templates_ts,
+        templates,
+        template_before,
+        template_after,
+        feature_groups,
+    ):
 
         """Get a dictionary of all ECG features"""
 
@@ -216,10 +261,15 @@ class Features:
             if feature_group == 'full_waveform_features':
 
                 # Extract features
-                full_waveform_features = FullWaveformFeatures(ts=ts, signal_raw=signal_raw,
-                                                              signal_filtered=signal_filtered, rpeaks=rpeaks,
-                                                              templates_ts=templates_ts, templates=templates,
-                                                              fs=FS)
+                full_waveform_features = FullWaveformFeatures(
+                    ts=ts,
+                    signal_raw=signal_raw,
+                    signal_filtered=signal_filtered,
+                    rpeaks=rpeaks,
+                    templates_ts=templates_ts,
+                    templates=templates,
+                    fs=FS,
+                )
                 full_waveform_features.extract_full_waveform_features()
 
                 # Update feature dictionary
@@ -229,9 +279,17 @@ class Features:
             if feature_group == 'rri_features':
 
                 # Extract features
-                rri_features = RRIFeatures(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
-                                           rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
-                                           fs=FS, template_before=template_before, template_after=template_after)
+                rri_features = RRIFeatures(
+                    ts=ts,
+                    signal_raw=signal_raw,
+                    signal_filtered=signal_filtered,
+                    rpeaks=rpeaks,
+                    templates_ts=templates_ts,
+                    templates=templates,
+                    fs=FS,
+                    template_before=template_before,
+                    template_after=template_after,
+                )
                 rri_features.extract_rri_features()
 
                 # Update feature dictionary
@@ -241,17 +299,28 @@ class Features:
             if feature_group == 'template_features':
 
                 # Extract features
-                template_features = TemplateFeatures(ts=ts, signal_raw=signal_raw, signal_filtered=signal_filtered,
-                                                     rpeaks=rpeaks, templates_ts=templates_ts, templates=templates,
-                                                     fs=FS, template_before=template_before,
-                                                     template_after=template_after)
+                template_features = TemplateFeatures(
+                    ts=ts,
+                    signal_raw=signal_raw,
+                    signal_filtered=signal_filtered,
+                    rpeaks=rpeaks,
+                    templates_ts=templates_ts,
+                    templates=templates,
+                    fs=FS,
+                    template_before=template_before,
+                    template_after=template_after,
+                )
                 template_features.extract_template_features()
 
                 # Update feature dictionary
                 features.update(template_features.get_template_features())
 
             # Add age and sex
-            features.update({'age': np.nan if self.meta_data['age'] == 'NaN' else int(self.meta_data['age']),
-                             'sex': 1 if self.meta_data['sex'] else 0})
+            features.update(
+                {
+                    'age': np.nan if self.meta_data['age'] == 'NaN' else int(self.meta_data['age']),
+                    'sex': 1 if self.meta_data['sex'] else 0,
+                }
+            )
 
         return features

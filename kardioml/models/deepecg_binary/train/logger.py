@@ -62,8 +62,20 @@ class Logger(object):
         if os.path.exists(os.path.join(self.save_path, 'logs', 'training.csv')):
             self.csv = pd.read_csv(os.path.join(self.save_path, 'logs', 'training.csv'))
         else:
-            self.csv = pd.DataFrame(data=[], columns=['epoch', 'steps', 'train_time', 'epoch_time', 'lr', 'train_loss',
-                                                      'val_loss', 'train_accuracy', 'val_accuracy'])
+            self.csv = pd.DataFrame(
+                data=[],
+                columns=[
+                    'epoch',
+                    'steps',
+                    'train_time',
+                    'epoch_time',
+                    'lr',
+                    'train_loss',
+                    'val_loss',
+                    'train_accuracy',
+                    'val_accuracy',
+                ],
+            )
 
     def _compute_training_time(self):
         """Compute elapsed time from start of training."""
@@ -116,8 +128,10 @@ class Logger(object):
 
     def _log_time_summary(self):
         self.logger.info('\nTime Summary:')
-        self.logger.info('Total Time: {:.2f} hours'.format(self._compute_training_time() / 3600.))
-        self.logger.info('Time Per Global Step: {:.6f} seconds'.format(self._compute_mean_global_step_time()))
+        self.logger.info('Total Time: {:.2f} hours'.format(self._compute_training_time() / 3600.0))
+        self.logger.info(
+            'Time Per Global Step: {:.6f} seconds'.format(self._compute_mean_global_step_time())
+        )
         self.logger.info('Time Per Epoch: {:.6f} seconds'.format(self._compute_mean_epoch_time()))
 
     def _log_best_model(self):
@@ -138,18 +152,23 @@ class Logger(object):
 
     def _get_training_log_string(self):
         """Generate log string."""
-        log_string = 'Epoch {0:.0f}, Step {1}, T-Time: {2:.3f} hr, E-Time: {3:.3f} min, lr: {4:.2e}, ' + \
-                     'Train Loss: {5:.6f}, Val Loss: {6:.6f}, Train Acc: {7:.3f} %, Val Acc: {8:.3f} %, {9}'
+        log_string = (
+            'Epoch {0:.0f}, Step {1}, T-Time: {2:.3f} hr, E-Time: {3:.3f} min, lr: {4:.2e}, '
+            + 'Train Loss: {5:.6f}, Val Loss: {6:.6f}, Train Acc: {7:.3f} %, Val Acc: {8:.3f} %, {9}'
+        )
 
-        return log_string.format(self.monitor.current_state.epoch,
-                                 self.monitor.current_state.global_step,
-                                 self._compute_training_time() / 3600.,
-                                 self._compute_epoch_time() / 60.,
-                                 self.monitor.current_state.learning_rate,
-                                 self.monitor.current_state.train_loss,
-                                 self.monitor.current_state.val_loss,
-                                 self.monitor.current_state.train_accuracy * 100,
-                                 self.monitor.current_state.val_accuracy * 100, self._is_best())
+        return log_string.format(
+            self.monitor.current_state.epoch,
+            self.monitor.current_state.global_step,
+            self._compute_training_time() / 3600.0,
+            self._compute_epoch_time() / 60.0,
+            self.monitor.current_state.learning_rate,
+            self.monitor.current_state.train_loss,
+            self.monitor.current_state.val_loss,
+            self.monitor.current_state.train_accuracy * 100,
+            self.monitor.current_state.val_accuracy * 100,
+            self._is_best(),
+        )
 
     def log_training(self, monitor):
         """Log training results."""
@@ -188,15 +207,19 @@ class Logger(object):
 
     def _get_training_log_csv(self):
         """Write training log to CSV."""
-        return pd.Series(dict(epoch=self.monitor.current_state.epoch,
-                              steps=self.monitor.current_state.global_step,
-                              train_time=self._compute_training_time() / 60.,
-                              epoch_time=self._compute_epoch_time() / 60.,
-                              lr=self.monitor.current_state.learning_rate,
-                              train_loss=self.monitor.current_state.train_loss,
-                              val_loss=self.monitor.current_state.val_loss,
-                              train_accuracy=self.monitor.current_state.train_accuracy,
-                              val_accuracy=self.monitor.current_state.val_accuracy))
+        return pd.Series(
+            dict(
+                epoch=self.monitor.current_state.epoch,
+                steps=self.monitor.current_state.global_step,
+                train_time=self._compute_training_time() / 60.0,
+                epoch_time=self._compute_epoch_time() / 60.0,
+                lr=self.monitor.current_state.learning_rate,
+                train_loss=self.monitor.current_state.train_loss,
+                val_loss=self.monitor.current_state.val_loss,
+                train_accuracy=self.monitor.current_state.train_accuracy,
+                val_accuracy=self.monitor.current_state.val_accuracy,
+            )
+        )
 
     def _start_log(self):
         """Log starting state."""

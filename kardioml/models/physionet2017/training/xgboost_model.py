@@ -21,7 +21,6 @@ from kardioml.models.physionet2017.features.feature_extractor import Features
 
 
 class Model(object):
-
     def __init__(self, features, labels, cv_folds, stratifier):
 
         # Set parameters
@@ -40,9 +39,7 @@ class Model(object):
     def tune_hyper_parameters(self, param_bounds, n_iter=10):
         """Run hyper-parameter optimization."""
         # Initialize optimizer
-        self.optimizer = BayesianOptimization(f=self.cross_validate,
-                                              pbounds=param_bounds,
-                                              random_state=0)
+        self.optimizer = BayesianOptimization(f=self.cross_validate, pbounds=param_bounds, random_state=0)
 
         # Run optimization
         self.optimizer.maximize(init_points=5, n_iter=n_iter, acq='ucb', kappa=3, alpha=1e-10)
@@ -56,28 +53,48 @@ class Model(object):
         # Train final model
         self.train_final_model(params=self.params)
 
-    def cross_validate(self, learning_rate, n_estimators, max_depth, subsample, colsample,
-                       gamma, min_child_weight, max_delta_step):
+    def cross_validate(
+        self,
+        learning_rate,
+        n_estimators,
+        max_depth,
+        subsample,
+        colsample,
+        gamma,
+        min_child_weight,
+        max_delta_step,
+    ):
         """Run cross validation."""
         # Force data type
         max_depth = int(max_depth)
         n_estimators = int(n_estimators)
 
         # Set parameters
-        params = {'learning_rate': learning_rate, 'n_estimators': n_estimators, 'max_depth': max_depth,
-                  'subsample': subsample, 'colsample': colsample, 'gamma': gamma,
-                  'min_child_weight': min_child_weight, 'max_delta_step': max_delta_step}
+        params = {
+            'learning_rate': learning_rate,
+            'n_estimators': n_estimators,
+            'max_depth': max_depth,
+            'subsample': subsample,
+            'colsample': colsample,
+            'gamma': gamma,
+            'min_child_weight': min_child_weight,
+            'max_delta_step': max_delta_step,
+        }
 
         # Initialize model
-        model = OneVsRestClassifier(XGBClassifier(learning_rate=learning_rate,
-                                                  n_estimators=n_estimators,
-                                                  max_depth=max_depth,
-                                                  subsample=subsample,
-                                                  colsample=colsample,
-                                                  gamma=gamma,
-                                                  min_child_weight=min_child_weight,
-                                                  max_delta_step=max_delta_step,
-                                                  n_jobs=-1))
+        model = OneVsRestClassifier(
+            XGBClassifier(
+                learning_rate=learning_rate,
+                n_estimators=n_estimators,
+                max_depth=max_depth,
+                subsample=subsample,
+                colsample=colsample,
+                gamma=gamma,
+                min_child_weight=min_child_weight,
+                max_delta_step=max_delta_step,
+                n_jobs=-1,
+            )
+        )
 
         # Compute CV scores
         cv_scores = self.compute_cv_scores(model=model, params=params)
@@ -94,15 +111,19 @@ class Model(object):
         self.stratified_kfolds = StratifiedKFold(n_splits=self.cv_folds, random_state=0, shuffle=True)
 
         # Loop through folds
-        for cv_index, (train_index, test_index) in enumerate(self.stratified_kfolds.split(X=self.features,
-                                                                                          y=self.stratifier)):
+        for cv_index, (train_index, test_index) in enumerate(
+            self.stratified_kfolds.split(X=self.features, y=self.stratifier)
+        ):
 
             # Compute CV score
-            cv_score = CVScore(model=model, cv_index=cv_index,
-                               train_index=train_index,
-                               test_index=test_index,
-                               x=self.features,
-                               y=self.labels)
+            cv_score = CVScore(
+                model=model,
+                cv_index=cv_index,
+                train_index=train_index,
+                test_index=test_index,
+                x=self.features,
+                y=self.labels,
+            )
 
             # Collect cv score
             cv_scores[cv_index] = {'cv_score': cv_score, 'params': params}
@@ -112,15 +133,19 @@ class Model(object):
     def _compute_final_cv_scores(self):
         """Compute final cv scores after optimization."""
         # Initialize model
-        model = OneVsRestClassifier(XGBClassifier(learning_rate=self.params['learning_rate'],
-                                                  n_estimators=int(self.params['n_estimators']),
-                                                  max_depth=int(self.params['max_depth']),
-                                                  subsample=self.params['subsample'],
-                                                  colsample=self.params['colsample'],
-                                                  gamma=self.params['gamma'],
-                                                  min_child_weight=self.params['min_child_weight'],
-                                                  max_delta_step=self.params['max_delta_step'],
-                                                  n_jobs=-1))
+        model = OneVsRestClassifier(
+            XGBClassifier(
+                learning_rate=self.params['learning_rate'],
+                n_estimators=int(self.params['n_estimators']),
+                max_depth=int(self.params['max_depth']),
+                subsample=self.params['subsample'],
+                colsample=self.params['colsample'],
+                gamma=self.params['gamma'],
+                min_child_weight=self.params['min_child_weight'],
+                max_delta_step=self.params['max_delta_step'],
+                n_jobs=-1,
+            )
+        )
 
         # Compute CV scores
         cv_scores = self.compute_cv_scores(model=model, params=self.params)
@@ -130,23 +155,29 @@ class Model(object):
     def train_final_model(self, params):
         """Train final model after optimization."""
         # Initialize model
-        self.model = OneVsRestClassifier(XGBClassifier(learning_rate=params['learning_rate'],
-                                                       n_estimators=int(params['n_estimators']),
-                                                       max_depth=int(params['max_depth']),
-                                                       subsample=params['subsample'],
-                                                       colsample=params['colsample'],
-                                                       gamma=params['gamma'],
-                                                       min_child_weight=params['min_child_weight'],
-                                                       max_delta_step=params['max_delta_step'],
-                                                       n_jobs=-1))
+        self.model = OneVsRestClassifier(
+            XGBClassifier(
+                learning_rate=params['learning_rate'],
+                n_estimators=int(params['n_estimators']),
+                max_depth=int(params['max_depth']),
+                subsample=params['subsample'],
+                colsample=params['colsample'],
+                gamma=params['gamma'],
+                min_child_weight=params['min_child_weight'],
+                max_delta_step=params['max_delta_step'],
+                n_jobs=-1,
+            )
+        )
 
         # Train model
         self.model.fit(X=self.features, y=self.labels)
 
     def get_final_cv_scores(self):
         """Return a dictionary of final scores."""
-        return {cv_index: self.cv_scores[cv_index]['cv_score'].get_cv_score()
-                for cv_index in range(len(self.cv_scores))}
+        return {
+            cv_index: self.cv_scores[cv_index]['cv_score'].get_cv_score()
+            for cv_index in range(len(self.cv_scores))
+        }
 
     def save(self):
         """Pickle data model."""
@@ -160,9 +191,11 @@ class Model(object):
         """Get final predictions for competition inference."""
         # Get features
         features = Features(filename=None, waveform_data=data, header_data=header_data)
-        features.extract_features(lead='I', feature_groups=['full_waveform_features',
-                                                            'rri_features', 'template_features'],
-                                  filter_bandwidth=FILTER_BAND_LIMITS)
+        features.extract_features(
+            lead='I',
+            feature_groups=['full_waveform_features', 'rri_features', 'template_features'],
+            filter_bandwidth=FILTER_BAND_LIMITS,
+        )
 
         # Get prediction output
         predictions = self.model.predict(features.get_features()).flatten()

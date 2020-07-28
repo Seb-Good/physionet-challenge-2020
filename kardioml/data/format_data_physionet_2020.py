@@ -54,9 +54,11 @@ class FormatDataPhysionet2020(object):
         os.makedirs(self.formatted_path, exist_ok=True)
 
         # Get a list of filenames
-        filenames = [filename.split('.')[0] for filename in
-                     os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset]))
-                     if 'mat' in filename]
+        filenames = [
+            filename.split('.')[0]
+            for filename in os.listdir(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset]))
+            if 'mat' in filename
+        ]
 
         if debug:
             for filename in filenames[0:10]:
@@ -87,32 +89,41 @@ class FormatDataPhysionet2020(object):
 
         # Save meta data JSON
         with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
-            json.dump({'filename': filename,
-                       'datetime': header['datetime'],
-                       'channel_order': header['channel_order'],
-                       'age': header['age'],
-                       'sex': header['sex'],
-                       'amp_conversion': header['amp_conversion'],
-                       'fs': header['fs'],
-                       'length': header['length'],
-                       'num_leads': header['num_leads'],
-                       'labels_SNOMEDCT': [label['SNOMED CT Code'] for label in
-                                           labels_scored] if labels_scored else None,
-                       'labels': [label['Abbreviation'] for label in labels_scored] if labels_scored else None,
-                       'labels_full': [label['Dx'] for label in labels_scored] if labels_scored else None,
-                       'shape': waveforms.shape,
-                       'hr': self._compute_heart_rate(waveforms=waveforms, fs=header['fs']),
-                       'rpeaks': rpeaks,
-                       'rpeak_array': rpeak_array.tolist(),
-                       'rpeak_times': rpeak_times,
-                       'labels_unscored_SNOMEDCT': [label['SNOMED CT Code'] for label in
-                                                    labels_unscored] if labels_unscored else None,
-                       'labels_unscored': [label['Abbreviation'] for label in
-                                           labels_unscored] if labels_unscored else None,
-                       'labels_unscored_full': [label['Dx'] for label in
-                                                labels_unscored] if labels_unscored else None,
-                       },
-                      file, sort_keys=False, indent=4)
+            json.dump(
+                {
+                    'filename': filename,
+                    'datetime': header['datetime'],
+                    'channel_order': header['channel_order'],
+                    'age': header['age'],
+                    'sex': header['sex'],
+                    'amp_conversion': header['amp_conversion'],
+                    'fs': header['fs'],
+                    'length': header['length'],
+                    'num_leads': header['num_leads'],
+                    'labels_SNOMEDCT': [label['SNOMED CT Code'] for label in labels_scored]
+                    if labels_scored
+                    else None,
+                    'labels': [label['Abbreviation'] for label in labels_scored] if labels_scored else None,
+                    'labels_full': [label['Dx'] for label in labels_scored] if labels_scored else None,
+                    'shape': waveforms.shape,
+                    'hr': self._compute_heart_rate(waveforms=waveforms, fs=header['fs']),
+                    'rpeaks': rpeaks,
+                    'rpeak_array': rpeak_array.tolist(),
+                    'rpeak_times': rpeak_times,
+                    'labels_unscored_SNOMEDCT': [label['SNOMED CT Code'] for label in labels_unscored]
+                    if labels_unscored
+                    else None,
+                    'labels_unscored': [label['Abbreviation'] for label in labels_unscored]
+                    if labels_unscored
+                    else None,
+                    'labels_unscored_full': [label['Dx'] for label in labels_unscored]
+                    if labels_unscored
+                    else None,
+                },
+                file,
+                sort_keys=False,
+                indent=4,
+            )
 
     def _get_scored_labels(self, labels):
         """Return a list scored labels."""
@@ -193,12 +204,12 @@ class FormatDataPhysionet2020(object):
         sections = self._contiguous_regions(peak_array == 0)
         for section in sections.tolist():
             if section[1] - section[0] <= 30:
-                peak_array[section[0]:section[1]] = 1
+                peak_array[section[0] : section[1]] = 1
 
         sections = self._contiguous_regions(peak_array == 1)
         for section in sections.tolist():
             if section[1] - section[0] == 1:
-                peak_array[section[0]:section[1]] = 0
+                peak_array[section[0] : section[1]] = 0
 
         return peak_array
 
@@ -210,7 +221,7 @@ class FormatDataPhysionet2020(object):
         # Get time array
         time = np.arange(waveforms.shape[0]) * 1 / fs
 
-        return [[time[section[0]], time[section[1]-1]] for section in sections]
+        return [[time[section[0]], time[section[1] - 1]] for section in sections]
 
     def _extract_data(self):
         """Extract the raw dataset file."""
@@ -219,13 +230,16 @@ class FormatDataPhysionet2020(object):
 
     def _load_mat_file(self, filename):
         """Load Matlab waveform file."""
-        return sio.loadmat(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset],
-                                        '{}.mat'.format(filename)))['val'].T
+        return sio.loadmat(
+            os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset], '{}.mat'.format(filename))
+        )['val'].T
 
     def _load_header_file(self, filename):
         """Load header file."""
         # Load file
-        file = open(os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset], '{}.hea'.format(filename)), 'r')
+        file = open(
+            os.path.join(self.raw_path, EXTRACTED_FOLDER_NAMES[self.dataset], '{}.hea'.format(filename)), 'r'
+        )
         content = file.read().split('\n')
         file.close()
         return parse_header(header_data=content)
@@ -243,7 +257,7 @@ class FormatDataPhysionet2020(object):
     def _contiguous_regions(condition):
         """Find the indices of changes in condition"""
         d = np.diff(condition)
-        idx, = d.nonzero()
+        (idx,) = d.nonzero()
 
         # Shift the index by 1 to the right.
         idx += 1
