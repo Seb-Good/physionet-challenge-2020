@@ -8,6 +8,7 @@ By: Sebastian D. Goodfellow, Ph.D., 2020
 # 3rd party imports
 import os
 import json
+import copy
 import shutil
 import numpy as np
 import pandas as pd
@@ -16,11 +17,13 @@ import scipy.io as sio
 from biosppy.signals import ecg
 from joblib import Parallel, delayed
 from scipy.signal.windows import blackmanharris
+from sklearn.preprocessing import MultiLabelBinarizer
 
 # Local imports
 from kardioml import DATA_PATH, DATA_FILE_NAMES, EXTRACTED_FOLDER_NAMES
 from kardioml.data.data_loader import parse_header
 from kardioml.data.p_t_wave_detector import PTWaveDetection
+from kardioml.data.resample import Resampling
 
 
 class FormatDataPhysionet2020(object):
@@ -38,8 +41,6 @@ class FormatDataPhysionet2020(object):
         # Set attributes
         self.raw_path = os.path.join(DATA_PATH, self.dataset, 'raw')
         self.formatted_path = os.path.join(DATA_PATH, self.dataset, 'formatted')
-        self.labels_scored = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
-        self.labels_unscored = pd.read_csv(os.path.join(DATA_PATH, 'labels_unscored.csv'))
 
     def format(self, extract=True, debug=False, p_and_t_waves=False, parallel=False):
         """Format Physionet2020 dataset."""
@@ -54,6 +55,7 @@ class FormatDataPhysionet2020(object):
     def _format_data(self, debug, p_and_t_waves, parallel):
         """Format raw data to standard structure."""
         # Create directory for formatted data
+        shutil.rmtree(self.formatted_path)
         os.makedirs(self.formatted_path, exist_ok=True)
 
         # Get a list of filenames
@@ -76,27 +78,29 @@ class FormatDataPhysionet2020(object):
         header = self._load_header_file(filename=filename)
 
         # Get labels
-        labels_scored = self._get_scored_labels(labels=header['labels_SNOMEDCT'])
-        labels_unscored = self._get_unscored_labels(labels=header['labels_SNOMEDCT'])
+        labels = Labels(labels_SNOMEDCT=header['labels_SNOMEDCT'])
 
         # Import matlab file
         waveforms = self._load_mat_file(filename=filename)
 
+        # Resample waveforms
+        waveforms = self._resample(waveforms=waveforms, fs=header['fs'])
+
         # Get rpeaks
-        rpeaks = self._get_rpeaks(waveforms=waveforms, fs=header['fs'])
+        rpeaks = self._get_rpeaks(waveforms=waveforms, fs=1000)
         rpeak_array = self._get_peak_array(waveforms=waveforms, peaks=rpeaks)
-        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=header['fs'])
+        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=1000)
 
         # Get P-waves and T-waves
         if p_and_t_waves:
             p_waves, t_waves = self._get_p_and_t_waves(waveforms=waveforms, rpeaks=rpeaks)
         else:
-            p_waves = [None for _ in range(header['num_leads'])]
-            t_waves = [None for _ in range(header['num_leads'])]
+            p_waves = None
+            t_waves = None
         p_wave_array = self._get_peak_array(waveforms=waveforms, peaks=p_waves)
-        p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=header['fs'])
+        p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=1000)
         t_wave_array = self._get_peak_array(waveforms=waveforms, peaks=t_waves)
-        t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=header['fs'])
+        t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=1000)
 
         # Save waveform data npy file
         np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
@@ -110,12 +114,15 @@ class FormatDataPhysionet2020(object):
                        'sex': header['sex'],
                        'amp_conversion': header['amp_conversion'],
                        'fs': header['fs'],
+                       'fs_resampled': 1000,
                        'length': header['length'],
                        'num_leads': header['num_leads'],
-                       'labels_SNOMEDCT': [label['SNOMED CT Code'] for label in
-                                           labels_scored] if labels_scored else None,
-                       'labels': [label['Abbreviation'] for label in labels_scored] if labels_scored else None,
-                       'labels_full': [label['Dx'] for label in labels_scored] if labels_scored else None,
+                       'labels_SNOMEDCT': labels.labels_SNOMEDCT,
+                       'labels_short': labels.labels_short,
+                       'labels_full': labels.labels_full,
+                       'labels_int': labels.labels_int,
+                       'labels_training': labels.labels_training,
+                       'labels_training_merged': labels.labels_training_merged,
                        'shape': waveforms.shape,
                        'hr': self._compute_heart_rate(waveforms=waveforms, fs=header['fs']),
                        'rpeaks': rpeaks,
@@ -127,37 +134,12 @@ class FormatDataPhysionet2020(object):
                        't_waves': t_waves,
                        't_wave_array': t_wave_array.tolist(),
                        't_wave_times': t_wave_times,
-                       'labels_unscored_SNOMEDCT': [label['SNOMED CT Code'] for label in
-                                                    labels_unscored] if labels_unscored else None,
-                       'labels_unscored': [label['Abbreviation'] for label in
-                                           labels_unscored] if labels_unscored else None,
-                       'labels_unscored_full': [label['Dx'] for label in
-                                                labels_unscored] if labels_unscored else None,
+                       'labels_unscored_SNOMEDCT': labels.labels_unscored_SNOMEDCT,
+                       'labels_unscored_short': labels.labels_unscored_short,
+                       'labels_unscored_full': labels.labels_unscored_full,
                        'p_and_t_waves': p_and_t_waves
                        },
                       file, sort_keys=False, indent=4)
-
-    def _get_scored_labels(self, labels):
-        """Return a list scored labels."""
-        labels_list = list()
-        for label in labels:
-            row = self.labels_scored[self.labels_scored['SNOMED CT Code'] == label]
-            if row.shape[0] > 0:
-                labels_list.append(row.to_dict(orient='row')[0])
-        if len(labels_list) > 0:
-            return labels_list
-        return None
-
-    def _get_unscored_labels(self, labels):
-        """Return a list scored labels."""
-        labels_list = list()
-        for label in labels:
-            row = self.labels_unscored[self.labels_unscored['SNOMED CT Code'] == label]
-            if row.shape[0] > 0:
-                labels_list.append(row.to_dict(orient='row')[0])
-        if len(labels_list) > 0:
-            return labels_list
-        return None
 
     @staticmethod
     def _compute_heart_rate(waveforms, fs):
@@ -207,7 +189,8 @@ class FormatDataPhysionet2020(object):
         # Create empty array with length of waveform
         peak_array = np.zeros(waveforms.shape[0], dtype=np.float32)
         window = blackmanharris(21)
-        if len([True for peak_ids in peaks if peak_ids is not None]) >= 1:
+        # if len([True for peak_ids in peaks if peak_ids is not None]) >= 1:
+        if peaks:
             for peak_ids in peaks:
                 if peak_ids:
                     for peak_id in peak_ids:
@@ -220,7 +203,7 @@ class FormatDataPhysionet2020(object):
     def _get_peak_times(self, waveforms, peak_array, fs):
         """Get list of start and end times for peaks."""
         # Get contiguous sections
-        sections = self._contiguous_regions(peak_array == 1).tolist()
+        sections = self._contiguous_regions(peak_array >= 0.5).tolist()
 
         # Get time array
         time = np.arange(waveforms.shape[0]) * 1 / fs
@@ -306,3 +289,83 @@ class FormatDataPhysionet2020(object):
         idx.shape = (-1, 2)
 
         return idx
+
+    @staticmethod
+    def _resample(waveforms, fs):
+        if fs == 257:
+            order = 4
+            waveforms_resampled = list()
+            for channel in range(waveforms.shape[1]):
+                waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
+            return np.stack(waveforms, axis=0)
+        elif fs == 500:
+            order = 2
+            waveforms_resampled = list()
+            for channel in range(waveforms.shape[1]):
+                waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
+            return np.stack(waveforms, axis=0)
+        return waveforms
+
+
+class Labels(object):
+
+    def __init__(self, labels_SNOMEDCT):
+
+        # Set parameters
+        self.labels_SNOMEDCT = labels_SNOMEDCT
+
+        # Scored labels
+        self.labels_scored_lookup = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
+        self.labels_scored = self._get_scored_labels(labels=self.labels_SNOMEDCT)
+        self.labels_short = [label['Abbreviation'] for label in self.labels_scored] if self.labels_scored else None
+        self.labels_full = [label['Dx'] for label in self.labels_scored] if self.labels_scored else None
+        self.labels_int = [int(self.labels_scored_lookup[self.labels_scored_lookup['SNOMED CT Code'] ==
+                                                         label['SNOMED CT Code']].index[0])
+                           for label in self.labels_scored] if self.labels_scored else None
+        self.labels_training = self._get_training_label(labels=self.labels_int) if self.labels_int else None
+        self.labels_training_merged = self._get_merged_label()
+
+        # Unscored labels
+        self.labels_unscored_lookup = pd.read_csv(os.path.join(DATA_PATH, 'labels_unscored.csv'))
+        self.labels_unscored = self._get_unscored_labels(labels=self.labels_SNOMEDCT)
+        self.labels_unscored_SNOMEDCT = [label['SNOMED CT Code'] for label in self.labels_unscored] if self.labels_unscored else None
+        self.labels_unscored_short = [label['Abbreviation'] for label in self.labels_unscored] if self.labels_unscored else None
+        self.labels_unscored_full = [label['Dx'] for label in self.labels_unscored] if self.labels_unscored else None
+
+    def _get_scored_labels(self, labels):
+        """Return a list scored labels."""
+        labels_list = list()
+        for label in labels:
+            row = self.labels_scored_lookup[self.labels_scored_lookup['SNOMED CT Code'] == label]
+            if row.shape[0] > 0:
+                labels_list.append(row.to_dict(orient='row')[0])
+        if len(labels_list) > 0:
+            return labels_list
+        return None
+
+    def _get_unscored_labels(self, labels):
+        """Return a list scored labels."""
+        labels_list = list()
+        for label in labels:
+            row = self.labels_unscored_lookup[self.labels_unscored_lookup['SNOMED CT Code'] == label]
+            if row.shape[0] > 0:
+                labels_list.append(row.to_dict(orient='row')[0])
+        if len(labels_list) > 0:
+            return labels_list
+        return None
+
+    def _get_training_label(self, labels):
+        """Return one-hot training label."""
+        mlb = MultiLabelBinarizer(classes=self.labels_scored_lookup.index.tolist())
+        return mlb.fit_transform([labels])[0].tolist()
+
+    def _get_merged_label(self):
+        label_maps = [[4, 18], [12, 23], [13, 26]]
+        if self.labels_training:
+            labels_training = copy.copy(self.labels_training)
+            for label in label_maps:
+                if labels_training[label[1]] == 1:
+                    labels_training[label[1]] = 0
+                    labels_training[label[0]] = 1
+            return labels_training
+        return None

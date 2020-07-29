@@ -32,7 +32,7 @@ def waveform_plot(filename_id, filenames, path):
 
     # Get label
     label = ''
-    if meta_data['labels']:
+    if meta_data['labels_short']:
         for idx, lab in enumerate(meta_data['labels_full']):
             if idx == 0:
                 label += lab
@@ -42,7 +42,7 @@ def waveform_plot(filename_id, filenames, path):
         label = 'Other'
 
     # Time array
-    time = np.arange(waveforms.shape[0]) * 1 / meta_data['fs']
+    time = np.arange(waveforms.shape[0]) * 1 / meta_data['fs_resampled']
 
     # Setup figure
     fig = plt.figure(figsize=(15, 15), facecolor='w')
@@ -60,14 +60,17 @@ def waveform_plot(filename_id, filenames, path):
     shift = 0
     for channel_id in range(waveforms.shape[1]):
         ax1.plot(time, waveforms[:, channel_id] + shift, '-k', lw=2)
-        ax1.plot(time[meta_data['rpeaks'][channel_id]],
-                 waveforms[meta_data['rpeaks'][channel_id], channel_id] + shift, 'ob')
+        if meta_data['rpeaks'] is not None:
+            ax1.plot(time[meta_data['rpeaks'][channel_id]],
+                     waveforms[meta_data['rpeaks'][channel_id], channel_id] + shift, 'ob')
         if meta_data['p_and_t_waves']:
-            ax1.plot(time[meta_data['p_waves'][channel_id]],
-                     waveforms[meta_data['p_waves'][channel_id], channel_id] + shift, 'or')
-            ax1.plot(time[meta_data['t_waves'][channel_id]],
-                     waveforms[meta_data['t_waves'][channel_id], channel_id] + shift, 'og')
-            ax1.text(0.1, 0.25 + shift, ECG_LEADS[channel_id], color='red', fontsize=16, ha='left')
+            if meta_data['p_waves'] is not None:
+                ax1.plot(time[meta_data['p_waves'][channel_id]],
+                         waveforms[meta_data['p_waves'][channel_id], channel_id] + shift, 'or')
+            if meta_data['t_waves'] is not None:
+                ax1.plot(time[meta_data['t_waves'][channel_id]],
+                         waveforms[meta_data['t_waves'][channel_id], channel_id] + shift, 'og')
+        ax1.text(0.1, 0.25 + shift, ECG_LEADS[channel_id], color='red', fontsize=16, ha='left')
         shift += 3
     ax1.plot(time, np.array(meta_data['rpeak_array']) + shift, '-k', lw=2)
     ax1.text(0.1, -1.25 + shift, 'R-Peaks', color='red', fontsize=16, ha='left')

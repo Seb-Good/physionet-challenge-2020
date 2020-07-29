@@ -18,3 +18,4 @@ sortedcontainers==2.2.2
 cython==0.29.17
 requests==2.23.0
 pytorch==1.4.0
+numba==0.50.1
