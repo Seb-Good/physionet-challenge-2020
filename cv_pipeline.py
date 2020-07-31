@@ -22,7 +22,7 @@ seed_everything(42)
 
 class CVPipeline:
     def __init__(
-        self, hparams, split_table_path, split_table_name, pic_folder, debug_folder,
+        self, hparams, split_table_path, split_table_name, debug_folder,
     ):
 
         # load the model
@@ -33,7 +33,6 @@ class CVPipeline:
         print('Selected Learning rate:', self.hparams['lr'])
         print('\n')
 
-        self.pic_folder = pic_folder
         self.debug_folder = debug_folder
         self.split_table_path = split_table_path
         self.split_table_name = split_table_name
@@ -45,7 +44,9 @@ class CVPipeline:
 
         splits = []
 
-        for i in range(5):
+        split_files = [i for i in os.listdir(self.split_table_path) if i.find('.json')!=-1]
+
+        for i in range(len(split_files)):
             data = json.load(open(self.split_table_path + str(i) + self.split_table_name))
             splits.append(data)
 

@@ -4,7 +4,7 @@ import click
 # import modules
 from cv_pipeline import CVPipeline
 from pre_processing import PrepareData
-from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME
+from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOLDER
 
 
 @click.command()
@@ -12,8 +12,8 @@ from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME
 @click.option('--batch_size', default=hparams['batch_size'], help='batch size')
 @click.option('--lr', default=hparams['lr'], help='learning rate')
 @click.option('--n_epochs', default=hparams['n_epochs'], help='number of epoches to run')
-@click.option('--p_proc', default=True, help='does it need to run preprocessing?')
-@click.option('--train', default=False, help='does it need to train the model?')
+@click.option('--p_proc', default=False, help='does it need to run preprocessing?')
+@click.option('--train', default=True, help='does it need to train the model?')
 def main(start_fold, batch_size, lr, n_epochs,p_proc,train):
 
     # update hparams
@@ -31,7 +31,6 @@ def main(start_fold, batch_size, lr, n_epochs,p_proc,train):
             hparams=hparams,
             split_table_path=SPLIT_TABLE_PATH,
             split_table_name=SPLIT_TABLE_NAME,
-            pic_folder=PIC_FOLDER,
             debug_folder=DEBUG_FOLDER,
         )
 
