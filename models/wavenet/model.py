@@ -121,7 +121,7 @@ class Model:
                 train_preds = torch.cat([train_preds, pred], 0)
 
             # calc triaing metric
-            mae_train = metric(train_true.numpy(), train_preds.numpy())
+            mae_train = Metric.compute(train_true.numpy(), train_preds.numpy())
 
             # evaluate the model
             print('Model evaluation...')
@@ -147,7 +147,7 @@ class Model:
                     val_preds = torch.cat([val_preds, pred], 0)
 
             # evalueate metric
-            mae_val = metric(val_true.numpy(), val_preds.numpy())
+            mae_val = Metric.compute(val_true.numpy(), val_preds.numpy())
 
             self.scheduler.step(avg_val_loss)
             res = self.early_stopping(score=avg_val_loss, model=self.model)
