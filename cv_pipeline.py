@@ -39,6 +39,7 @@ class CVPipeline:
         self.split_table_name = split_table_name
 
         self.splits = self.load_split_table()
+        self.metric = Metric()
 
     def load_split_table(self):
 
@@ -67,7 +68,7 @@ class CVPipeline:
             X, y = train.__getitem__(0)
 
             # TODO: model will require mutiple hparams
-            self.model = self.model(input_size=X.shape[1], n_channels=X.shape[2], hparams=self.hparams,)
+            self.model = self.model(input_size=X.shape[1], n_channels=X.shape[2], hparams=self.hparams)
 
             # train model
             self.model.fit(train=train, valid=valid)
@@ -78,7 +79,7 @@ class CVPipeline:
             heatmap = self.model.get_heatmap(valid)
 
             y_val = valid.get_labels()
-            fold_score = metric(y_val, pred_val)
+            fold_score = self.metric.compute(y_val, pred_val)
 
             # save the model
             self.model.model_save(

@@ -2,7 +2,7 @@ import logging as log
 import click
 
 # import modules
-#from cv_pipeline import CVPipeline
+from cv_pipeline import CVPipeline
 from pre_processing import PrepareData
 from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME
 
