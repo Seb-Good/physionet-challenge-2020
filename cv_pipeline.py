@@ -22,12 +22,13 @@ seed_everything(42)
 
 class CVPipeline:
     def __init__(
-        self, hparams, split_table_path, split_table_name, debug_folder,
+        self, hparams, split_table_path, split_table_name, debug_folder,model
     ):
 
         # load the model
 
         self.hparams = hparams
+        self.model = model
 
         print('\n')
         print('Selected Learning rate:', self.hparams['lr'])
@@ -44,10 +45,10 @@ class CVPipeline:
 
         splits = []
 
-        split_files = [i for i in os.listdir(self.split_table_path) if i.find('.json')!=-1]
+        split_files = [i for i in os.listdir(self.split_table_path) if i.find('fold')!=-1]
 
         for i in range(len(split_files)):
-            data = json.load(open(self.split_table_path + str(i) + self.split_table_name))
+            data = json.load(open(self.split_table_path + str(i) + '_' + self.split_table_name))
             splits.append(data)
 
         splits = pd.DataFrame(splits)
@@ -63,13 +64,13 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
 
-            train = Dataset_train(indexes=self.splits['train'].values[fold])
-            valid = Dataset_train(indexes=self.splits['val'].values[fold])
+            train = Dataset_train(self.splits['train'].values[fold])
+            valid = Dataset_train(self.splits['val'].values[fold])
 
             X, y = train.__getitem__(0)
 
             # TODO: model will require mutiple hparams
-            self.model = self.model(input_size=X.shape[1], n_channels=X.shape[2], hparams=self.hparams)
+            self.model = self.model(input_size=X.shape[0], n_channels=X.shape[1], hparams=self.hparams)
 
             # train model
             self.model.fit(train=train, valid=valid)

@@ -4,7 +4,7 @@ import click
 # import modules
 from cv_pipeline import CVPipeline
 from pre_processing import PrepareData
-from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOLDER
+from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOLDER,Model
 
 
 @click.command()
@@ -32,6 +32,7 @@ def main(start_fold, batch_size, lr, n_epochs,p_proc,train):
             split_table_path=SPLIT_TABLE_PATH,
             split_table_name=SPLIT_TABLE_NAME,
             debug_folder=DEBUG_FOLDER,
+            model = Model
         )
 
         score,fold = cross_val.train()

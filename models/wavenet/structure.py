@@ -42,7 +42,7 @@ class CBR(nn.Module):
         super().__init__()
 
         self.conv = nn.Conv1d(
-            out_ch,
+            in_ch,
             out_ch,
             kernel_size,
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
@@ -50,32 +50,32 @@ class CBR(nn.Module):
         )
         self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
+        self.pooling = nn.MaxPool1d(kernel_size=2)
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.bn(x)
+        #x = self.bn(x)
         x = self.relu(x)
+        x = self.pooling(x)
         return x
 
 
 class WaveNet(nn.Module):
-    def __init__(self, n_channels, basic_block=wave_block):
+    def __init__(self, n_channels, basic_block=CBR):
         super().__init__()
+
+        self.input_layer_1 = nn.LSTM(input_size=n_channels,hidden_size=5000,num_layers=1,batch_first=True,bidirectional=False)
+
         self.basic_block = basic_block
-        self.layer1 = self._make_layers(n_channels, 16, 3, 12)
-        self.bn1 = nn.BatchNorm1d(16)
-        self.layer2 = self._make_layers(16, 32, 3, 8)
-        self.bn2 = nn.BatchNorm1d(32)
-        self.layer3 = self._make_layers(32, 64, 3, 4)
-        self.bn3 = nn.BatchNorm1d(64)
-        self.layer4 = self._make_layers(64, 128, 3, 1)
-        # self.bn4 = nn.BatchNorm1d(128)
-        self.fc = nn.Linear(128, 11)  #
+        self.layer1 = self.basic_block(2, 128, 3, 12)
+        self.layer2 = self.basic_block(128, 64, 3, 8)
+        self.layer3 = self.basic_block(64, 32, 3, 4)
+        self.layer4 = self.basic_block(32, 16, 3, 1)
 
-        self.main_head = self._make_layers(128, 11, 1, 1)
-        self.angular_output = AngularPenaltySMLoss(in_features=128, out_features=11, loss_type='arcface')
+        self.fc1 = nn.Linear(4992, 300)
+        self.fc2 = nn.Linear(300, 300)
+        self.fc3 = nn.Linear(300, 27)#
 
-        self.part_head = nn.Linear(4000, 1)
 
     def _make_layers(self, in_ch, out_ch, kernel_size, n):
         dilation_rates = [2 ** i for i in range(n)]
@@ -85,8 +85,11 @@ class WaveNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)
-        x = self.layer1(x)
+
+        x,(h_0,c_0) = self.input_layer_1(x)
+
+        #h_0 = h_0.permute(0,2,1)
+        x = self.layer1(h_0)
         # x = self.bn1(x)
         x = self.layer2(x)
         # x = self.bn2(x)
@@ -95,12 +98,12 @@ class WaveNet(nn.Module):
         x = self.layer4(x)
         # x = self.bn4(x)
 
-        part_head = self.part_head(x)
 
-        x = x.permute(0, 2, 1)
-        part_head = part_head.permute(0, 2, 1)
+        x = x.view(-1,x.shape[1]*x.shape[2])
 
-        x = self.fc(x)
-        part_head = self.fc(part_head)
 
-        return x, part_head
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = torch.sigmoid(self.fc3(x))
+
+        return x

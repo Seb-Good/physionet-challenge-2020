@@ -10,7 +10,7 @@ for dataset in ['A','B','C','D','E','F']:
     DATA_PATH.append('./data/'+dataset+'/formatted/')
 
 SPLIT_TABLE_PATH = './data/fold_split/'
-SPLIT_TABLE_NAME = 'split_table.json'
+SPLIT_TABLE_NAME = 'fold.json'
 
 PIC_FOLDER = './data/pictures/'
 DEBUG_FOLDER = './data/CV_debug/'
