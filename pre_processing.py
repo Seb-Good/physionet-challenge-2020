@@ -30,8 +30,8 @@ class PrepareData:
         # get a list of patients
         self.patients = []
         for input_folder in self.input_folders:
-            for patient in os.listdir(input_folder):
-                if patient in exclude.items():
+            for patient in [i for i in os.listdir(input_folder) if i.find('.npy')!=-1]:
+                if patient[:-4] in exclude.items():
                     continue
                 else:
                     self.patients.append(patient)
@@ -59,14 +59,14 @@ class PrepareData:
             patients_val = []
 
             for dataset in train:
-                patients = os.listdir(dataset)
+                patients = [i for i in os.listdir(dataset) if i.find('.npy')!=-1]
                 for patient in patients:
-                    patients_train.append(dataset+patient)
+                    patients_train.append(dataset+patient[:-4])
 
             for dataset in val:
-                patients = os.listdir(dataset)
+                patients = [i for i in os.listdir(dataset) if i.find('.npy')!=-1]
                 for patient in patients:
-                    patients_val.append(dataset+patient)
+                    patients_val.append(dataset+patient[:-4])
 
             split['train'] = patients_train
             split['val'] = patients_val

@@ -8,7 +8,7 @@ import torch
 import os
 
 from data_generator import Dataset_train, Dataset_test
-from metrics import metric
+from metrics import Metric
 
 
 def seed_everything(seed):
