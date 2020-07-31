@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 
 # custom modules
-from metrics import metric
+from metrics import Metric
 from utils.torchsummary import summary
 from utils.pytorchtools import EarlyStopping
 

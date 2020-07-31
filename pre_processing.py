@@ -16,12 +16,11 @@ import torch
 
 
 class PrepareData:
-    def __init__(self, input_folders, output_folder, split_folder):
+    def __init__(self, input_folders, split_folder,split_table_name):
 
         self.input_folders = input_folders
-        self.output_folder = output_folder
         self.split_folder = split_folder
-
+        self.split_table_name = split_table_name
 
     def run(self):
 
@@ -39,24 +38,38 @@ class PrepareData:
 
 
         # split data into folds
+        print('Total number of patients: ', len(self.patients))
         self.split_table = self.create_split_table()
-
-        print('Total number of patients: ', len([*self.patients]))
 
         return 0
 
     def create_split_table(self):
 
         #TODO: finish up cross-validation loop
-        kfold = KFold(n_splits=5, random_state=42, shuffle=True)
+        kfold = KFold(n_splits=6, random_state=42, shuffle=True)
 
         split_table = []
 
-        for index, (train, val) in enumerate(kfold.split([*self.patients])):
+        for index, (train, val) in enumerate(kfold.split(self.input_folders)):
             split = {}
-            temp = self.patients.keys()
-            split['train'] = np.array([*self.patients])[train].tolist()
-            split['val'] = np.array([*self.patients])[val].tolist()
+            train = [i for index,i in enumerate(self.input_folders) if index in train.tolist()]
+            val = [i for index,i in enumerate(self.input_folders) if index in val.tolist()]
+
+            patients_train = []
+            patients_val = []
+
+            for dataset in train:
+                patients = os.listdir(dataset)
+                for patient in patients:
+                    patients_train.append(dataset+patient)
+
+            for dataset in val:
+                patients = os.listdir(dataset)
+                for patient in patients:
+                    patients_val.append(dataset+patient)
+
+            split['train'] = patients_train
+            split['val'] = patients_val
 
             split_table.append(split)
             with open(self.split_folder + str(index) + '_fold.json', 'w') as outfile:
