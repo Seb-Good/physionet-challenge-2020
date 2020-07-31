@@ -46,7 +46,8 @@ class Summaries(object):
         summary.value.add(tag='loss/loss', simple_value=monitor.current_state.train_loss)
         summary.value.add(tag='f_beta/f_beta', simple_value=monitor.current_state.train_f_beta)
         summary.value.add(tag='g_beta/g_beta', simple_value=monitor.current_state.train_g_beta)
-        summary.value.add(tag='geometric_mean/geometric_mean', simple_value=monitor.current_state.train_geometric_mean)
+        summary.value.add(tag='challenge_metric/challenge_metric',
+                          simple_value=monitor.current_state.train_challenge_metric)
 
         # Get validation summary
         self.train_summary_writer.add_summary(summary=summary, global_step=monitor.current_state.global_step)
@@ -60,7 +61,8 @@ class Summaries(object):
         summary.value.add(tag='loss/loss', simple_value=monitor.current_state.val_loss)
         summary.value.add(tag='f_beta/f_beta', simple_value=monitor.current_state.val_f_beta)
         summary.value.add(tag='g_beta/g_beta', simple_value=monitor.current_state.val_g_beta)
-        summary.value.add(tag='geometric_mean/geometric_mean', simple_value=monitor.current_state.val_geometric_mean)
+        summary.value.add(tag='challenge_metric/challenge_metric',
+                          simple_value=monitor.current_state.val_challenge_metric)
 
         # Get validation summary
         self.val_summary_writer.add_summary(summary=summary, global_step=monitor.current_state.global_step)

@@ -15,21 +15,20 @@ from scipy import signal
 from biosppy.signals import ecg
 
 # Local imports
-from kardioml import LABELS_COUNT, FS, NUM_LEADS
+from kardioml import LABELS_COUNT
 
 
 class DataGenerator(object):
 
-    def __init__(self, data_path, lookup_path, mode, shape, batch_size, fs=FS,
+    def __init__(self, lookup_path, mode, shape, batch_size, fs,
                  prefetch_buffer=1, seed=0, num_parallel_calls=1):
 
         # Set parameters
-        self.data_path = data_path
         self.lookup_path = lookup_path
         self.mode = mode
         self.shape = shape
         self.batch_size = batch_size
-        self.fs = fs if fs <= FS else FS
+        self.fs = fs
         self.prefetch_buffer = prefetch_buffer
         self.seed = seed
         self.num_parallel_calls = num_parallel_calls
@@ -56,7 +55,7 @@ class DataGenerator(object):
                 hr=hr,
                 age=age,
                 sex=sex,
-                augment=True
+                augment=False
             )
         self.import_waveforms_fn_val = \
             lambda waveform_file_path, meta_file_path, label, hr, age, sex: self._import_waveform(
@@ -103,7 +102,7 @@ class DataGenerator(object):
         # Get label from each file
         labels = list()
         for filename in self.file_names:
-            labels.append(self.meta_data[filename]['label_train'])
+            labels.append(self.meta_data[filename]['labels_training_merged'])
 
         # file_paths and labels should have same length
         assert len(self.file_names) == len(labels)
@@ -164,7 +163,7 @@ class DataGenerator(object):
         waveform = tf.py_func(self._load_npy_file, [waveform_file_path], tf.float32)
 
         # Resample waveform
-        waveform = tf.py_func(self._resample, [waveform], tf.float32)
+        # waveform = tf.py_func(self._resample, [waveform], tf.float32)
 
         # Augment waveform
         if augment:
@@ -189,7 +188,7 @@ class DataGenerator(object):
             rpeaks = tf.py_func(self._get_rpeak_channel, [waveform, meta_file_path], tf.float32)
 
         # Combine waveform and rpeak
-        waveform = tf.concat([waveform, rpeaks], axis=1)
+        # waveform = tf.concat([waveform, rpeaks], axis=1)
 
         # Pad waveform
         waveform = tf.py_func(self._pad_waveform, [waveform], tf.float32)

@@ -43,3 +43,6 @@ FILTER_BAND_LIMITS = (3, 45)
 
 # Number of leads
 NUM_LEADS = 12
+
+# Number of labels
+LABELS_COUNT = 27

@@ -1,20 +1,20 @@
 import numpy as np, os, os.path, sys
 import pandas as pd
 import matplotlib.pyplot as plt
+from kardioml import WEIGHTS_PATH
 
 
-class Metric():
+class Metric(object):
 
     def __init__(self):
 
         #load weights for confusion matrix
-        self.weights = pd.read_csv('./metrics/weights.csv', header=0)
+        self.weights = pd.read_csv(WEIGHTS_PATH, header=0)
         self.weights = self.weights.values[:, 1:]
-
 
     #================ Utils ================
     # Compute modified confusion matrix for multi-class, multi-label tasks.
-    def compute_modified_confusion_matrix(self,labels, outputs):
+    def compute_modified_confusion_matrix(self, labels, outputs):
         # Compute a binary multi-class, multi-label confusion matrix, where the rows
         # are the labels and the columns are the outputs.
         num_recordings, num_classes = np.shape(labels)

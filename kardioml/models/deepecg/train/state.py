@@ -6,9 +6,11 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
 # 3rd party imports
+import os
 import io
 import time
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from scipy import signal
 from datetime import datetime
@@ -17,8 +19,10 @@ from scipy.special import expit
 from scipy.stats.mstats import gmean
 
 # Local imports
-from kardioml import LABELS_COUNT, LABELS_LOOKUP, FS
-from kardioml.scoring.scoring_metrics import compute_beta_score
+from metrics.metrics import Metric
+from kardioml import DATA_PATH, WEIGHTS_PATH
+from kardioml.scoring.scoring_metrics import (load_weights, compute_challenge_metric, compute_auc,
+                                              compute_beta_measures, compute_f_measure, compute_accuracy)
 
 
 class State(object):
@@ -34,14 +38,17 @@ class State(object):
         self.num_gpus = num_gpus
 
         # Set attributes
+        self.labels_scored_lookup = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
+        self.scoring_weights = load_weights(weight_file=WEIGHTS_PATH,
+                                            classes=self.labels_scored_lookup['SNOMED CT Code'].values)
         self.train_loss = None
         self.val_loss = None
         self.train_f_beta = None
         self.val_f_beta = None
         self.train_g_beta = None
         self.val_g_beta = None
-        self.train_geometric_mean = None
-        self.val_geometric_mean = None
+        self.train_challenge_metric = None
+        self.val_challenge_metric = None
         self.logits = None
         self.labels = None
         self.waveforms = None
@@ -64,10 +71,10 @@ class State(object):
 
     def _compute_metrics(self):
         # Training metrics
-        self.train_loss, self.train_f_beta, self.train_g_beta, self.train_geometric_mean = self._compute_train_metrics()
+        self.train_loss, self.train_f_beta, self.train_g_beta, self.train_challenge_metric = self._compute_train_metrics()
 
         # Validation metrics
-        self.val_loss, self.val_f_beta, self.val_g_beta, self.val_geometric_mean = self._compute_val_metrics()
+        self.val_loss, self.val_f_beta, self.val_g_beta, self.val_challenge_metric = self._compute_val_metrics()
 
     def _get_num_train_batches(self):
         """Number of batches for training Dataset."""
@@ -90,7 +97,7 @@ class State(object):
             metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
             metrics = self.sess.run(metrics_op)
 
-            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['geometric_mean']
+            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['challenge_metric']
 
         else:
             # Get train handle
@@ -115,7 +122,7 @@ class State(object):
             metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
             metrics = self.sess.run(metrics_op)
 
-            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['geometric_mean']
+            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['challenge_metric']
 
     def _compute_val_metrics(self):
         """Get validation metrics."""
@@ -159,20 +166,24 @@ class State(object):
         self.cams = np.concatenate(cams_all, axis=0)
 
         # Apply Normal Rhythm correction
-        sigmoid = expit(self.logits)
-        for index in range(sigmoid.shape[0]):
-            if sigmoid[index, 3] >= 0.75 and np.argmax(sigmoid[index, :]) == 3:
-                sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
+        # sigmoid = expit(self.logits)
+        # for index in range(sigmoid.shape[0]):
+        #     if sigmoid[index, 3] >= 0.75 and np.argmax(sigmoid[index, :]) == 3:
+        #         sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
 
-        # Compute f1 score
-        _, _, f_beta, g_beta = compute_beta_score(labels=self.labels, output=np.round(sigmoid).astype(int),
-                                                  beta=2, num_classes=LABELS_COUNT, check_errors=True)
+        # Compute Beta-measures
+        macro_f_beta_measure, macro_g_beta_measure = compute_beta_measures(labels=self.labels,
+                                                                           outputs=np.round(expit(self.logits)).astype(int),
+                                                                           beta=2)
+
+        # Compute challenge metric
+        challenge_metric = Metric().compute(labels=self.labels, outputs=np.round(expit(self.logits)).astype(int))
 
         # Get metrics
         metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
         metrics = self.sess.run(metrics_op)
 
-        return metrics['loss'], f_beta, g_beta, gmean([f_beta, g_beta])
+        return metrics['loss'], macro_f_beta_measure, macro_g_beta_measure, challenge_metric
 
     def plot_val_cams(self):
         """Plot validation class activation maps."""
@@ -204,9 +215,6 @@ class State(object):
         ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
         ax2 = plt.subplot2grid((3, 1), (2, 0))
 
-        # Label lookup
-        label_lookup = list(LABELS_LOOKUP.keys())
-
         # Get time array
         time_array = np.arange(self.waveforms.shape[1]) * 1 / self.graph.network.hyper_params['fs']
 
@@ -226,12 +234,11 @@ class State(object):
         non_zero_index = np.where(self.waveforms[index, :, 0] != 0)[0]
 
         # Title
-        title_string = '{}\nLabel: {}\nPrediction: {}\n{}'
-        ax1.set_title(title_string.format(label_lookup,
-                                          label,
+        title_string = 'Label: {}\nPrediction: {}\n{}'
+        ax1.set_title(title_string.format(label,
                                           np.round(expit(self.logits[index, :])).astype(int),
                                           np.round(expit(self.logits[index, :]), 2)),
-                      fontsize=20, y=1.03)
+                      fontsize=12, y=1.03)
 
         # Plot ECG waveform
         shift = 0

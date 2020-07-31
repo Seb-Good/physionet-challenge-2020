@@ -17,12 +17,11 @@ class Graph(object):
 
     """Computational graph class."""
 
-    def __init__(self, network, save_path, data_path, lookup_path, max_to_keep):
+    def __init__(self, network, save_path, lookup_path, max_to_keep):
 
         # Set input parameters
         self.network = network                # network: neural network architecture
         self.save_path = save_path            # save_path: checkpoints, summaries, and graphs
-        self.data_path = data_path            # data_path: waveforms, labels
         self.lookup_path = lookup_path        # lookup_path: dictionary
         self.max_to_keep = max_to_keep        # Maximum number of checkpoints to keep
 
@@ -36,7 +35,7 @@ class Graph(object):
         self.loss = None
         self.f_beta = None
         self.g_beta = None
-        self.geometric_mean = None
+        self.challenge_metric = None
         self.optimizer = None
         self.train_summary_all_op = None
         self.val_cam_plots_summary_op = None
@@ -59,7 +58,7 @@ class Graph(object):
         self.tower_losses = None
         self.tower_f_beta = None
         self.tower_g_beta = None
-        self.tower_geometric_mean = None
+        self.tower_challenge_metric = None
         self.tower_gradients = None
         self.tower_waveforms = None
         self.tower_labels = None
@@ -147,7 +146,7 @@ class Graph(object):
         # Compute forward propagation
         self.logits, self.cams = self.network.inference(input_layer=self.waveforms, age=age, sex=sex,
                                                         reuse=tf.AUTO_REUSE, is_training=self.is_training,
-                                                        name='ECGNet', print_shape=False)
+                                                        name='ECGNet', print_shape=True)
 
         # Compute loss
         self.loss = self._compute_loss(logits=self.logits, labels=self.labels)
@@ -155,7 +154,7 @@ class Graph(object):
         # Compute metrics
         self.f_beta = self._compute_f_beta(logits=self.logits, labels=self.labels)
         self.g_beta = self._compute_g_beta(logits=self.logits, labels=self.labels)
-        self.geometric_mean = self._compute_geometric_mean(logits=self.logits, labels=self.labels)
+        self.challenge_metric = self._compute_challenge_metric(logits=self.logits, labels=self.labels)
 
         # Compute gradients
         self.gradients = self._compute_gradients(optimizer=self.optimizer, loss=self.loss)
@@ -166,7 +165,7 @@ class Graph(object):
         self.tower_losses = list()
         self.tower_f_beta = list()
         self.tower_g_beta = list()
-        self.tower_geometric_mean = list()
+        self.tower_challenge_metric = list()
         self.tower_gradients = list()
         self.tower_waveforms = list()
         self.tower_labels = list()
@@ -195,8 +194,8 @@ class Graph(object):
                     # Compute g-beta
                     g_beta = self._compute_g_beta(logits=logits, labels=labels)
 
-                    # Compute geometric mean
-                    geometric_mean = self._compute_geometric_mean(logits=logits, labels=labels)
+                    # Compute challenge_metric
+                    challenge_metric = self._compute_challenge_metric(logits=logits, labels=labels)
 
                     # Compute gradients
                     gradients = self._compute_gradients(optimizer=self.optimizer, loss=loss)
@@ -210,8 +209,8 @@ class Graph(object):
                     # Append g_beta
                     self.tower_g_beta.append(g_beta)
 
-                    # Append geometric mean
-                    self.tower_geometric_mean.append(geometric_mean)
+                    # Append challenge_metric
+                    self.tower_challenge_metric.append(challenge_metric)
 
                     # Append gradients
                     self.tower_gradients.append(gradients)
@@ -230,7 +229,7 @@ class Graph(object):
         self.loss = self._compute_mean_loss(tower_losses=self.tower_losses)
         self.f_beta = self._compute_mean_f_beta(tower_f_beta=self.tower_f_beta)
         self.g_beta = self._compute_mean_g_beta(tower_g_beta=self.tower_g_beta)
-        self.geometric_mean = self._compute_mean_geometric_mean(tower_geometric_mean=self.tower_geometric_mean)
+        self.challenge_metric = self._compute_mean_challenge_metric(tower_challenge_metric=self.tower_challenge_metric)
         self.gradients = self._compute_mean_gradients(tower_gradients=self.tower_gradients)
         self._group_data()
 
@@ -247,7 +246,7 @@ class Graph(object):
         with tf.variable_scope('metrics'):
             metrics = {'f_beta': tf.metrics.mean(values=self.f_beta),
                        'g_beta': tf.metrics.mean(values=self.g_beta),
-                       'geometric_mean': tf.metrics.mean(values=self.geometric_mean),
+                       'challenge_metric': tf.metrics.mean(values=self.challenge_metric),
                        'loss': tf.metrics.mean(values=self.loss)}
         return metrics
 
@@ -277,10 +276,10 @@ class Graph(object):
     def _get_generators(self):
         """Create train, val, and test data generators."""
         with tf.variable_scope('train_generator'):
-            generator_train = self.network.create_generator(data_path=self.data_path, lookup_path=self.lookup_path,
+            generator_train = self.network.create_generator(lookup_path=self.lookup_path,
                                                             mode='train', batch_size=self.batch_size)
         with tf.variable_scope('val_generator'):
-            generator_val = self.network.create_generator(data_path=self.data_path, lookup_path=self.lookup_path,
+            generator_val = self.network.create_generator(lookup_path=self.lookup_path,
                                                           mode='val', batch_size=self.batch_size)
         return generator_train, generator_val
 
@@ -326,11 +325,10 @@ class Graph(object):
                                          0.35227273, 0.31,  0.11685514, 0.25057737, 1.])
 
             # Specify the weights for each sample in the batch
-            weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
+            # weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
 
             # compute the loss
-            losses = tf.losses.sigmoid_cross_entropy(logits=logits, multi_class_labels=tf.cast(labels, tf.int32),
-                                                     weights=weights)
+            losses = tf.losses.sigmoid_cross_entropy(logits=logits, multi_class_labels=tf.cast(labels, tf.int32))
             
             # Compute mean loss
             loss = tf.reduce_mean(losses)
@@ -409,23 +407,23 @@ class Graph(object):
     def _compute_f_beta(self, logits, labels):
         """Computes the accuracy set of logits and labels."""
         with tf.variable_scope('f_beta'):
-            f_beta, _, _ = self.network.compute_metrics(logits=logits, labels=labels)
+            _, _, macro_f_beta_measure, _, _, _, _ = self.network.compute_metrics(logits=logits, labels=labels)
 
-        return f_beta
+        return macro_f_beta_measure
 
     def _compute_g_beta(self, logits, labels):
         """Computes the f1 score set of logits and labels."""
         with tf.variable_scope('g_beta'):
-            _, g_beta, _ = self.network.compute_metrics(logits=logits, labels=labels)
+            _, _, _, macro_g_beta_measure, _, _, _ = self.network.compute_metrics(logits=logits, labels=labels)
 
-        return g_beta
+        return macro_g_beta_measure
 
-    def _compute_geometric_mean(self, logits, labels):
+    def _compute_challenge_metric(self, logits, labels):
         """Computes the f1 score set of logits and labels."""
         with tf.variable_scope('g_beta'):
-            _, _, gmean = self.network.compute_metrics(logits=logits, labels=labels)
+            _, _, _, _, _, _, challenge_metric = self.network.compute_metrics(logits=logits, labels=labels)
 
-        return gmean
+        return challenge_metric
 
     @staticmethod
     def _compute_gradients(optimizer, loss):
@@ -476,15 +474,16 @@ class Graph(object):
         return g_beta
 
     @staticmethod
-    def _compute_mean_geometric_mean(tower_geometric_mean):
+    def _compute_mean_challenge_metric(tower_challenge_metric):
         """Compute mean f1 score across towers."""
-        with tf.variable_scope('geometric_mean'):
-            geometric_mean = tf.reduce_mean(tower_geometric_mean)
+        with tf.variable_scope('challenge_metric'):
+            challenge_metric = tf.reduce_mean(tower_challenge_metric)
 
         # Get summary
-        tf.summary.scalar(name='geometric_mean/geometric_mean', tensor=geometric_mean, collections=['train_metrics'])
+        tf.summary.scalar(name='challenge_metric/challenge_metric', tensor=challenge_metric,
+                          collections=['train_metrics'])
 
-        return geometric_mean
+        return challenge_metric
 
     @staticmethod
     def _compute_mean_gradients(tower_gradients):
