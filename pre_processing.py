@@ -38,10 +38,16 @@ class PrepareData:
 
 
         # split data into folds
-        print('Total number of patients: ', len(self.patients))
-        self.split_table = self.create_split_table()
 
+        self.split_table = self.create_split_table()
+        print('Total number of patients: ', len(self.patients))
         return 0
+
+    def load_labels(self,name):
+        y = json.load(open(name + '.json'))
+        return y
+
+
 
     def create_split_table(self):
 
@@ -60,12 +66,20 @@ class PrepareData:
 
             for dataset in train:
                 patients = [i for i in os.listdir(dataset) if i.find('.npy')!=-1]
-                for patient in patients:
+                print(f'Start checking each patient in dataset {dataset[7]}... for training')
+                for patient in tqdm(patients):
+                    y = self.load_labels(dataset+patient[:-4])
+                    if y['labels_training_merged'] == None:
+                        continue
                     patients_train.append(dataset+patient[:-4])
 
             for dataset in val:
                 patients = [i for i in os.listdir(dataset) if i.find('.npy')!=-1]
+                print(f'Start checking each patient in dataset {dataset[7]}... for validation')
                 for patient in patients:
+                    y = self.load_labels(dataset + patient[:-4])
+                    if y['labels_training_merged'] == None:
+                        continue
                     patients_val.append(dataset+patient[:-4])
 
             split['train'] = patients_train

@@ -17,7 +17,6 @@ class Dataset_train(Dataset):
         self.patients = patients
 
 
-
     def __len__(self):
         return len(self.patients)
 
@@ -34,13 +33,12 @@ class Dataset_train(Dataset):
 
         # load waveforms
         X = np.load(self.patients[id] + '.npy')
-        # X = self.preprocessing.run(X)
 
         if train:
             # load annotation
-            y = np.array(json.load(open(self.patients[id] + '.json'))['labels_training_merged'])
+            y = json.load(open(self.patients[id] + '.json'))
 
-            return X, y
+            return X, y['labels_training_merged']
         else:
             return X
 
@@ -60,6 +58,34 @@ class Dataset_train(Dataset):
                 y = np.concatenate((y, temp), axis=0)
 
         return y
+
+    def my_collate(self,batch):
+        """
+        This function was created to handle a variable-length of the
+        :param batch: tuple(data,target)
+        :return: list[data_tensor(batch_size,n_samples_channels), target_tensor(batch_size,n_classes)]
+        """
+        data = [item[0] for item in batch]
+        target = [item[1] for item in batch]
+
+        # define the max size of the batch
+        m_size = 0
+        for element in data:
+            if m_size < element.shape[0]:
+                m_size = element.shape[0]
+
+        # zero pooling
+        for index, element in enumerate(data):
+            if m_size > element.shape[0]:
+                padding = np.zeros((element.shape[0] - m_size, element.shape[1]))
+                padding = torch.from_numpy(padding).cuda()
+                data[index] = torch.cat([element, padding], dim=0)
+                padding = padding.cpu().detach()
+
+        data = torch.stack(data)
+        target = torch.stack(target)
+
+        return [data, target]
 
 
 class Dataset_test(Dataset_train):

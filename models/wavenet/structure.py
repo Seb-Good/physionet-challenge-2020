@@ -48,7 +48,7 @@ class CBR(nn.Module):
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
             dilation=dilation,
         )
-        self.bn = nn.BatchNorm1d(out_ch)
+        #self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
         self.pooling = nn.MaxPool1d(kernel_size=2)
 
@@ -64,15 +64,14 @@ class WaveNet(nn.Module):
     def __init__(self, n_channels, basic_block=CBR):
         super().__init__()
 
-        self.input_layer_1 = nn.LSTM(input_size=n_channels,hidden_size=5000,num_layers=1,batch_first=True,bidirectional=False)
+        self.input_layer_1 = nn.LSTM(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
 
         self.basic_block = basic_block
-        self.layer1 = self.basic_block(2, 128, 3, 12)
+        self.layer1 = self.basic_block(1, 128, 3, 12)
         self.layer2 = self.basic_block(128, 64, 3, 8)
         self.layer3 = self.basic_block(64, 32, 3, 4)
-        self.layer4 = self.basic_block(32, 16, 3, 1)
 
-        self.fc1 = nn.Linear(4992, 300)
+        self.fc1 = nn.Linear(1984, 300)
         self.fc2 = nn.Linear(300, 300)
         self.fc3 = nn.Linear(300, 27)#
 
@@ -88,15 +87,10 @@ class WaveNet(nn.Module):
 
         x,(h_0,c_0) = self.input_layer_1(x)
 
-        #h_0 = h_0.permute(0,2,1)
+        h_0 = h_0.permute(1,0,2)
         x = self.layer1(h_0)
-        # x = self.bn1(x)
         x = self.layer2(x)
-        # x = self.bn2(x)
         x = self.layer3(x)
-        # x = self.bn3(x)
-        x = self.layer4(x)
-        # x = self.bn4(x)
 
 
         x = x.view(-1,x.shape[1]*x.shape[2])

@@ -38,6 +38,8 @@ class Model:
         self.model = WaveNet(n_channels=n_channels).cuda()
         summary(self.model, (input_size, n_channels))
 
+        self.metric = Metric()
+
         ########################## compile the model ###############################
 
         # define optimizer
@@ -74,11 +76,13 @@ class Model:
 
     def fit(self, train, valid):
 
-        train_loader = torch.utils.data.DataLoader(
-            train, batch_size=self.hparams['batch_size'], shuffle=True
+        #TODO: need to set shuffle=True
+        train_loader = DataLoader(
+            train, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=train.my_collate
         )
-        valid_loader = torch.utils.data.DataLoader(
-            valid, batch_size=self.hparams['batch_size'], shuffle=True
+        # TODO: need to set shuffle=True
+        valid_loader = DataLoader(
+            valid, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=valid.my_collate
         )
 
         # tensorboard object
@@ -99,11 +103,14 @@ class Model:
                 self.optimizer.zero_grad()
                 # get model predictions
                 pred = self.model(X_batch)
+                X_batch = X_batch.cpu().detach()
 
                 # process loss_1
                 pred = pred.view(-1, pred.shape[-1])
                 y_batch = y_batch.view(-1, y_batch.shape[-1])
                 train_loss = self.loss(pred, y_batch)
+                y_batch = y_batch.cpu().detach()
+                pred = pred.cpu().detach()
 
                 train_loss.backward()
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
@@ -113,15 +120,15 @@ class Model:
                 # calc metric
                 avg_loss += train_loss.item() / len(train_loader)
 
-                X_batch.cpu().detach()
-                y_batch = y_batch.cpu().detach()
-                pred = pred.cpu().detach()
 
                 train_true = torch.cat([train_true, y_batch], 0)
                 train_preds = torch.cat([train_preds, pred], 0)
 
             # calc triaing metric
-            mae_train = Metric.compute(train_true.numpy(), train_preds.numpy())
+            train_preds = train_preds.numpy()
+            train_preds[np.where(train_preds >= 0.5)] = 1
+            train_preds[np.where(train_preds < 0.5)] = 0
+            metric_train = self.metric.compute(labels=train_true.numpy(), outputs=train_preds)
 
             # evaluate the model
             print('Model evaluation...')
@@ -134,12 +141,12 @@ class Model:
                     X_batch = X_batch.cuda()
 
                     pred = self.model(X_batch)
+                    X_batch = X_batch.cpu().detach()
+
                     pred = pred.reshape(-1, pred.shape[-1])
                     y_batch = y_batch.view(-1, y_batch.shape[-1])
 
                     avg_val_loss += self.loss(pred, y_batch).item() / len(valid_loader)
-
-                    X_batch.cpu().detach()
                     y_batch = y_batch.cpu().detach()
                     pred = pred.cpu().detach()
 
@@ -147,7 +154,10 @@ class Model:
                     val_preds = torch.cat([val_preds, pred], 0)
 
             # evalueate metric
-            mae_val = Metric.compute(val_true.numpy(), val_preds.numpy())
+            val_preds = val_preds.numpy()
+            val_preds[np.where(val_preds >= 0.5)] = 1
+            val_preds[np.where(val_preds < 0.5)] = 0
+            metric_val = self.metric.compute(val_true.numpy(), val_preds)
 
             self.scheduler.step(avg_val_loss)
             res = self.early_stopping(score=avg_val_loss, model=self.model)
@@ -159,10 +169,13 @@ class Model:
                     epoch + 1,
                     '| Train_loss: ',
                     avg_loss,
-                    '| MAE_train: ',
-                    mae_train,
-                    '| MAE_val: ',
-                    mae_val,
+                    '| Val_loss: ',
+                    avg_val_loss,
+                    '| Metric_train: ',
+                    metric_train,
+                    '| Metric_val: ',
+                    metric_val,
+                    '| Current LR: ',
                     self.__get_lr(self.optimizer),
                 )
 
@@ -171,7 +184,7 @@ class Model:
                 'Loss', {'Train_loss': avg_loss, 'Val_loss': avg_val_loss}, epoch,
             )
 
-            writer.add_scalars('MAE', {'MAE_train': mae_train, 'MAE_val': mae_val}, epoch)
+            writer.add_scalars('Metric', {'Metric_train': metric_train, 'Metric_val': metric_val}, epoch)
 
             if res == 2:
                 print("Early Stopping")

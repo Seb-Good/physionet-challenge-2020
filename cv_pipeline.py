@@ -64,19 +64,18 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
 
-            train = Dataset_train(self.splits['train'].values[fold])
-            valid = Dataset_train(self.splits['val'].values[fold])
+            train = Dataset_train(self.splits['train'].values[fold][:2])
+            valid = Dataset_train(self.splits['val'].values[fold][:2])
 
             X, y = train.__getitem__(0)
 
-            # TODO: model will require mutiple hparams
             self.model = self.model(input_size=X.shape[0], n_channels=X.shape[1], hparams=self.hparams)
 
             # train model
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            valid = Dataset_test(indexes=self.splits['val'].values[fold])
+            valid = Dataset_test(self.splits['val'].values[fold])
             pred_val = self.model.predict(valid)
             heatmap = self.model.get_heatmap(valid)
 
