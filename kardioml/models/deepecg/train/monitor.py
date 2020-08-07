@@ -53,6 +53,7 @@ class Monitor(object):
         """Check for improvement in validation accuracy."""
         if self.current_state.val_challenge_metric > self.best_state.val_challenge_metric:
             self.best_state = copy.copy(self.current_state)
+            self.best_state.create_cv_debug()
 
     def _save_checkpoint(self):
         """Check for improvement in validation accuracy."""

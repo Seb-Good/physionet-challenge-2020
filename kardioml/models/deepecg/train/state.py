@@ -9,6 +9,7 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 import os
 import io
 import time
+import json
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -51,6 +52,8 @@ class State(object):
         self.val_challenge_metric = None
         self.logits = None
         self.labels = None
+        self.file_names = None
+        self.dataset = None
         self.waveforms = None
         self.cams = None
         self.val_cam_plots = None
@@ -139,6 +142,8 @@ class State(object):
         # Empty lists for logits and labels
         logits_all = list()
         labels_all = list()
+        dataset_all = list()
+        file_names_all = list()
         waveforms_all = list()
         cams_all = list()
 
@@ -146,35 +151,34 @@ class State(object):
         for batch in range(self.val_steps_per_epoch):
 
             # Run metric update operation
-            logits, labels, waveforms, cams, _ = self.sess.run(fetches=[self.graph.logits, self.graph.labels,
-                                                                        self.graph.waveforms, self.graph.cams,
-                                                                        self.graph.update_metrics_op],
-                                                               feed_dict={self.graph.batch_size: self.batch_size,
-                                                                          self.graph.is_training: False,
-                                                                          self.graph.mode_handle: handle_val})
+            logits, labels, file_names, dataset, waveforms, cams, _ = self.sess.run(
+                fetches=[self.graph.logits, self.graph.labels, self.graph.file_names, self.dataset,
+                         self.graph.waveforms, self.graph.cams, self.graph.update_metrics_op],
+                feed_dict={self.graph.batch_size: self.batch_size, self.graph.is_training: False,
+                           self.graph.mode_handle: handle_val})
 
             # Get logits and labels
             logits_all.append(logits)
             labels_all.append(labels)
+            file_names_all.append(file_names)
+            dataset_all.append(dataset)
             waveforms_all.append(waveforms)
             cams_all.append(cams)
 
         # Group logits and labels
         self.logits = np.concatenate(logits_all, axis=0)
         self.labels = np.concatenate(labels_all, axis=0)
+        self.file_names = np.concatenate(file_names_all, axis=0)
+        self.dataset = np.concatenate(dataset_all, axis=0)
         self.waveforms = np.concatenate(waveforms_all, axis=0)
         self.cams = np.concatenate(cams_all, axis=0)
 
-        # Apply Normal Rhythm correction
-        # sigmoid = expit(self.logits)
-        # for index in range(sigmoid.shape[0]):
-        #     if sigmoid[index, 3] >= 0.75 and np.argmax(sigmoid[index, :]) == 3:
-        #         sigmoid[index, [0, 1, 2, 4, 5, 6, 7, 8]] = 0.
-
         # Compute Beta-measures
-        macro_f_beta_measure, macro_g_beta_measure = compute_beta_measures(labels=self.labels,
-                                                                           outputs=np.round(expit(self.logits)).astype(int),
-                                                                           beta=2)
+        macro_f_beta_measure, macro_g_beta_measure = compute_beta_measures(
+            labels=self.labels,
+            outputs=np.round(expit(self.logits)).astype(int),
+            beta=2
+        )
 
         # Compute challenge metric
         challenge_metric = Metric().compute(labels=self.labels, outputs=np.round(expit(self.logits)).astype(int))
@@ -276,3 +280,18 @@ class State(object):
         """Compute softmax values for set of scores."""
         e_scores = np.exp(scores - np.max(scores))
         return e_scores / e_scores.sum()
+
+    def create_cv_debug(self):
+        """Generate CV Debug file."""
+        predictions = np.round(expit(self.logits)).astype(int)
+        for file_name, dataset, label, logit, prediction in zip(self.file_names.tolist(), self.dataset.tolist(),
+                                                                self.labels.tolist(), self.logits.tolist(),
+                                                                predictions.tolist()):
+            # Save meta data JSON
+            with open(os.path.join(self.save_path, 'cv_debug', dataset, '{}.json'.format(file_name)), 'w') as file:
+                json.dump({'file_name': file_name,
+                           'dataset': dataset,
+                           'label': label,
+                           'sigmoid': logit,
+                           'predicted_label': prediction},
+                          file, sort_keys=False, indent=4)

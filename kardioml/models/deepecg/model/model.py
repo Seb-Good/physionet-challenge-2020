@@ -117,7 +117,7 @@ class Model(object):
     def _create_folder_structure(self):
 
         # Set list of folders
-        folders = ['train', 'val', 'checkpoints', 'network', 'graph', 'logs', 'parameters']
+        folders = ['train', 'val', 'checkpoints', 'network', 'graph', 'logs', 'parameters', 'cv_debug']
 
         # Main project directory
         if not os.path.exists(self.save_path):

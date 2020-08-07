@@ -28,6 +28,8 @@ class Graph(object):
         # Set attributes
         self.waveforms = None
         self.labels = None
+        self.file_names = None
+        self.dataset = None
         self.is_training = None
         self.learning_rate = None
         self.global_step = None
@@ -62,6 +64,8 @@ class Graph(object):
         self.tower_gradients = None
         self.tower_waveforms = None
         self.tower_labels = None
+        self.tower_file_names = None
+        self.tower_dataset = None
         self.tower_logits = None
         self.tower_cam = None
         self.val_cam_plots = None
@@ -141,7 +145,7 @@ class Graph(object):
     def _build_sequential_forward_graph(self):
         """Build sequential forward graph for training on CPU or single GPU."""
         # Get mini-batch
-        self.waveforms, self.labels, age, sex = self._get_next_batch()
+        self.waveforms, self.labels, self.file_names, self.dataset, age, sex = self._get_next_batch()
 
         # Compute forward propagation
         self.logits, self.cams = self.network.inference(input_layer=self.waveforms, age=age, sex=sex,
@@ -169,6 +173,7 @@ class Graph(object):
         self.tower_gradients = list()
         self.tower_waveforms = list()
         self.tower_labels = list()
+        self.tower_file_names = list()
         self.tower_logits = list()
         self.tower_cams = list()
 
@@ -178,7 +183,7 @@ class Graph(object):
                 with tf.name_scope('tower_{}'.format(tower_id)) as name_scope:
 
                     # Get mini-batch
-                    waveforms, labels, age, sex = self._get_next_batch()
+                    waveforms, labels, file_names, dataset, age, sex = self._get_next_batch()
 
                     # Compute inference
                     logits, cams = self.network.inference(input_layer=waveforms, age=age, sex=sex,
@@ -218,6 +223,8 @@ class Graph(object):
                     # Append waveforms, labels, and logits
                     self.tower_waveforms.append(waveforms)
                     self.tower_labels.append(labels)
+                    self.tower_file_names.append(file_names)
+                    self.tower_dataset.append(dataset)
                     self.tower_logits.append(logits)
                     self.tower_cams.append(cams)
 
@@ -238,6 +245,8 @@ class Graph(object):
         with tf.variable_scope('group_data'):
             self.waveforms = tf.concat(self.tower_waveforms, axis=0)
             self.labels = tf.concat(self.tower_labels, axis=0)
+            self.file_names = tf.concat(self.tower_file_names, axis=0)
+            self.dataset = tf.concat(self.tower_dataset, axis=0)
             self.logits = tf.concat(self.tower_logits, axis=0)
             self.cams = tf.concat(self.tower_cams, axis=0)
 
@@ -269,9 +278,9 @@ class Graph(object):
     def _get_next_batch(self):
         """Get next batch (waveforms, labels) from iterator."""
         with tf.name_scope('next_batch'):
-            waveforms, labels, age, sex = self.iterator.get_next()
+            waveforms, labels, file_names, dataset, age, sex = self.iterator.get_next()
 
-        return waveforms, labels, age, sex
+        return waveforms, labels, file_names, dataset, age, sex
 
     def _get_generators(self):
         """Create train, val, and test data generators."""

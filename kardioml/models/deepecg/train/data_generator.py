@@ -35,6 +35,7 @@ class DataGenerator(object):
 
         # Set attributes
         self.file_names = self._get_lookup_dict()
+        self.dataset = self._get_dataset()
         self.meta_data = self._get_meta_data()
         self.labels = self._get_labels()
         self.hr = self._get_hr()
@@ -48,20 +49,24 @@ class DataGenerator(object):
 
         # Get lambda functions
         self.import_waveforms_fn_train = \
-            lambda waveform_file_path, meta_file_path, label, hr, age, sex: self._import_waveform(
+            lambda waveform_file_path, meta_file_path, label, filename, dataset, hr, age, sex: self._import_waveform(
                 waveform_file_path=waveform_file_path,
                 meta_file_path=meta_file_path,
                 label=label,
+                filename=filename,
+                dataset=dataset,
                 hr=hr,
                 age=age,
                 sex=sex,
                 augment=True
             )
         self.import_waveforms_fn_val = \
-            lambda waveform_file_path, meta_file_path, label, hr, age, sex: self._import_waveform(
+            lambda waveform_file_path, meta_file_path, label, filename, dataset, hr, age, sex: self._import_waveform(
                 waveform_file_path=waveform_file_path,
                 meta_file_path=meta_file_path,
                 label=label,
+                filename=filename,
+                dataset=dataset,
                 hr=hr,
                 age=age,
                 sex=sex,
@@ -121,6 +126,18 @@ class DataGenerator(object):
 
         return hr
 
+    def _get_dataset(self):
+        """Get list of datasets."""
+        # Get label from each file
+        dataset = list()
+        for filename in self.file_names:
+            dataset.append(self.meta_data[filename]['dataset'])
+
+        # file_paths and labels should have same length
+        assert len(self.file_names) == len(dataset)
+
+        return dataset
+
     def _get_age(self):
         """Get list of waveform age."""
         # Get label from each file
@@ -157,7 +174,7 @@ class DataGenerator(object):
         meta_data = json.load(open(file_path))
         return int(meta_data['hr']) if meta_data['hr'] != 'nan' else -1
 
-    def _import_waveform(self, waveform_file_path, meta_file_path, label, hr, age, sex, augment):
+    def _import_waveform(self, waveform_file_path, meta_file_path, label, filename, dataset, hr, age, sex, augment):
         """Import waveform file from file path string."""
         # Load numpy file
         waveform = tf.py_func(self._load_npy_file, [waveform_file_path], tf.float32)
@@ -197,7 +214,7 @@ class DataGenerator(object):
         waveform = tf.reshape(tensor=waveform, shape=self.shape)
         age = tf.reshape(tensor=age, shape=[1])
 
-        return waveform, label, age, sex
+        return waveform, label, filename, dataset, age, sex
 
     def _get_rpeak_channel(self, waveform, meta_file_path):
         """Get binary array of rpeak locations."""
@@ -412,6 +429,8 @@ class DataGenerator(object):
                     tensors=(tf.constant(value=self.waveform_file_paths),
                              tf.constant(value=self.meta_file_paths),
                              tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1, LABELS_COUNT]),
+                             tf.constant(value=self.file_names),
+                             tf.constant(value=self.dataset),
                              tf.constant(value=self.hr),
                              tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
                              tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))
@@ -428,6 +447,8 @@ class DataGenerator(object):
                     tensors=(tf.constant(value=self.waveform_file_paths),
                              tf.constant(value=self.meta_file_paths),
                              tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1, LABELS_COUNT]),
+                             tf.constant(value=self.file_names),
+                             tf.constant(value=self.dataset),
                              tf.constant(value=self.hr),
                              tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
                              tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))

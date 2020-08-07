@@ -55,7 +55,10 @@ class FormatDataPhysionet2020(object):
     def _format_data(self, debug, p_and_t_waves, parallel):
         """Format raw data to standard structure."""
         # Create directory for formatted data
-        shutil.rmtree(self.formatted_path)
+        try:
+            shutil.rmtree(self.formatted_path)
+        except:
+            pass
         os.makedirs(self.formatted_path, exist_ok=True)
 
         # Get a list of filenames
@@ -108,6 +111,7 @@ class FormatDataPhysionet2020(object):
         # Save meta data JSON
         with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
             json.dump({'filename': filename,
+                       'dataset': self.dataset,
                        'datetime': header['datetime'],
                        'channel_order': header['channel_order'],
                        'age': header['age'],
@@ -292,18 +296,18 @@ class FormatDataPhysionet2020(object):
 
     @staticmethod
     def _resample(waveforms, fs):
-        if fs == 257:
+        if int(fs) == 257:
             order = 4
             waveforms_resampled = list()
             for channel in range(waveforms.shape[1]):
                 waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
-            return np.stack(waveforms, axis=0)
-        elif fs == 500:
+            return np.stack(waveforms_resampled, axis=0)
+        elif int(fs) == 500:
             order = 2
             waveforms_resampled = list()
             for channel in range(waveforms.shape[1]):
                 waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
-            return np.stack(waveforms, axis=0)
+            return np.stack(waveforms_resampled, axis=0)
         return waveforms
 
 
