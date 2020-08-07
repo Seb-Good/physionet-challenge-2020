@@ -191,7 +191,7 @@ class State(object):
         plots = list()
 
         # Loop through waveforms
-        for index in range(256):
+        for index in range(64):
 
             # Get plot
             plot_buf = self._plot_image(index=index)

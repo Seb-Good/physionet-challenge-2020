@@ -91,12 +91,14 @@ def train(model, epochs, batch_size):
             # Log progress
             logger.log_training(monitor=monitor)
 
+            # monitor.best_state.plot_val_cams()
+            # summary_writer.log_val_cam_plots_summaries(monitor=monitor)
             # Check for early stopping
-            if monitor.early_stopping_check():
-                print('Early stopping at epoch {}'.format(epoch + 1))
-                monitor.best_state.plot_val_cams()
-                summary_writer.log_val_cam_plots_summaries(monitor=monitor)
-                break
+            # if monitor.early_stopping_check():
+            #     print('Early stopping at epoch {}'.format(epoch + 1))
+            #     monitor.best_state.plot_val_cams()
+            #     summary_writer.log_val_cam_plots_summaries(monitor=monitor)
+            #     break
 
             # Update learning rate scheduler
             lr_scheduler.on_epoch_end_update()

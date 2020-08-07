@@ -55,7 +55,7 @@ class DataGenerator(object):
                 hr=hr,
                 age=age,
                 sex=sex,
-                augment=False
+                augment=True
             )
         self.import_waveforms_fn_val = \
             lambda waveform_file_path, meta_file_path, label, hr, age, sex: self._import_waveform(
@@ -139,9 +139,9 @@ class DataGenerator(object):
         sexes = list()
         for filename in self.file_names:
 
-            if self.meta_data[filename]['sex'] == 'Male':
+            if self.meta_data[filename]['sex'] == 'male':
                 sexes.append(1)
-            elif self.meta_data[filename]['sex'] == 'Female':
+            elif self.meta_data[filename]['sex'] == 'female':
                 sexes.append(0)
             else:
                 sexes.append(-1)
