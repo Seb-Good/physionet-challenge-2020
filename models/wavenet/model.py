@@ -42,7 +42,7 @@ class Model:
         self.model = DP(self.model)
 
         self.metric = Metric()
-        self.num_workers = 8
+        self.num_workers = 80
         ########################## compile the model ###############################
 
         # define optimizer
