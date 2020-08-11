@@ -39,7 +39,12 @@ class Model:
         self.model = WaveNet(n_channels=n_channels).to(self.device)
         summary(self.model, (input_size, n_channels))
 
-        self.model = DP(self.model)
+        if torch.cuda.device_count() > 1:
+            print("Number of GPUs will be used: ", torch.cuda.device_count())
+            self.model = DP(self.model)
+        else:
+            print('Only one GPU is available')
+
 
         self.metric = Metric()
         self.num_workers = 80
