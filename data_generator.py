@@ -31,12 +31,29 @@ class Dataset_train(Dataset):
 
     def load_data(self, id, train=True):
 
+        if self.patients[id][0] == 'A':
+            data_folder = 'A'
+        elif self.patients[id][0] == 'Q':
+            data_folder = 'B'
+        elif self.patients[id][0] == 'I':
+            data_folder = 'C'
+        elif self.patients[id][0] == 'S':
+            data_folder = 'D'
+        elif self.patients[id][0] == 'H':
+            data_folder = 'E'
+        elif self.patients[id][0] == 'E':
+            data_folder = 'F'
+        else:
+            print(1)
+
+        data_folder = f'./data/{data_folder}/formatted/'
+
         # load waveforms
-        X = np.load(self.patients[id] + '.npy')
+        X = np.load(data_folder+self.patients[id] + '.npy')
 
         if train:
             # load annotation
-            y = json.load(open(self.patients[id] + '.json'))
+            y = json.load(open(data_folder+self.patients[id] + '.json'))
 
             return X, y['labels_training_merged']
         else:
@@ -49,12 +66,34 @@ class Dataset_train(Dataset):
         """
 
         for index, record in enumerate(self.patients):
+
+            if record[0] == 'A':
+                data_folder = 'A'
+
+            elif record[0] == 'Q':
+                data_folder = 'B'
+
+            elif record[0] == 'I':
+                data_folder = 'C'
+
+            elif record[0] == 'S':
+                data_folder = 'D'
+
+            elif record[0] == 'H':
+                data_folder = 'E'
+
+            elif record[0] == 'E':
+                data_folder = 'F'
+
+            data_folder = f'./data/{data_folder}/formatted/'
+
+
             if index == 0:
-                y = np.array([json.load(open(record + '.json'))['label']])
-                y = np.reshape(y, (1, 1))
+                y = np.array([json.load(open(data_folder+record + '.json'))['labels_training_merged']])
+                y = np.reshape(y, (1, 27))
             else:
-                temp = np.array([json.load(open(record + '.json'))['label']])
-                temp = np.reshape(temp, (1, 1))
+                temp = np.array([json.load(open(data_folder+record + '.json'))['labels_training_merged']])
+                temp = np.reshape(temp, (1, 27))
                 y = np.concatenate((y, temp), axis=0)
 
         return y
@@ -77,10 +116,10 @@ class Dataset_train(Dataset):
         # zero pooling
         for index, element in enumerate(data):
             if m_size > element.shape[0]:
-                padding = np.zeros((element.shape[0] - m_size, element.shape[1]))
-                padding = torch.from_numpy(padding).cuda()
+                padding = np.zeros((m_size-element.shape[0], element.shape[1]))
+                padding = torch.from_numpy(padding)
                 data[index] = torch.cat([element, padding], dim=0)
-                padding = padding.cpu().detach()
+                padding = padding.detach()
 
         data = torch.stack(data)
         target = torch.stack(target)

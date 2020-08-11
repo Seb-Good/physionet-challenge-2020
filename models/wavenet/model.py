@@ -35,7 +35,7 @@ class Model:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # define the models
-        self.model = WaveNet(n_channels=n_channels).cuda()
+        self.model = WaveNet(n_channels=n_channels).to(self.device)
         summary(self.model, (input_size, n_channels))
 
         self.metric = Metric()
@@ -95,8 +95,8 @@ class Model:
             train_preds, train_true = torch.Tensor([]), torch.Tensor([])
 
             for (X_batch, y_batch) in tqdm(train_loader):
-                y_batch = y_batch.cuda()
-                X_batch = X_batch.cuda()
+                y_batch = y_batch.float().to(self.device)
+                X_batch = X_batch.float().to(self.device)
 
                 self.optimizer.zero_grad()
                 # get model predictions
@@ -130,13 +130,14 @@ class Model:
 
             # evaluate the model
             print('Model evaluation...')
+            self.model.zero_grad()
             self.model.eval()
             val_preds, val_true = torch.Tensor([]), torch.Tensor([])
             avg_val_loss = 0.0
             with torch.no_grad():
                 for X_batch, y_batch in valid_loader:
-                    y_batch = y_batch.cuda()
-                    X_batch = X_batch.cuda()
+                    y_batch = y_batch.float().to(self.device)
+                    X_batch = X_batch.float().to(self.device)
 
                     pred = self.model(X_batch)
                     X_batch = X_batch.cpu().detach()
@@ -193,6 +194,8 @@ class Model:
 
         writer.close()
 
+        self.model.zero_grad()
+
         return True
 
     def predict(self, X_test):
@@ -201,17 +204,18 @@ class Model:
         self.model.eval()
 
         test_loader = torch.utils.data.DataLoader(
-            X_test, batch_size=self.hparams['batch_size'], shuffle=False
+            X_test, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=X_test.my_collate
         )
 
         test_preds = torch.Tensor([])
+        print('Start generation of predictions')
         with torch.no_grad():
-            for i, (X_batch) in enumerate(test_loader):
-                X_batch = X_batch.cuda()
+            for i, (X_batch,y_batch) in enumerate(tqdm(test_loader)):
+                X_batch = X_batch.float().to(self.device)
 
                 pred = self.model(X_batch)
 
-                X_batch.cpu().detach()
+                X_batch = X_batch.cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 
@@ -222,17 +226,17 @@ class Model:
         # evaluate the model
         self.model.eval()
 
-        test_loader = torch.utils.data.DataLoader(X_test, batch_size=self.batch_size, shuffle=False)
+        test_loader = torch.utils.data.DataLoader(X_test, batch_size=self.batch_size, shuffle=False,collate_fn=X_test.my_collate)
 
         test_preds = torch.Tensor([])
         with torch.no_grad():
             for i, (X_batch) in enumerate(test_loader):
-                X_batch = X_batch.cuda()
+                X_batch = X_batch.float().to(self.device)
 
                 pred = self.model.activatations(X_batch)
                 pred = torch.sigmoid(pred)
 
-                X_batch.cpu().detach()
+                X_batch = X_batch.cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 

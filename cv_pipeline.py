@@ -49,6 +49,19 @@ class CVPipeline:
 
         for i in range(len(split_files)):
             data = json.load(open(self.split_table_path + str(i) + '_' + self.split_table_name))
+
+            train_data = data['train']
+            for index,i in enumerate(train_data):
+                i = i.split('\\')
+                i = i[-1]
+                train_data[index] = i
+
+            val_data = data['val']
+            for index, i in enumerate(val_data):
+                i = i.split('\\')
+                i = i[-1]
+                val_data[index] = i
+
             splits.append(data)
 
         splits = pd.DataFrame(splits)
@@ -64,6 +77,7 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
 
+            #TODO: return the entire dataset
             train = Dataset_train(self.splits['train'].values[fold][:2])
             valid = Dataset_train(self.splits['val'].values[fold][:2])
 
@@ -75,9 +89,12 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            valid = Dataset_test(self.splits['val'].values[fold])
+            # TODO: return the entire dataset
+            valid = Dataset_train(self.splits['val'].values[fold][:10])
             pred_val = self.model.predict(valid)
-            heatmap = self.model.get_heatmap(valid)
+            #TODO: add activations
+            #heatmap = self.model.get_heatmap(valid)
+
 
             y_val = valid.get_labels()
             fold_score = self.metric.compute(y_val, pred_val)
@@ -94,17 +111,52 @@ class CVPipeline:
             )
 
             # create a dictionary for debugging
-            debugging = {}
-            for index, i in enumerate(self.splits['val'].values[fold]):
-                temp = {}
-                temp['heatmap'] = np.abs(heatmap[index, :]).tolist()
-                temp['labels'] = y_val[index, :].tolist()
-                temp['preds'] = pred_val[index, :].tolist()
-                debugging[f'{i}'] = temp
+            # TODO: return the entire dataset
+            self.save_debug_data(pred_val, self.splits['val'].values[fold][:10])
 
-            # save debug data
-            with open(self.debug_folder + str(fold) + '_fold_' + str(fold_score) + '.txt', "w",) as file:
-                file.write(str(debugging))
-                file.close()
+            # debugging = {}
+            # for index, i in enumerate(self.splits['val'].values[fold]):
+            #     temp = {}
+            #     temp['heatmap'] = np.abs(heatmap[index, :]).tolist()
+            #     temp['labels'] = y_val[index, :].tolist()
+            #     temp['preds'] = pred_val[index, :].tolist()
+            #     debugging[f'{i}'] = temp
+            #
+            # # save debug data
+            # with open(self.debug_folder + str(fold) + '_fold_' + str(fold_score) + '.txt', "w",) as file:
+            #     file.write(str(debugging))
+            #     file.close()
 
         return fold_score
+
+    def save_debug_data(self,pred_val,validation_list):
+
+        for index,data in enumerate(validation_list):
+
+            if data[0] == 'A':
+                data_folder = 'A'
+
+            elif data[0] == 'Q':
+                data_folder = 'B'
+
+            elif data[0] == 'I':
+                data_folder = 'C'
+
+            elif data[0] == 'S':
+                data_folder = 'D'
+
+            elif data[0] == 'H':
+                data_folder = 'E'
+
+            elif data[0] == 'E':
+                data_folder = 'F'
+
+            data_folder = f'./data/CV_debug/{data_folder}/'
+
+            prediction = {}
+            prediction['predicted_label'] = pred_val[index].tolist()
+            # save debug data
+            with open(data_folder + data + '.json', 'w') as outfile:
+                json.dump(prediction, outfile)
+
+        return True
