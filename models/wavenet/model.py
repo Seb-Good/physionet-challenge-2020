@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from metrics import Metric
 from utils.torchsummary import summary
 from utils.pytorchtools import EarlyStopping
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 # model
 from models.wavenet.structure import WaveNet
@@ -35,8 +36,10 @@ class Model:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # define the models
-        self.model = WaveNet(n_channels=n_channels).to(self.device)
-        summary(self.model, (input_size, n_channels))
+        self.model = WaveNet(n_channels=n_channels)#.to(self.device)
+        #summary(self.model, (input_size, n_channels))
+
+        self.model = DDP(self.model)
 
         self.metric = Metric()
         self.num_workers = 2
@@ -95,8 +98,8 @@ class Model:
             train_preds, train_true = torch.Tensor([]), torch.Tensor([])
 
             for (X_batch, y_batch) in tqdm(train_loader):
-                y_batch = y_batch.float().to(self.device)
-                X_batch = X_batch.float().to(self.device)
+                y_batch = y_batch.float()#.to(self.device)
+                X_batch = X_batch.float()#.to(self.device)
 
                 self.optimizer.zero_grad()
                 # get model predictions
@@ -136,8 +139,8 @@ class Model:
             avg_val_loss = 0.0
             with torch.no_grad():
                 for X_batch, y_batch in valid_loader:
-                    y_batch = y_batch.float().to(self.device)
-                    X_batch = X_batch.float().to(self.device)
+                    y_batch = y_batch.float()#.to(self.device)
+                    X_batch = X_batch.float()#.to(self.device)
 
                     pred = self.model(X_batch)
                     X_batch = X_batch.cpu().detach()
@@ -211,7 +214,7 @@ class Model:
         print('Start generation of predictions')
         with torch.no_grad():
             for i, (X_batch,y_batch) in enumerate(tqdm(test_loader)):
-                X_batch = X_batch.float().to(self.device)
+                X_batch = X_batch.float()#.to(self.device)
 
                 pred = self.model(X_batch)
 
@@ -231,7 +234,7 @@ class Model:
         test_preds = torch.Tensor([])
         with torch.no_grad():
             for i, (X_batch) in enumerate(test_loader):
-                X_batch = X_batch.float().to(self.device)
+                X_batch = X_batch.float()#.to(self.device)
 
                 pred = self.model.activatations(X_batch)
                 pred = torch.sigmoid(pred)
