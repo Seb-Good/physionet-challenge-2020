@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 np.random.seed(42)
 
 
-# TODO: need to refactor to upload large datasets in batches
+
 class Dataset_train(Dataset):
     def __init__(self, patients):
 

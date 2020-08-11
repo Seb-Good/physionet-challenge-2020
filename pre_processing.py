@@ -51,7 +51,6 @@ class PrepareData:
 
     def create_split_table(self):
 
-        #TODO: finish up cross-validation loop
         kfold = KFold(n_splits=6, random_state=42, shuffle=True)
 
         split_table = []

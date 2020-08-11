@@ -77,9 +77,9 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
 
-            #TODO: return the entire dataset
-            train = Dataset_train(self.splits['train'].values[fold][:2])
-            valid = Dataset_train(self.splits['val'].values[fold][:2])
+
+            train = Dataset_train(self.splits['train'].values[fold])
+            valid = Dataset_train(self.splits['val'].values[fold])
 
             X, y = train.__getitem__(0)
 
@@ -89,8 +89,7 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            # TODO: return the entire dataset
-            valid = Dataset_train(self.splits['val'].values[fold][:10])
+            valid = Dataset_train(self.splits['val'].values[fold])
             pred_val = self.model.predict(valid)
             #TODO: add activations
             #heatmap = self.model.get_heatmap(valid)
@@ -111,8 +110,7 @@ class CVPipeline:
             )
 
             # create a dictionary for debugging
-            # TODO: return the entire dataset
-            self.save_debug_data(pred_val, self.splits['val'].values[fold][:10])
+            self.save_debug_data(pred_val, self.splits['val'].values[fold])
 
             # debugging = {}
             # for index, i in enumerate(self.splits['val'].values[fold]):
