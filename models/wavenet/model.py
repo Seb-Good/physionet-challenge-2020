@@ -39,7 +39,7 @@ class Model:
         summary(self.model, (input_size, n_channels))
 
         self.metric = Metric()
-        self.num_workers = 40
+        self.num_workers = 2
         ########################## compile the model ###############################
 
         # define optimizer
