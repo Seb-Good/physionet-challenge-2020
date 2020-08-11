@@ -74,7 +74,7 @@ class WaveNet(nn.Module):
         self.fc1 = nn.Linear(1984, 300)
         self.fc2 = nn.Linear(300, 300)
         self.fc3 = nn.Linear(300, 27)#
-
+        self.out = torch.nn.Hardsigmoid()
 
     def _make_layers(self, in_ch, out_ch, kernel_size, n):
         dilation_rates = [2 ** i for i in range(n)]
@@ -101,6 +101,6 @@ class WaveNet(nn.Module):
 
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = torch.sigmoid(self.fc3(x))
+        x = self.out(self.fc3(x))
 
         return x
