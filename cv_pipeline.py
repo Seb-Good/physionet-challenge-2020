@@ -77,7 +77,7 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
 
-
+            #TODO: full dataset
             train = Dataset_train(self.splits['train'].values[fold])
             valid = Dataset_train(self.splits['val'].values[fold])
 
@@ -89,6 +89,7 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
+            # TODO: full dataset
             valid = Dataset_train(self.splits['val'].values[fold])
             pred_val = self.model.predict(valid)
             #TODO: add activations
@@ -110,6 +111,7 @@ class CVPipeline:
             )
 
             # create a dictionary for debugging
+            # TODO: full dataset
             self.save_debug_data(pred_val, self.splits['val'].values[fold])
 
             # debugging = {}

@@ -38,6 +38,7 @@ class Model:
         # define the models
         self.model = WaveNet(n_channels=n_channels).to(self.device)
         summary(self.model, (input_size, n_channels))
+        #self.model.half()
 
         if torch.cuda.device_count() > 1:
             print("Number of GPUs will be used: ", torch.cuda.device_count())
@@ -77,6 +78,8 @@ class Model:
 
         self.seed_everything(42)
 
+        self.scaler = torch.cuda.amp.GradScaler()
+
     def seed_everything(self, seed):
         np.random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
@@ -115,13 +118,14 @@ class Model:
                 pred = pred.view(-1, pred.shape[-1])
                 y_batch = y_batch.view(-1, y_batch.shape[-1])
                 train_loss = self.loss(pred, y_batch)
-                y_batch = y_batch.cpu().detach()
-                pred = pred.cpu().detach()
+                y_batch = y_batch.float().cpu().detach()
+                pred = pred.float().cpu().detach()
 
-                train_loss.backward()
+                self.scaler.scale(train_loss).backward() #train_loss.backward()
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
                 # torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.5)
-                self.optimizer.step()
+                self.scaler.step(self.optimizer)#self.optimizer.step()
+                self.scaler.update()
 
                 # calc metric
                 avg_loss += train_loss.item() / len(train_loader)
@@ -148,14 +152,14 @@ class Model:
                     X_batch = X_batch.float().to(self.device)
 
                     pred = self.model(X_batch)
-                    X_batch = X_batch.cpu().detach()
+                    X_batch = X_batch.float().cpu().detach()
 
                     pred = pred.reshape(-1, pred.shape[-1])
                     y_batch = y_batch.view(-1, y_batch.shape[-1])
 
                     avg_val_loss += self.loss(pred, y_batch).item() / len(valid_loader)
-                    y_batch = y_batch.cpu().detach()
-                    pred = pred.cpu().detach()
+                    y_batch = y_batch.float().cpu().detach()
+                    pred = pred.float().cpu().detach()
 
                     val_true = torch.cat([val_true, y_batch], 0)
                     val_preds = torch.cat([val_preds, pred], 0)
@@ -223,7 +227,7 @@ class Model:
 
                 pred = self.model(X_batch)
 
-                X_batch = X_batch.cpu().detach()
+                X_batch = X_batch.float().cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 
@@ -244,7 +248,7 @@ class Model:
                 pred = self.model.activatations(X_batch)
                 pred = torch.sigmoid(pred)
 
-                X_batch = X_batch.cpu().detach()
+                X_batch = X_batch.float().cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 
