@@ -1,5 +1,6 @@
-import logging as log
+import logging
 import click
+import time
 
 # import modules
 from cv_pipeline import CVPipeline
@@ -36,10 +37,27 @@ def main(start_fold, batch_size, lr, n_epochs,p_proc,train,gpu):
             model = Model
         )
 
-        score = cross_val.train()
+        score = 0 #cross_val.train()
 
-        log.info(f'Model metric = {score}')
-        log.info(f'Model fold = {start_fold}')
+
+
+        logger = logging.getLogger('Training pipeline')
+        logger.setLevel(logging.DEBUG)
+
+        fh = logging.FileHandler('training.log')
+        fh.setLevel(logging.DEBUG)
+        logger.addHandler(fh)
+        logger.info('=============================================')
+        logger.info(f'Datetime = {time.time()}')
+        logger.info(f'Model metric = {score}')
+        logger.info(f'Model fold = {start_fold}')
+        logger.info(f'Train = {train}')
+        logger.info(f'Preproc = {p_proc}')
+        logger.info(f'Model fold = {batch_size}')
+        logger.info(f'Model fold = {lr}')
+        logger.info(f'Model fold = {n_epochs}')
+        logger.info(f'GPU = {gpu}')
+        logger.info('=============================================')
 
 
 if __name__ == "__main__":
