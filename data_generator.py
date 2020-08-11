@@ -51,13 +51,19 @@ class Dataset_train(Dataset):
         # load waveforms
         X = np.load(data_folder+self.patients[id] + '.npy')
 
-        if train:
-            # load annotation
-            y = json.load(open(data_folder+self.patients[id] + '.json'))
+        # load annotation
+        y = json.load(open(data_folder + self.patients[id] + '.json'))
+        X = X /y['amp_conversion']
 
-            return X, y['labels_training_merged']
-        else:
-            return X
+        return X, y['labels_training_merged']
+
+        # if train:
+        #     # load annotation
+        #     y = json.load(open(data_folder+self.patients[id] + '.json'))
+        #
+        #     return X, y['labels_training_merged']
+        # else:
+        #     return X
 
     def get_labels(self):
         """
@@ -133,7 +139,7 @@ class Dataset_test(Dataset_train):
 
     def __getitem__(self, idx):
 
-        X = self.load_data(idx, train=False)
+        X,y = self.load_data(idx, train=False)
 
         X = torch.tensor(X, dtype=torch.float)
 
