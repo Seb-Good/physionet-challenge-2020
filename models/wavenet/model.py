@@ -36,13 +36,13 @@ class Model:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # define the models
-        self.model = WaveNet(n_channels=n_channels).to(self.device)
-        summary(self.model, (input_size, n_channels))
+        self.model = WaveNet(n_channels=n_channels)#.to(self.device)
+        #summary(self.model, (input_size, n_channels))
 
         self.model = DP(self.model)
 
         self.metric = Metric()
-        self.num_workers = 4
+        self.num_workers = 8
         ########################## compile the model ###############################
 
         # define optimizer
