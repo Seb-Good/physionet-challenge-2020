@@ -64,7 +64,7 @@ class WaveNet(nn.Module):
     def __init__(self, n_channels, basic_block=CBR):
         super().__init__()
 
-        self.input_layer_1 = nn.GRU(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
+        self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
 
         self.basic_block = basic_block
         self.layer1 = self.basic_block(1, 128, 3, 12)
@@ -86,6 +86,8 @@ class WaveNet(nn.Module):
     def forward(self, x):
 
         x, h_0 = self.input_layer_1(x)
+        x = x.cpu().detach()
+
         #x,(h_0,c_0) = self.input_layer_1(x)
 
         h_0 = h_0.permute(1,0,2)
