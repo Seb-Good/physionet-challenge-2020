@@ -19,3 +19,4 @@ numba==0.50.1
 tensorboard==1.15.0
 jupyterlab
 appJar
+PyQt5

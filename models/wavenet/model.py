@@ -76,11 +76,9 @@ class Model:
 
     def fit(self, train, valid):
 
-        #TODO: need to set shuffle=True
         train_loader = DataLoader(
-            train, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=train.my_collate
+            train, batch_size=self.hparams['batch_size'], shuffle=True,collate_fn=train.my_collate
         )
-        # TODO: need to set shuffle=True
         valid_loader = DataLoader(
             valid, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=valid.my_collate
         )
