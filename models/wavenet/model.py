@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from metrics import Metric
 from utils.torchsummary import summary
 from utils.pytorchtools import EarlyStopping
-from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.nn.parallel import DataParallel as DP
 
 # model
 from models.wavenet.structure import WaveNet
@@ -39,7 +39,7 @@ class Model:
         self.model = WaveNet(n_channels=n_channels)#.to(self.device)
         #summary(self.model, (input_size, n_channels))
 
-        self.model = DDP(self.model)
+        self.model = DP(self.model)
 
         self.metric = Metric()
         self.num_workers = 2
