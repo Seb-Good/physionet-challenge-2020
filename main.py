@@ -37,7 +37,7 @@ def main(start_fold, batch_size, lr, n_epochs,p_proc,train,gpu):
             model = Model
         )
 
-        score = 0 #cross_val.train()
+        score = cross_val.train()
 
 
 
