@@ -48,7 +48,7 @@ class Model:
 
 
         self.metric = Metric()
-        self.num_workers = 8
+        self.num_workers = 32
         ########################## compile the model ###############################
 
         # define optimizer
