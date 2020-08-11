@@ -39,7 +39,7 @@ class Model:
         summary(self.model, (input_size, n_channels))
 
         self.metric = Metric()
-
+        self.num_workers = 40
         ########################## compile the model ###############################
 
         # define optimizer
@@ -77,10 +77,10 @@ class Model:
     def fit(self, train, valid):
 
         train_loader = DataLoader(
-            train, batch_size=self.hparams['batch_size'], shuffle=True,collate_fn=train.my_collate
+            train, batch_size=self.hparams['batch_size'], shuffle=True,collate_fn=train.my_collate,num_workers=self.num_workers
         )
         valid_loader = DataLoader(
-            valid, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=valid.my_collate
+            valid, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=valid.my_collate,num_workers=self.num_workers
         )
 
         # tensorboard object
@@ -204,7 +204,7 @@ class Model:
         self.model.eval()
 
         test_loader = torch.utils.data.DataLoader(
-            X_test, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=X_test.my_collate
+            X_test, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=X_test.my_collate,num_workers=self.num_workers
         )
 
         test_preds = torch.Tensor([])
@@ -226,7 +226,7 @@ class Model:
         # evaluate the model
         self.model.eval()
 
-        test_loader = torch.utils.data.DataLoader(X_test, batch_size=self.batch_size, shuffle=False,collate_fn=X_test.my_collate)
+        test_loader = torch.utils.data.DataLoader(X_test, batch_size=self.batch_size, shuffle=False,collate_fn=X_test.my_collate,num_workers=self.num_workers)
 
         test_preds = torch.Tensor([])
         with torch.no_grad():
