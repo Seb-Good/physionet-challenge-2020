@@ -19,7 +19,7 @@ from torch.nn.parallel import DataParallel as DP
 
 
 # model
-from models.wavenet.structure import WaveNet
+from models.ecgnet.structure import ECGNet
 
 
 class Model:
@@ -38,7 +38,7 @@ class Model:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # define the models
-        self.model = WaveNet(n_channels=n_channels).to(self.device)
+        self.model = ECGNet(n_channels=n_channels).to(self.device)
         summary(self.model, (input_size, n_channels))
         #self.model.half()
 
@@ -79,7 +79,7 @@ class Model:
         )
 
         self.seed_everything(42)
-        self.threshold = 0.75
+
         self.scaler = torch.cuda.amp.GradScaler()
 
     def seed_everything(self, seed):
@@ -138,8 +138,8 @@ class Model:
 
             # calc triaing metric
             train_preds = train_preds.numpy()
-            train_preds[np.where(train_preds >= self.threshold)] = 1
-            train_preds[np.where(train_preds < self.threshold)] = 0
+            train_preds[np.where(train_preds >= 0.5)] = 1
+            train_preds[np.where(train_preds < 0.5)] = 0
             metric_train = self.metric.compute(labels=train_true.numpy(), outputs=train_preds)
 
             # evaluate the model
@@ -168,8 +168,8 @@ class Model:
 
             # evalueate metric
             val_preds = val_preds.numpy()
-            val_preds[np.where(val_preds >= self.threshold)] = 1
-            val_preds[np.where(val_preds < self.threshold)] = 0
+            val_preds[np.where(val_preds >= 0.5)] = 1
+            val_preds[np.where(val_preds < 0.5)] = 0
             metric_val = self.metric.compute(val_true.numpy(), val_preds)
 
             self.scheduler.step(avg_val_loss)
