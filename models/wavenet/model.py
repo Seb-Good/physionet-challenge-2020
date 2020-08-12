@@ -43,8 +43,8 @@ class Model:
         #self.model.half()
 
         if torch.cuda.device_count() > 1:
-            print("Number of GPUs will be used: ", torch.cuda.device_count())
-            self.model = DP(self.model, device_ids=list(range(torch.cuda.device_count())))
+            print("Number of GPUs will be used: ", torch.cuda.device_count()-2)
+            self.model = DP(self.model, device_ids=list(range(torch.cuda.device_count()-2)))
         else:
             print('Only one GPU is available')
 
