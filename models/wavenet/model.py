@@ -138,8 +138,8 @@ class Model:
 
             # calc triaing metric
             train_preds = train_preds.numpy()
-            train_preds[np.where(train_preds >= 0.1)] = 1
-            train_preds[np.where(train_preds < 0.1)] = 0
+            train_preds[np.where(train_preds >= 0.5)] = 1
+            train_preds[np.where(train_preds < 0.5)] = 0
             metric_train = self.metric.compute(labels=train_true.numpy(), outputs=train_preds)
 
             # evaluate the model
@@ -168,8 +168,8 @@ class Model:
 
             # evalueate metric
             val_preds = val_preds.numpy()
-            val_preds[np.where(val_preds >= 0.1)] = 1
-            val_preds[np.where(val_preds < 0.1)] = 0
+            val_preds[np.where(val_preds >= 0.5)] = 1
+            val_preds[np.where(val_preds < 0.5)] = 0
             metric_val = self.metric.compute(val_true.numpy(), val_preds)
 
             self.scheduler.step(avg_val_loss)
