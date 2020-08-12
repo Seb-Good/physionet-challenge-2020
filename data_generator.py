@@ -12,10 +12,10 @@ np.random.seed(42)
 
 
 class Dataset_train(Dataset):
-    def __init__(self, patients):
+    def __init__(self, patients,aug):
 
         self.patients = patients
-
+        self.aug = aug
 
     def __len__(self):
         return len(self.patients)
@@ -59,7 +59,11 @@ class Dataset_train(Dataset):
 
         # load annotation
         y = json.load(open(data_folder + self.patients[id] + '.json'))
-        X = (X - np.mean(X)) / np.std(X)#/y['amp_conversion']
+        X = (X - np.mean(X)) / np.std(X)
+
+        #TODO: Seb's augmentation implementation point
+        if self.aug is True:
+            pass
 
         return X, y['labels_training_merged']
 
