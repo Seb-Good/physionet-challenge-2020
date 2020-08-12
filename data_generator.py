@@ -69,7 +69,8 @@ class Dataset_train(Dataset):
         # We need a way to inform this method of the sample rate for the dataset.
         fs_training = 1000
         if self.aug is True:
-            X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
+            pass
+            #X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
         #padding
         if X.shape[0] < 38000:
