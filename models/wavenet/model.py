@@ -308,5 +308,5 @@ class CompLoss(nn.Module):
 
         loss = (matrix - matrix_norm) / (matrix_ideal - matrix_norm)
 
-        return 1-loss
+        return 2-loss
 
