@@ -59,7 +59,7 @@ class Dataset_train(Dataset):
 
         # load annotation
         y = json.load(open(data_folder + self.patients[id] + '.json'))
-        X = X / 1000 #/y['amp_conversion']
+        X = (X - np.mean(X)) / np.std(X)#/y['amp_conversion']
 
         return X, y['labels_training_merged']
 
