@@ -281,18 +281,20 @@ class CompLoss(nn.Module):
 
     def forward(self,pred, target):
 
-        # pred = (pred - 0.5) * 2
-        # target = (target - 0.5) * 2
+        pred = (pred - 0.5) * 2
+        target = (target - 0.5) * 2
 
         target = target.t()
 
         #matrix for predictions
         matrix = torch.mm(target, pred)
+        matrix = torch.abs(matrix)
         matrix = torch.matmul(matrix,self.weights_matrix)
         matrix = torch.sum(matrix)
 
         #matrix for ideal prediction
         matrix_ideal = torch.mm(target, target.t())
+        matrix_ideal = torch.abs(matrix_ideal)
         matrix_ideal = torch.matmul(matrix_ideal, self.weights_matrix)
         matrix_ideal = torch.sum(matrix_ideal)
 
@@ -300,6 +302,7 @@ class CompLoss(nn.Module):
         normal_predictions = torch.Tensor(np.zeros((target.shape[1],target.shape[0]))).to(self.device)
         normal_predictions[:,21] = 1
         matrix_norm = torch.mm(target, normal_predictions)
+        matrix_norm = torch.abs(matrix_norm)
         matrix_norm = torch.matmul(matrix_norm, self.weights_matrix)
         matrix_norm = torch.sum(matrix_norm)
 
