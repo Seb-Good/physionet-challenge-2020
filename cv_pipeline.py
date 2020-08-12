@@ -442,6 +442,8 @@ class CVPipeline:
             for i in train_data:
                 if i in self.exclusions:
                     continue
+                if i[0] != 'A':
+                    continue
                 dataset_train.append(i)
 
 
@@ -449,6 +451,8 @@ class CVPipeline:
             dataset_val = []
             for i in val_data:
                 if i in self.exclusions:
+                    continue
+                if i[0] != 'A':
                     continue
                 dataset_val.append(i)
 
