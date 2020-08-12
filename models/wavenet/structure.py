@@ -48,13 +48,13 @@ class CBR(nn.Module):
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
             dilation=dilation,
         )
-        #self.bn = nn.BatchNorm1d(out_ch)
+        self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
         self.pooling = nn.MaxPool1d(kernel_size=4)
 
     def forward(self, x):
         x = self.conv(x)
-        #x = self.bn(x)
+        x = self.bn(x)
         x = self.relu(x)
         x = self.pooling(x)
         return x
