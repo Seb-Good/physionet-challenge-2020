@@ -281,8 +281,8 @@ class CompLoss(nn.Module):
 
     def forward(self,pred, target):
 
-        pred = (pred - 0.5) * 2
-        target = (target - 0.5) * 2
+        # pred = (pred - 0.5) * 2
+        # target = (target - 0.5) * 2
 
         # matrix for ideal prediction
         matrix_ideal = torch.mm(target.t(), target)
