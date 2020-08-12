@@ -483,7 +483,7 @@ class CVPipeline:
 
             # get model predictions
             # TODO: full dataset
-            valid = Dataset_train(self.splits['val'].values[fold])
+            valid = Dataset_train(self.splits['val'].values[fold],aug=False)
             pred_val = self.model.predict(valid)
             #TODO: add activations
             #heatmap = self.model.get_heatmap(valid)
