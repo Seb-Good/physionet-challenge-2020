@@ -69,8 +69,8 @@ class Dataset_train(Dataset):
         # We need a way to inform this method of the sample rate for the dataset.
         fs_training = 1000
         if self.aug is True:
-            pass
-            #X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
+            #pass
+            X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
         #padding
         if X.shape[0] < 38000:
@@ -123,7 +123,7 @@ class Dataset_train(Dataset):
             duration = waveform.shape[0] / fs_training
 
             # Get new heart rate
-            hr_new = int(meta_data['hr'] * np.random.uniform(0.75, 1.))
+            hr_new = int(meta_data['hr'] * np.random.uniform(1, 1.25))
             if hr_new > 300:
                 hr_new = 300
             elif hr_new < 40:
