@@ -99,8 +99,8 @@ class Dataset_train(Dataset):
     def apply_augmentation(self, waveform, meta_data, fs_training):
 
         # Random resample
-        waveform = self._random_resample(waveform=waveform, meta_data=meta_data,
-                                         fs_training=fs_training, probability=0.25)
+        # waveform = self._random_resample(waveform=waveform, meta_data=meta_data,
+        #                                  fs_training=fs_training, probability=0.25)
 
         # Random amplitude scale
         waveform = self._random_scale(waveform=waveform, probability=0.5)
