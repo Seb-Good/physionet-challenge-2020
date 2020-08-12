@@ -2,6 +2,7 @@
 import numpy as np
 from tqdm import tqdm
 import os
+import pandas as pd
 
 # pytorch
 import torch
@@ -15,6 +16,7 @@ from metrics import Metric
 from utils.torchsummary import summary
 from utils.pytorchtools import EarlyStopping
 from torch.nn.parallel import DataParallel as DP
+
 
 # model
 from models.wavenet.structure import WaveNet
@@ -48,14 +50,14 @@ class Model:
 
 
         self.metric = Metric()
-        self.num_workers = 32
+        self.num_workers = 1
         ########################## compile the model ###############################
 
         # define optimizer
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.hparams['lr'], weight_decay=1e-5)
 
         # weights = torch.Tensor([0.025,0.033,0.039,0.046,0.069,0.107,0.189,0.134,0.145,0.262,1]).cuda()
-        self.loss = nn.BCELoss()
+        self.loss = CompLoss(self.device) #nn.BCELoss() #
 
         # define early stopping
         self.early_stopping = EarlyStopping(
@@ -267,3 +269,41 @@ class Model:
     def __get_lr(self, optimizer):
         for param_group in optimizer.param_groups:
             return param_group['lr']
+
+
+class CompLoss(nn.Module):
+
+    def __init__(self,device):
+        super().__init__()
+        self.weights_matrix = pd.read_csv('./metrics/weights.csv').values[:,1:]
+        self.weights_matrix = torch.Tensor(self.weights_matrix).to(device)
+        self.device = device
+
+    def forward(self,pred, target):
+
+        # pred = (pred - 0.5) * 2
+        # target = (target - 0.5) * 2
+
+        target = target.t()
+
+        #matrix for predictions
+        matrix = torch.mm(target, pred)
+        matrix = torch.matmul(matrix,self.weights_matrix)
+        matrix = torch.sum(matrix)
+
+        #matrix for ideal prediction
+        matrix_ideal = torch.mm(target, target.t())
+        matrix_ideal = torch.matmul(matrix_ideal, self.weights_matrix)
+        matrix_ideal = torch.sum(matrix_ideal)
+
+        # matrix for prediction of only normal labels
+        normal_predictions = torch.Tensor(np.zeros((target.shape[1],target.shape[0]))).to(self.device)
+        normal_predictions[:,21] = 1
+        matrix_norm = torch.mm(target, normal_predictions)
+        matrix_norm = torch.matmul(matrix_norm, self.weights_matrix)
+        matrix_norm = torch.sum(matrix_norm)
+
+        loss = (matrix - matrix_norm) / (matrix_ideal - matrix_norm)
+
+        return 1-loss
+

@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import pandas as pd
+import os
 
 class AngularPenaltySMLoss(nn.Module):
+    
     def __init__(
         self, in_features, out_features, loss_type='arcface', eps=1e-7, s=None, m=None,
     ):
@@ -73,3 +75,7 @@ class AngularPenaltySMLoss(nn.Module):
         denominator = torch.exp(numerator) + torch.sum(torch.exp(self.s * excl), dim=1)
         L = numerator - torch.log(denominator)
         return -torch.mean(L)
+
+
+
+
