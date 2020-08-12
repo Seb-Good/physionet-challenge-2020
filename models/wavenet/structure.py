@@ -67,14 +67,14 @@ class WaveNet(nn.Module):
         #self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
 
         #self.basic_block = basic_block
-        self.layer1 = basic_block(12, 24, 3, 12)
-        self.layer2 = basic_block(24, 48, 3, 8)
+        self.layer1 = basic_block(12, 128, 3, 12)
+        self.layer2 = basic_block(128, 64, 3, 8)
 
-        self.layer3 = basic_block(48, 64, 3, 4)
-        self.layer4 = basic_block(64, 64, 3, 4)
-        self.layer5 = basic_block(64, 64, 3, 4)
+        self.layer3 = basic_block(64, 32, 3, 4)
+        self.layer4 = basic_block(32, 32, 3, 4)
+        self.layer5 = basic_block(32, 32, 3, 4)
 
-        self.fc1 = nn.Linear(2368, 300)
+        self.fc1 = nn.Linear(1184, 300)
         self.fc2 = nn.Linear(300, 300)
         self.fc3 = nn.Linear(300, 27)#
         self.out = torch.nn.Hardsigmoid()
