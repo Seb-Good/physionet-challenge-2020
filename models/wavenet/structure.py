@@ -50,7 +50,7 @@ class CBR(nn.Module):
         )
         #self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
-        self.pooling = nn.MaxPool1d(kernel_size=2)
+        self.pooling = nn.MaxPool1d(kernel_size=4)
 
     def forward(self, x):
         x = self.conv(x)
@@ -67,12 +67,15 @@ class WaveNet(nn.Module):
         #self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
 
         #self.basic_block = basic_block
-        self.layer1 = basic_block(12, 128, 3, 12)
-        self.layer2 = basic_block(128, 64, 3, 8)
-        self.layer3 = basic_block(64, 32, 3, 4)
+        self.layer1 = basic_block(12, 24, 3, 12)
+        self.layer2 = basic_block(24, 48, 3, 8)
 
-        self.fc1 = nn.Linear(152000, 5000)
-        self.fc2 = nn.Linear(5000, 300)
+        self.layer3 = basic_block(48, 64, 3, 4)
+        self.layer4 = basic_block(64, 64, 3, 4)
+        self.layer5 = basic_block(64, 64, 3, 4)
+
+        self.fc1 = nn.Linear(2368, 300)
+        self.fc2 = nn.Linear(300, 300)
         self.fc3 = nn.Linear(300, 27)#
         self.out = torch.nn.Hardsigmoid()
 
@@ -95,6 +98,8 @@ class WaveNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
 
+        x = self.layer4(x)
+        x = self.layer5(x)
 
         x = x.view(-1,x.shape[1]*x.shape[2])
 
