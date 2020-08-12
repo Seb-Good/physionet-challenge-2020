@@ -64,15 +64,15 @@ class WaveNet(nn.Module):
     def __init__(self, n_channels, basic_block=CBR):
         super().__init__()
 
-        self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
+        #self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
 
-        self.basic_block = basic_block
-        self.layer1 = self.basic_block(1, 128, 3, 12)
-        self.layer2 = self.basic_block(128, 64, 3, 8)
-        self.layer3 = self.basic_block(64, 32, 3, 4)
+        #self.basic_block = basic_block
+        self.layer1 = basic_block(12, 128, 3, 12)
+        self.layer2 = basic_block(128, 64, 3, 8)
+        self.layer3 = basic_block(64, 32, 3, 4)
 
-        self.fc1 = nn.Linear(1984, 300)
-        self.fc2 = nn.Linear(300, 300)
+        self.fc1 = nn.Linear(152000, 5000)
+        self.fc2 = nn.Linear(5000, 300)
         self.fc3 = nn.Linear(300, 27)#
         self.out = torch.nn.Hardsigmoid()
 
@@ -85,13 +85,13 @@ class WaveNet(nn.Module):
 
     def forward(self, x):
 
-        x, h_0 = self.input_layer_1(x)
-        x = x.cpu().detach()
+        #x, h_0 = self.input_layer_1(x)
+        #x = x.cpu().detach()
 
         #x,(h_0,c_0) = self.input_layer_1(x)
 
-        h_0 = h_0.permute(1,0,2)
-        x = self.layer1(h_0)
+        x = x.permute(0,2,1)
+        x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
 

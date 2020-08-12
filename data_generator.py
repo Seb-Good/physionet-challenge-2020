@@ -44,6 +44,7 @@ class Dataset_train(Dataset):
         elif self.patients[id][0] == 'E':
             data_folder = 'F'
         else:
+            a = self.patients[id]
             print(1)
 
         data_folder = f'./data/{data_folder}/formatted/'
@@ -51,9 +52,14 @@ class Dataset_train(Dataset):
         # load waveforms
         X = np.load(data_folder+self.patients[id] + '.npy')
 
+        #padding
+        if X.shape[0] < 38000:
+            padding = np.zeros((38000 - X.shape[0], X.shape[1]))
+            X = np.concatenate([X,padding],axis=0)
+
         # load annotation
         y = json.load(open(data_folder + self.patients[id] + '.json'))
-        X = X /y['amp_conversion']
+        X = X / 1000 #/y['amp_conversion']
 
         return X, y['labels_training_merged']
 

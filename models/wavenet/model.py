@@ -88,11 +88,11 @@ class Model:
     def fit(self, train, valid):
 
         train_loader = DataLoader(
-            train, batch_size=self.hparams['batch_size'], shuffle=True,collate_fn=train.my_collate,num_workers=self.num_workers
-        )
+            train, batch_size=self.hparams['batch_size'], shuffle=True,num_workers=self.num_workers
+        )#,collate_fn=train.my_collate
         valid_loader = DataLoader(
-            valid, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=valid.my_collate,num_workers=self.num_workers
-        )
+            valid, batch_size=self.hparams['batch_size'], shuffle=False,num_workers=self.num_workers
+        )#,collate_fn=train.my_collate
 
         # tensorboard object
         writer = SummaryWriter()
@@ -216,8 +216,8 @@ class Model:
         self.model.eval()
 
         test_loader = torch.utils.data.DataLoader(
-            X_test, batch_size=self.hparams['batch_size'], shuffle=False,collate_fn=X_test.my_collate,num_workers=self.num_workers
-        )
+            X_test, batch_size=self.hparams['batch_size'], shuffle=False,num_workers=self.num_workers
+        )#,collate_fn=train.my_collate
 
         test_preds = torch.Tensor([])
         print('Start generation of predictions')
@@ -238,7 +238,7 @@ class Model:
         # evaluate the model
         self.model.eval()
 
-        test_loader = torch.utils.data.DataLoader(X_test, batch_size=self.batch_size, shuffle=False,collate_fn=X_test.my_collate,num_workers=self.num_workers)
+        test_loader = torch.utils.data.DataLoader(X_test, batch_size=self.batch_size, shuffle=False,num_workers=self.num_workers)#,collate_fn=train.my_collate
 
         test_preds = torch.Tensor([])
         with torch.no_grad():
