@@ -38,7 +38,7 @@ class wave_block(nn.Module):
 
 
 class CBR(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size, dilation):
+    def __init__(self, in_ch, out_ch, kernel_size, dilation,pool_size):
         super().__init__()
 
         self.conv = nn.Conv1d(
@@ -50,7 +50,7 @@ class CBR(nn.Module):
         )
         self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
-        self.pooling = nn.MaxPool1d(kernel_size=4)
+        self.pooling = nn.MaxPool1d(kernel_size=pool_size)
 
     def forward(self, x):
         x = self.conv(x)
@@ -67,14 +67,15 @@ class WaveNet(nn.Module):
         #self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
 
         #self.basic_block = basic_block
-        self.layer1 = basic_block(12, 128, 3, 12)
-        self.layer2 = basic_block(128, 64, 3, 8)
+        self.layer1 = basic_block(12, 32, 11, 1,2)
+        self.layer2 = basic_block(32, 64, 11, 1,2)
 
-        self.layer3 = basic_block(64, 32, 3, 4)
-        self.layer4 = basic_block(32, 32, 3, 4)
-        self.layer5 = basic_block(32, 32, 3, 4)
+        self.layer3 = basic_block(64, 64, 11, 1,4)
+        self.layer4 = basic_block(64, 64, 11, 1,4)
+        self.layer5 = basic_block(64, 64, 11, 1,4)
+        self.layer5 = basic_block(64, 64, 11, 1, 4)
 
-        self.fc1 = nn.Linear(1184, 300)
+        self.fc1 = nn.Linear(9472, 300)
         self.fc2 = nn.Linear(300, 300)
         self.fc3 = nn.Linear(300, 27)#
         self.out = torch.sigmoid
