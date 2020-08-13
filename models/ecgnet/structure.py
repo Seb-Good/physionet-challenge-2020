@@ -4,7 +4,7 @@ from loss_functions import AngularPenaltySMLoss
 
 
 class Stem_layer(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size, drop_rate):
+    def __init__(self, in_ch, out_ch, kernel_size, drop_rate,pool_size):
         super().__init__()
         dilation = 1
         self.conv = nn.Conv1d(
@@ -16,7 +16,7 @@ class Stem_layer(nn.Module):
         )
         #self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
-        self.pooling = nn.MaxPool1d(kernel_size=4)
+        self.pooling = nn.MaxPool1d(kernel_size=pool_size)
         self.drop = nn.Dropout(drop_rate)
 
     def forward(self, x):
@@ -75,7 +75,7 @@ class Wave_block(nn.Module):
 
         tanh = self.tanh(self.conv1(x))
         sig = self.sigmoid(self.conv2(x))
-        res = tanh.mul(sig)
+        res = torch.mul(tanh,sig)
 
         res_out = self.conv_res(res)+ res_x
         skip_out = self.conv_skip(res)
@@ -113,18 +113,18 @@ class ECGNet(nn.Module):
         self.basic_block = basic_block
 
         #stem layers
-        self.layer1 = input_block(n_channels, 32, 9,0.3)
-        self.layer2 = input_block(32, 64, 9,0.3)
+        self.layer1 = input_block(n_channels, 32, 9,0.3,3)
+        self.layer2 = input_block(32, 64, 9,0.3,3)
 
         #wavenet(residual) layers
-        self.layer3 = self.basic_block(64, 9,1)
-        self.layer4 = self.basic_block(64, 9,2)
-        self.layer5 = self.basic_block(64, 9,4)
-        self.layer6 = self.basic_block(64, 9,8)
-        self.layer7 = self.basic_block(64, 9,16)
-        self.layer8 = self.basic_block(64, 9,32)
-        self.layer9 = self.basic_block(64, 9,64)
-        self.layer10 = self.basic_block(64, 9,128)
+        self.layer3 = self.basic_block(64, 9,2)
+        self.layer4 = self.basic_block(64, 9,4)
+        self.layer5 = self.basic_block(64, 9,8)
+        self.layer6 = self.basic_block(64, 9,16)
+        self.layer7 = self.basic_block(64, 9,32)
+        self.layer8 = self.basic_block(64, 9,64)
+        self.layer9 = self.basic_block(64, 9,128)
+        self.layer10 = self.basic_block(64, 9,256)
 
 
         self.conv_out_1 = self.conv2 = nn.Conv1d(
@@ -132,12 +132,20 @@ class ECGNet(nn.Module):
             128,
             9,
             padding=int((10 + (10 - 1) * (0 - 1)) / 2),
-            dilation=0,
+            dilation=1,
+        )
+
+        self.conv_out_2 = self.conv2 = nn.Conv1d(
+            128,
+            256,
+            9,
+            padding=int((10 + (10 - 1) * (0 - 1)) / 2),
+            dilation=1,
         )
 
 
 
-        self.fc = nn.Linear(64, 27)#
+        self.fc = nn.Linear(256, 27)#
         self.out = torch.nn.Sigmoid()
 
     def _make_layers(self, out_ch, kernel_size, n, basic_block):
@@ -158,9 +166,9 @@ class ECGNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
 
-        x,skip_1 = self.layer3(x)
-        x,skip_2 = self.layer4(x)
-        x,skip_3 = self.layer5(x)
+        x, skip_1 = self.layer3(x)
+        x, skip_2 = self.layer4(x)
+        x, skip_3 = self.layer5(x)
         x, skip_4 = self.layer6(x)
         x, skip_5 = self.layer7(x)
         x, skip_6 = self.layer8(x)
@@ -168,6 +176,9 @@ class ECGNet(nn.Module):
         x, skip_8 = self.layer10(x)
 
         x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
+
+        x = self.conv_out_1(x)
+        x = self.conv_out_2(x)
 
         x = torch.mean(x,dim=2)
 
