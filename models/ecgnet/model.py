@@ -65,13 +65,14 @@ class Model:
             checkpoint_path=self.hparams['checkpoint_path'] + '/checkpoint.pt',
             patience=self.hparams['patience'],
             delta=self.hparams['min_delta'],
+            is_maximize=False
         )
         # lr cheduler
         self.scheduler = ReduceLROnPlateau(
             optimizer=self.optimizer,
-            mode='max',
+            mode='min',
             factor=0.2,
-            patience=3,
+            patience=int(self.hparams['patience']/5),
             verbose=True,
             threshold=self.hparams['min_delta'],
             threshold_mode='abs',
