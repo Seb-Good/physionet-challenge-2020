@@ -174,7 +174,7 @@ class Model:
 
             # evaluate the model
             print('Model evaluation...')
-            self.model.zero_grad()
+            #self.model.zero_grad()
             self.model.eval()
             val_preds, val_true = torch.Tensor([]), torch.Tensor([])
             avg_val_loss = 0.0
@@ -240,7 +240,7 @@ class Model:
 
         writer.close()
 
-        self.model.zero_grad()
+        #self.model.zero_grad()
 
         return True
 
