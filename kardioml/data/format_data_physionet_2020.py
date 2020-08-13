@@ -86,13 +86,19 @@ class FormatDataPhysionet2020(object):
         # Import matlab file
         waveforms = self._load_mat_file(filename=filename)
 
+        # Set common sample rate
+        fs_resampled = 1000
+
         # Resample waveforms
         waveforms = self._resample(waveforms=waveforms, fs=header['fs'])
 
+        # Compute heart rate
+        hr = self._compute_heart_rate(waveforms=waveforms, fs=fs_resampled)
+
         # Get rpeaks
-        rpeaks = self._get_rpeaks(waveforms=waveforms, fs=1000)
+        rpeaks = self._get_rpeaks(waveforms=waveforms, fs=fs_resampled)
         rpeak_array = self._get_peak_array(waveforms=waveforms, peaks=rpeaks)
-        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=1000)
+        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=fs_resampled)
 
         # Get P-waves and T-waves
         if p_and_t_waves:
@@ -101,9 +107,9 @@ class FormatDataPhysionet2020(object):
             p_waves = None
             t_waves = None
         p_wave_array = self._get_peak_array(waveforms=waveforms, peaks=p_waves)
-        p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=1000)
+        p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=fs_resampled)
         t_wave_array = self._get_peak_array(waveforms=waveforms, peaks=t_waves)
-        t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=1000)
+        t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=fs_resampled)
 
         # Save waveform data npy file
         np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
@@ -118,7 +124,7 @@ class FormatDataPhysionet2020(object):
                        'sex': header['sex'],
                        'amp_conversion': header['amp_conversion'],
                        'fs': header['fs'],
-                       'fs_resampled': 1000,
+                       'fs_resampled': fs_resampled,
                        'length': header['length'],
                        'num_leads': header['num_leads'],
                        'labels_SNOMEDCT': labels.labels_SNOMEDCT,
@@ -128,7 +134,7 @@ class FormatDataPhysionet2020(object):
                        'labels_training': labels.labels_training,
                        'labels_training_merged': labels.labels_training_merged,
                        'shape': waveforms.shape,
-                       'hr': self._compute_heart_rate(waveforms=waveforms, fs=header['fs']),
+                       'hr': hr,
                        'rpeaks': rpeaks,
                        'rpeak_array': rpeak_array.tolist(),
                        'rpeak_times': rpeak_times,
@@ -193,7 +199,6 @@ class FormatDataPhysionet2020(object):
         # Create empty array with length of waveform
         peak_array = np.zeros(waveforms.shape[0], dtype=np.float32)
         window = blackmanharris(21)
-        # if len([True for peak_ids in peaks if peak_ids is not None]) >= 1:
         if peaks:
             for peak_ids in peaks:
                 if peak_ids:
@@ -301,13 +306,13 @@ class FormatDataPhysionet2020(object):
             waveforms_resampled = list()
             for channel in range(waveforms.shape[1]):
                 waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
-            return np.stack(waveforms_resampled, axis=0)
+            return np.stack(waveforms_resampled, axis=1)
         elif int(fs) == 500:
             order = 2
             waveforms_resampled = list()
             for channel in range(waveforms.shape[1]):
                 waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
-            return np.stack(waveforms_resampled, axis=0)
+            return np.stack(waveforms_resampled, axis=1)
         return waveforms
 
 
