@@ -442,7 +442,7 @@ class CVPipeline:
                     continue
 
             #TODO: full dataset
-            train = Dataset_train(self.splits['train'].values[fold],aug=True)
+            train = Dataset_train(self.splits['train'].values[fold],aug=False)
             valid = Dataset_train(self.splits['val'].values[fold],aug=False)
 
             X, y = train.__getitem__(0)
