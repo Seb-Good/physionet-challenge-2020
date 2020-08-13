@@ -72,6 +72,8 @@ class Metric():
             for threshold in threshold_grid:
                 scores = []
 
+        #save thresholds
+
 
         return labels, outputs
 
