@@ -65,6 +65,11 @@ class Metric():
         threshold_grid = np.arange(0,0.01,0.99)
 
 
+        #TODO
+        for threshold in threshold_grid:
+            for i in range(27):
+                print(1)
+
         return labels, outputs
 
 
