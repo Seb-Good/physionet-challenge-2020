@@ -28,22 +28,20 @@ class Stem_layer(nn.Module):
         return x
 
 class Wave_block(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size):
+    def __init__(self, out_ch, kernel_size,dilation):
         super().__init__()
-        dilation = 1
         self.kernel_size = kernel_size
-        self.in_ch = in_ch
         self.out_ch = out_ch
 
         self.conv1 = nn.Conv1d(
-            in_ch,
+            out_ch,
             out_ch,
             kernel_size,
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
             dilation=dilation,
         )
         self.conv2 = nn.Conv1d(
-            in_ch,
+            out_ch,
             out_ch,
             kernel_size,
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
@@ -58,13 +56,6 @@ class Wave_block(nn.Module):
             dilation=dilation,
         )
 
-        self.conv_sip_channel = nn.Conv1d(
-            in_ch,
-            out_ch,
-            1,
-            padding=0,
-            dilation=dilation,
-        )
 
         self.conv_skip = nn.Conv1d(
             out_ch,
@@ -80,7 +71,7 @@ class Wave_block(nn.Module):
 
     def forward(self, x):
 
-        res_x = self.conv_sip_channel(x)
+        res_x = x
 
         tanh = self.tanh(self.conv1(x))
         sig = self.sigmoid(self.conv2(x))
@@ -88,7 +79,6 @@ class Wave_block(nn.Module):
 
         res_out = self.conv_res(res)+ res_x
         skip_out = self.conv_skip(res)
-        #res_out = res_out
         return res_out,skip_out
 
 
@@ -120,27 +110,35 @@ class ECGNet(nn.Module):
         super().__init__()
 
         #self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
+        self.basic_block = basic_block
 
         #stem layers
-        self.layer1 = input_block(n_channels, 32, 10,0.3)
-        self.layer2 = input_block(n_channels, 64, 10,0.3)
+        self.layer1 = input_block(n_channels, 32, 9,0.3)
+        self.layer2 = input_block(32, 64, 9,0.3)
 
         #wavenet(residual) layers
-        self.layer3 = self.basic_block(64, 64, 10)
-        self.layer4 = self.basic_block(64, 64, 10)
-        self.layer5 = self.basic_block(64, 64, 10)
-        self.layer6 = self.basic_block(64, 64, 10)
-        self.layer7 = self.basic_block(64, 64, 10)
-        self.layer8 = self.basic_block(64, 64, 10)
-        self.layer9 = self.basic_block(64, 64, 10)
-        self.layer10 = self.basic_block(64, 64, 10)
+        self.layer3 = self.basic_block(64, 9,1)
+        self.layer4 = self.basic_block(64, 9,2)
+        self.layer5 = self.basic_block(64, 9,4)
+        self.layer6 = self.basic_block(64, 9,8)
+        self.layer7 = self.basic_block(64, 9,16)
+        self.layer8 = self.basic_block(64, 9,32)
+        self.layer9 = self.basic_block(64, 9,64)
+        self.layer10 = self.basic_block(64, 9,128)
+
+
+        self.conv_out_1 = self.conv2 = nn.Conv1d(
+            64,
+            128,
+            9,
+            padding=int((10 + (10 - 1) * (0 - 1)) / 2),
+            dilation=0,
+        )
 
 
 
-        self.fc1 = nn.Linear(1184, 300)
-        self.fc2 = nn.Linear(300, 300)
-        self.fc3 = nn.Linear(300, 27)#
-        self.out = torch.nn.Hardsigmoid()
+        self.fc = nn.Linear(64, 27)#
+        self.out = torch.nn.Sigmoid()
 
     def _make_layers(self, out_ch, kernel_size, n, basic_block):
         #dilation_rates = [2 ** i for i in range(n)]
@@ -159,16 +157,21 @@ class ECGNet(nn.Module):
         x = x.permute(0,2,1)
         x = self.layer1(x)
         x = self.layer2(x)
-        x = self.layer3(x)
 
-        x = self.layer4(x)
-        x = self.layer5(x)
+        x,skip_1 = self.layer3(x)
+        x,skip_2 = self.layer4(x)
+        x,skip_3 = self.layer5(x)
+        x, skip_4 = self.layer6(x)
+        x, skip_5 = self.layer7(x)
+        x, skip_6 = self.layer8(x)
+        x, skip_7 = self.layer9(x)
+        x, skip_8 = self.layer10(x)
 
-        x = x.view(-1,x.shape[1]*x.shape[2])
+        x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
+
+        x = torch.mean(x,dim=2)
 
 
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.out(self.fc3(x))
+        x = self.out(self.fc(x))
 
         return x

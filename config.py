@@ -2,7 +2,7 @@ import ast
 import os
 
 # select the type of the model here
-from models.wavenet import Model, hparams
+from models.ecgnet import Model, hparams
 
 # names:
 DATA_PATH = []
