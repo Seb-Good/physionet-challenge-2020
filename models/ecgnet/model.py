@@ -50,7 +50,7 @@ class Model:
             print('Only one GPU is available')
 
         # define the models
-        self.model = ECGNet(n_channels=n_channels).to(self.device)
+        self.model = ECGNet(n_channels=n_channels,hparams=self.hparams).to(self.device)
         summary(self.model, (input_size, n_channels))
 
         self.metric = Metric()
@@ -177,7 +177,6 @@ class Model:
 
             # evaluate the model
             print('Model evaluation...')
-            # self.model.zero_grad()
             self.model.eval()
             val_preds, val_true = torch.Tensor([]), torch.Tensor([])
             avg_val_loss = 0.0
@@ -242,8 +241,6 @@ class Model:
                 print(f'save global val_loss model score {avg_val_loss}')
 
         writer.close()
-
-        # self.model.zero_grad()
 
         return True
 

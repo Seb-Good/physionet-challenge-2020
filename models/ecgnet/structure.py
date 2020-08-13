@@ -97,35 +97,54 @@ class CBR(nn.Module):
 
 
 class ECGNet(nn.Module):
-    def __init__(self, n_channels, input_block=Stem_layer, basic_block=Wave_block):
+    def __init__(self, n_channels, hparams, input_block=Stem_layer, basic_block=Wave_block):
         super().__init__()
 
-        # self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
         self.basic_block = basic_block
 
+        self.hparams = hparams['model']
+
         # stem layers
-        self.layer1 = input_block(n_channels, 32, 9, 0.3, 3)
-        self.layer2 = input_block(32, 64, 9, 0.3, 3)
+        self.layer1 = input_block(
+            n_channels, self.hparams['n_filt_stem'], self.hparams['kern_size'], self.hparams['dropout'], 3
+        )
+        self.layer2 = input_block(
+            self.hparams['n_filt_stem'],
+            self.hparams['n_filt_res'],
+            self.hparams['kern_size'],
+            self.hparams['dropout'],
+            3,
+        )
 
         # wavenet(residual) layers
-        self.layer3 = self.basic_block(64, 9, 2)
-        self.layer4 = self.basic_block(64, 9, 4)
-        self.layer5 = self.basic_block(64, 9, 8)
-        self.layer6 = self.basic_block(64, 9, 16)
-        self.layer7 = self.basic_block(64, 9, 32)
-        self.layer8 = self.basic_block(64, 9, 64)
-        self.layer9 = self.basic_block(64, 9, 128)
-        self.layer10 = self.basic_block(64, 9, 256)
+        self.layer3 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 2)
+        self.layer4 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 4)
+        self.layer5 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 8)
+        self.layer6 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 16)
+        self.layer7 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 32)
+        self.layer8 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 64)
+        self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128)
+        self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256)
 
         self.conv_out_1 = self.conv2 = nn.Conv1d(
-            64, 128, 9, padding=int((10 + (10 - 1) * (0 - 1)) / 2), dilation=1, bias=False,
+            self.hparams['n_filt_res'],
+            self.hparams['n_filt_out_conv_1'],
+            self.hparams['kern_size'],
+            padding=int((10 + (10 - 1) * (0 - 1)) / 2),
+            dilation=1,
+            bias=False,
         )
 
         self.conv_out_2 = self.conv2 = nn.Conv1d(
-            128, 256, 9, padding=int((10 + (10 - 1) * (0 - 1)) / 2), dilation=1, bias=False,
+            self.hparams['n_filt_out_conv_1'],
+            self.hparams['n_filt_out_conv_2'],
+            self.hparams['kern_size'],
+            padding=int((10 + (10 - 1) * (0 - 1)) / 2),
+            dilation=1,
+            bias=False,
         )
 
-        self.fc = nn.Linear(256, 27)  #
+        self.fc = nn.Linear(self.hparams['n_filt_out_conv_2'], 27)  #
         self.out = torch.nn.Sigmoid()
 
     def _make_layers(self, out_ch, kernel_size, n, basic_block):

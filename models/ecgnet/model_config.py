@@ -3,7 +3,7 @@ import os
 hparams = {}
 # training params
 hparams['n_epochs'] = 1
-hparams['lr'] = 0.0001
+hparams['lr'] = 0.001
 hparams['batch_size'] = 2
 hparams['verbose_train'] = True
 
@@ -26,9 +26,12 @@ for path in [hparams['model_path'], hparams['checkpoint_path']]:
 # dictionary of hyperparameters
 structure_hparams = dict()
 # global dropout rate
-structure_hparams['dropout'] = 0.2
+structure_hparams['dropout'] = 0.3
 # number of filers for the models
-structure_hparams['input_size'] = 4000
+structure_hparams['kern_size'] = 9
+structure_hparams['n_filt_stem'] = 32
+structure_hparams['n_filt_res'] = 64
+structure_hparams['n_filt_out_conv_1'] = 128
+structure_hparams['n_filt_out_conv_2'] = 256
 
-
-hparams['models'] = structure_hparams
+hparams['model'] = structure_hparams
