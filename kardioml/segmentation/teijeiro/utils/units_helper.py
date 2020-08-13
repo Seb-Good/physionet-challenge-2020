@@ -4,8 +4,8 @@ This module contains utility functions to work with the physical and
 converted units of the signal.
 """
 
-__author__="T. Teijeiro"
-__date__ ="$30-nov-2011 9:58:56$"
+__author__ = "T. Teijeiro"
+__date__ = "$30-nov-2011 9:58:56$"
 
 from ..model import Interval as Iv
 
@@ -21,17 +21,21 @@ TSCALE = 25.0
 #: Amplitude scale of the drawing mechanism (mm/mV)
 ASCALE = 10.0
 
+
 def set_sampling_freq(frequency):
     global SAMPLING_FREQ
     SAMPLING_FREQ = frequency
+
 
 def set_ADCGain(gain):
     global ADCGain
     ADCGain = gain
 
+
 def set_temporal_scale(scale):
     global TSCALE
     TSCALE = scale
+
 
 def set_amplitude_scale(scale):
     global ASCALE
@@ -59,15 +63,18 @@ def samples2msec(samples):
     """
     return samples * 1000 / SAMPLING_FREQ
 
+
 def msec2samples(msec):
     """
     Obtains the number of samples corresponding to a milliseconds timespan.
     """
     return msec * SAMPLING_FREQ / 1000.0
 
+
 def samples2sec(samples):
     """Returns the seconds corresponding to a number of signal samples"""
     return samples2msec(samples) / 1000.0
+
 
 def phys2digital(mvolts):
     """
@@ -76,12 +83,14 @@ def phys2digital(mvolts):
     """
     return mvolts * ADCGain
 
+
 def digital2phys(difference):
     """
     Obtains the physical magnitude in mV corresponding to a given digital
     difference.
     """
     return difference / ADCGain
+
 
 def digital2mm(difference):
     """
@@ -90,12 +99,14 @@ def digital2mm(difference):
     """
     return digital2phys(difference) * ASCALE
 
+
 def mm2digital(mm):
     """
     Obtains the digital difference corresponding to a given amplitude measure
     given in mm.
     """
-    return phys2digital(mm/ASCALE)
+    return phys2digital(mm / ASCALE)
+
 
 def samples2mm(samples):
     """
@@ -104,12 +115,14 @@ def samples2mm(samples):
     """
     return samples2msec(samples) / 1000.0 * TSCALE
 
+
 def mm2samples(mm):
     """
     Obtains the number of samples corresponding to a temporal difference given
     in mm, according to the defined scale.
     """
-    return msec2samples((mm/TSCALE) * 1000.0)
+    return msec2samples((mm / TSCALE) * 1000.0)
+
 
 def samples2hour(samples):
     """
@@ -117,13 +130,14 @@ def samples2hour(samples):
     'HH:MM:SS.mmm' format. If the higher magnitude is 0, it won't be generated.
     """
     msec = int(samples2msec(samples))
-    h, rem = int(msec/3600000), msec % 3600000
-    m, rem = int(rem/60000), rem % 60000
-    s, ms = int(rem/1000), rem % 1000
+    h, rem = int(msec / 3600000), msec % 3600000
+    m, rem = int(rem / 60000), rem % 60000
+    s, ms = int(rem / 1000), rem % 1000
     if h > 0:
         return '{0:02d}:{1:02d}:{2:02d}.{3:03d}'.format(h, m, s, ms)
     else:
         return '{0:02d}:{1:02d}.{2:03d}'.format(m, s, ms)
+
 
 def hour2samples(hour):
     """
@@ -132,7 +146,7 @@ def hour2samples(hour):
     """
     hms, ms = hour.split('.')
     h, m, s = hms.split(':')
-    return int(h)*3600000 + int(m)*60000 + int(s)*1000 + int(ms)
+    return int(h) * 3600000 + int(m) * 60000 + int(s) * 1000 + int(ms)
 
 
 def changeTime(observations, time_offset):
@@ -148,12 +162,10 @@ def changeTime(observations, time_offset):
     if time_offset > 0:
         for o in observations:
             o.end.value = Iv(o.earlyend + time_offset, o.lateend + time_offset)
-            o.start.value = Iv(o.earlystart + time_offset,
-                               o.latestart + time_offset)
+            o.start.value = Iv(o.earlystart + time_offset, o.latestart + time_offset)
     else:
         for o in observations:
-            o.start.value = Iv(o.earlystart + time_offset,
-                               o.latestart + time_offset)
+            o.start.value = Iv(o.earlystart + time_offset, o.latestart + time_offset)
             o.end.value = Iv(o.earlyend + time_offset, o.lateend + time_offset)
 
 

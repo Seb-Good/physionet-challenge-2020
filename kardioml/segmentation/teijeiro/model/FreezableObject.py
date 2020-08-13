@@ -9,15 +9,17 @@ Created on Tue Jul  2 19:44:31 2013
 from abc import ABCMeta
 import copy
 
+
 class FreezableMeta(ABCMeta):
     '''The metaclass for the abstract base class of Freezable objects'''
+
     def __new__(mcls, name, bases, namespace):
         fields = namespace.get('__slots__', ())
         for base in bases:
             oldfields = getattr(base, '_fields', None)
             if oldfields:
                 fields = oldfields + fields
-        #All freezable objects must use __slots__ for attribute definition.
+        # All freezable objects must use __slots__ for attribute definition.
         namespace.setdefault('__slots__', ())
         namespace['_fields'] = fields
         return ABCMeta.__new__(mcls, name, bases, namespace)
@@ -43,11 +45,15 @@ class FreezableObject(object):
         Implements equality comparison, by equality comparison of all the
         attributes but __frozen__
         """
-        return (type(self) is type(other) and
-                self._fields == other._fields and
-                all(getattr(self, f, None) == getattr(other, f, None)
-                        for f in self._fields
-                                   if f not in  ('__frozen__', '__weakref__')))
+        return (
+            type(self) is type(other)
+            and self._fields == other._fields
+            and all(
+                getattr(self, f, None) == getattr(other, f, None)
+                for f in self._fields
+                if f not in ('__frozen__', '__weakref__')
+            )
+        )
 
     @property
     def frozen(self):
@@ -116,7 +122,7 @@ def clone_attrs(obs, ref):
     if frozen:
         ref.unfreeze()
     for field in ref._fields:
-        if field not in  ('__frozen__', '__weakref__'):
+        if field not in ('__frozen__', '__weakref__'):
             attr = getattr(ref, field, None)
             if id(attr) not in memo:
                 memo[id(attr)] = copy.deepcopy(attr)
@@ -131,6 +137,7 @@ if __name__ == "__main__":
         __slots__ = ('attr1', 'attr2', 'attr3')
 
         """Dummy class to test the FreezableObject hierarchy"""
+
         def __init__(self):
             super(FreezableTest, self).__init__()
             self.attr1 = "val1"

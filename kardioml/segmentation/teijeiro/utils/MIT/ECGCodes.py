@@ -61,49 +61,49 @@ LINK     @   Link to external data [5]
 
 NOTQRS = 0  # not-QRS (not a getann/putann code)
 NORMAL = 1  # normal beat
-LBBB = 2    # left bundle branch block beat
-RBBB = 3    # right bundle branch block beat
-ABERR = 4   # aberrated atrial premature beat
-PVC = 5     # premature ventricular contraction
+LBBB = 2  # left bundle branch block beat
+RBBB = 3  # right bundle branch block beat
+ABERR = 4  # aberrated atrial premature beat
+PVC = 5  # premature ventricular contraction
 FUSION = 6  # fusion of ventricular and normal beat
-NPC = 7     # nodal (junctional) premature beat
-APC = 8     # atrial premature contraction
-SVPB = 9    # premature or ectopic supraventricular beat
-VESC = 10   # ventricular escape beat
-NESC = 11   # nodal (junctional) escape beat
-PACE = 12   # paced beat
-UNKNOWN = 13    # unclassifiable beat
+NPC = 7  # nodal (junctional) premature beat
+APC = 8  # atrial premature contraction
+SVPB = 9  # premature or ectopic supraventricular beat
+VESC = 10  # ventricular escape beat
+NESC = 11  # nodal (junctional) escape beat
+PACE = 12  # paced beat
+UNKNOWN = 13  # unclassifiable beat
 NOISE = 14  # signal quality change
 ARFCT = 16  # isolated QRS-like artifact
-STCH = 18   # ST change
-TCH = 19    # T-wave change
-SYSTOLE = 20    # systole
-DIASTOLE= 21# diastole
-NOTE = 22   # comment annotation
-MEASURE = 23# measurement annotation
+STCH = 18  # ST change
+TCH = 19  # T-wave change
+SYSTOLE = 20  # systole
+DIASTOLE = 21  # diastole
+NOTE = 22  # comment annotation
+MEASURE = 23  # measurement annotation
 PWAVE = 24  # P-wave peak
-BBB = 25    # left or right bundle branch block
-PACESP = 26 # non-conducted pacer spike
+BBB = 25  # left or right bundle branch block
+PACESP = 26  # non-conducted pacer spike
 TWAVE = 27  # T-wave peak
-RHYTHM = 28 # rhythm change
+RHYTHM = 28  # rhythm change
 UWAVE = 29  # U-wave peak
 LEARN = 30  # learning
 FLWAV = 31  # ventricular flutter wave
-VFON = 32   # start of ventricular flutter/fibrillation
+VFON = 32  # start of ventricular flutter/fibrillation
 VFOFF = 33  # end of ventricular flutter/fibrillation
-AESC = 34   # atrial escape beat
+AESC = 34  # atrial escape beat
 SVESC = 35  # supraventricular escape beat
-LINK = 36   # link to external data (aux contains URL)
-NAPC = 37   # non-conducted P-wave (blocked APB)
-PFUS = 38   # fusion of paced and normal beat
-WFON = 39   # waveform onset
-PQ = WFON   # PQ junction (beginning of QRS)
+LINK = 36  # link to external data (aux contains URL)
+NAPC = 37  # non-conducted P-wave (blocked APB)
+PFUS = 38  # fusion of paced and normal beat
+WFON = 39  # waveform onset
+PQ = WFON  # PQ junction (beginning of QRS)
 WFOFF = 40  # waveform end
-JPT = WFOFF # J point (end of QRS)
-RONT = 41   # R-on-T premature ventricular contraction
+JPT = WFOFF  # J point (end of QRS)
+RONT = 41  # R-on-T premature ventricular contraction
 
 CHARMAP = {
-#Beat annotations
+    # Beat annotations
     'N': NORMAL,
     'L': LBBB,
     'R': RBBB,
@@ -123,7 +123,7 @@ CHARMAP = {
     'f': PFUS,
     'Q': UNKNOWN,
     '?': LEARN,
-#Non-beat annotations
+    # Non-beat annotations
     '[': VFON,
     '!': FLWAV,
     ']': VFOFF,
@@ -145,8 +145,9 @@ CHARMAP = {
     'D': DIASTOLE,
     '=': MEASURE,
     '"': NOTE,
-    '@': LINK
+    '@': LINK,
 }
+
 
 def mit_to_aami(code):
     """Converts a beat code from the mit-bih to the aami scale"""
@@ -163,6 +164,7 @@ def mit_to_aami(code):
     else:
         return LEARN
 
+
 def aami_to_mit(code):
     """Converts a beat code from the aami scale to a corresponding mit-bih"""
     if code is 1:
@@ -178,6 +180,7 @@ def aami_to_mit(code):
     else:
         return LEARN
 
+
 def ICHARMAP(code):
     """
     Obtains the character corresponding to a specific code, by performing an
@@ -185,17 +188,18 @@ def ICHARMAP(code):
     """
     return next(k for k, v in CHARMAP.iteritems() if v == code)
 
+
 RHYTHM_AUX = {
-#Stores the AUX text for the different rhythms.
-    o.Sinus_Rhythm:         '(N',
-    o.Tachycardia:          '(SVTA',
-    o.Bradycardia:          '(SBR',
-    o.Atrial_Fibrillation:  '(AFIB',
-    o.Extrasystole:         '(EXT', #Non-standard
-    o.Couplet:              '(CPT', #Non-standard
-    o.Trigeminy:            '(T',
-    o.Bigeminy:             '(B',
-    o.RhythmBlock:          '(BK',
-    o.Ventricular_Flutter:  '(VFL',
-    o.Asystole:             'P'
+    # Stores the AUX text for the different rhythms.
+    o.Sinus_Rhythm: '(N',
+    o.Tachycardia: '(SVTA',
+    o.Bradycardia: '(SBR',
+    o.Atrial_Fibrillation: '(AFIB',
+    o.Extrasystole: '(EXT',  # Non-standard
+    o.Couplet: '(CPT',  # Non-standard
+    o.Trigeminy: '(T',
+    o.Bigeminy: '(B',
+    o.RhythmBlock: '(BK',
+    o.Ventricular_Flutter: '(VFL',
+    o.Asystole: 'P',
 }

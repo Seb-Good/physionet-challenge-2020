@@ -18,9 +18,18 @@ from kardioml import FS
 
 
 class DataGenerator(object):
-
-    def __init__(self, data_path, lookup_path, mode, shape, batch_size, fs=FS,
-                 prefetch_buffer=1, seed=0, num_parallel_calls=1):
+    def __init__(
+        self,
+        data_path,
+        lookup_path,
+        mode,
+        shape,
+        batch_size,
+        fs=FS,
+        prefetch_buffer=1,
+        seed=0,
+        num_parallel_calls=1,
+    ):
 
         # Set parameters
         self.data_path = data_path
@@ -46,12 +55,12 @@ class DataGenerator(object):
         self.current_seed = 0
 
         # Get lambda functions
-        self.import_waveforms_fn_train = \
-            lambda file_path, label, hr, age, sex: self._import_waveform(file_path=file_path, label=label, hr=hr,
-                                                                         age=age, sex=sex, augment=True)
-        self.import_waveforms_fn_val = \
-            lambda file_path, label, hr, age, sex: self._import_waveform(file_path=file_path, label=label, hr=hr,
-                                                                         age=age, sex=sex, augment=False)
+        self.import_waveforms_fn_train = lambda file_path, label, hr, age, sex: self._import_waveform(
+            file_path=file_path, label=label, hr=hr, age=age, sex=sex, augment=True
+        )
+        self.import_waveforms_fn_val = lambda file_path, label, hr, age, sex: self._import_waveform(
+            file_path=file_path, label=label, hr=hr, age=age, sex=sex, augment=False
+        )
         # Get dataset
         self.dataset = self._get_dataset()
 
@@ -87,7 +96,11 @@ class DataGenerator(object):
         # Get label from each file
         labels = list()
         for filename in self.file_names:
-            label = 0 if self.meta_data[filename]['labels'] and 'Normal' in self.meta_data[filename]['labels'] else 1
+            label = (
+                0
+                if self.meta_data[filename]['labels'] and 'Normal' in self.meta_data[filename]['labels']
+                else 1
+            )
             labels.append(label)
 
         # file_paths and labels should have same length
@@ -112,7 +125,9 @@ class DataGenerator(object):
         # Get label from each file
         ages = list()
         for filename in self.file_names:
-            ages.append(int(self.meta_data[filename]['age']) if self.meta_data[filename]['age'] != 'NaN' else -1)
+            ages.append(
+                int(self.meta_data[filename]['age']) if self.meta_data[filename]['age'] != 'NaN' else -1
+            )
 
         # file_paths and labels should have same length
         assert len(self.file_names) == len(ages)
@@ -217,10 +232,14 @@ class DataGenerator(object):
         # Pad waveform
         remainder = self.shape[0] - waveform.shape[0]
         if remainder >= 0:
-            return np.pad(waveform, ((int(remainder / 2), remainder - int(remainder / 2)), (0, 0)),
-                          'constant', constant_values=0)
+            return np.pad(
+                waveform,
+                ((int(remainder / 2), remainder - int(remainder / 2)), (0, 0)),
+                'constant',
+                constant_values=0,
+            )
         else:
-            return waveform[0:self.shape[0], :]
+            return waveform[0 : self.shape[0], :]
 
     def _random_resample(self, waveform, hr):
         """Randomly resample waveform."""
@@ -262,8 +281,9 @@ class DataGenerator(object):
         prediction = self._random_true_false(prob=prob)
 
         # Apply random multiplication factor
-        waveform = tf.cond(prediction, lambda: self._scale(waveform=waveform),
-                           lambda: self._do_nothing(waveform=waveform))
+        waveform = tf.cond(
+            prediction, lambda: self._scale(waveform=waveform), lambda: self._do_nothing(waveform=waveform)
+        )
 
         return waveform
 
@@ -283,11 +303,15 @@ class DataGenerator(object):
         """Add different kinds of synthetic noise to the signal."""
         waveform = waveform.squeeze()
         for idx in range(waveform.shape[1]):
-            waveform[:, idx] = self._generate_baseline_wandering_noise(waveform=waveform[:, idx],
-                                                                       fs=self.fs, probability=probability)
-            waveform[:, idx] = self._generate_high_frequency_noise(waveform=waveform[:, idx],
-                                                                   fs=self.fs, probability=probability)
-            waveform[:, idx] = self._generate_gaussian_noise(waveform=waveform[:, idx], probability=probability)
+            waveform[:, idx] = self._generate_baseline_wandering_noise(
+                waveform=waveform[:, idx], fs=self.fs, probability=probability
+            )
+            waveform[:, idx] = self._generate_high_frequency_noise(
+                waveform=waveform[:, idx], fs=self.fs, probability=probability
+            )
+            waveform[:, idx] = self._generate_gaussian_noise(
+                waveform=waveform[:, idx], probability=probability
+            )
             waveform[:, idx] = self._generate_pulse_noise(waveform=waveform[:, idx], probability=probability)
         return waveform
 
@@ -305,8 +329,9 @@ class DataGenerator(object):
             # Loop through baseline signals
             for baseline_signal in range(baseline_signals):
                 # Add noise
-                waveform += random.uniform(0.01, 0.75) * np.sin(2 * np.pi * random.uniform(0.001, 0.5) *
-                                                                time + random.uniform(0, 60))
+                waveform += random.uniform(0.01, 0.75) * np.sin(
+                    2 * np.pi * random.uniform(0.001, 0.5) * time + random.uniform(0, 60)
+                )
 
         return waveform
 
@@ -318,8 +343,9 @@ class DataGenerator(object):
             time = np.arange(len(waveform)) * 1 / fs
 
             # Add noise
-            waveform += random.uniform(0.001, 0.3) * np.sin(2 * np.pi * random.uniform(50, 200) *
-                                                            time + random.uniform(0, 60))
+            waveform += random.uniform(0.001, 0.3) * np.sin(
+                2 * np.pi * random.uniform(50, 200) * time + random.uniform(0, 60)
+            )
 
         return waveform
 
@@ -337,18 +363,20 @@ class DataGenerator(object):
         if self._coin_flip(probability):
 
             # Get pulse
-            pulse = signal.gaussian(int(len(waveform) * random.uniform(0.05, 0.010)), std=random.randint(50, 200))
+            pulse = signal.gaussian(
+                int(len(waveform) * random.uniform(0.05, 0.010)), std=random.randint(50, 200)
+            )
             pulse = np.diff(pulse)
 
             # Get remainder
             remainder = len(waveform) - len(pulse)
             if remainder >= 0:
-                left_pad = int(remainder * random.uniform(0., 1.))
+                left_pad = int(remainder * random.uniform(0.0, 1.0))
                 right_pad = remainder - left_pad
                 pulse = np.pad(pulse, (left_pad, right_pad), 'constant', constant_values=0)
                 pulse = pulse / pulse.max()
 
-            waveform += pulse * random.uniform(waveform.max()*1.5, waveform.max()*2)
+            waveform += pulse * random.uniform(waveform.max() * 1.5, waveform.max() * 2)
 
         return waveform
 
@@ -362,7 +390,7 @@ class DataGenerator(object):
     def _random_true_false(prob):
         """Get a random true or false."""
         # Get random probability between 0 and 1
-        probability = tf.random_uniform(shape=[], minval=0., maxval=1., dtype=tf.float32)
+        probability = tf.random_uniform(shape=[], minval=0.0, maxval=1.0, dtype=tf.float32)
         return tf.less(x=probability, y=prob)
 
     def _get_dataset(self):
@@ -370,11 +398,13 @@ class DataGenerator(object):
         if self.mode == 'train':
             return (
                 tf.data.Dataset.from_tensor_slices(
-                    tensors=(tf.constant(value=self.file_paths),
-                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1]),
-                             tf.constant(value=self.hr),
-                             tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
-                             tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))
+                    tensors=(
+                        tf.constant(value=self.file_paths),
+                        tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1]),
+                        tf.constant(value=self.hr),
+                        tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
+                        tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]),
+                    )
                 )
                 .shuffle(buffer_size=self.num_samples, reshuffle_each_iteration=True)
                 .map(map_func=self.import_waveforms_fn_train, num_parallel_calls=self.num_parallel_calls)
@@ -385,11 +415,13 @@ class DataGenerator(object):
         else:
             return (
                 tf.data.Dataset.from_tensor_slices(
-                    tensors=(tf.constant(value=self.file_paths),
-                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1]),
-                             tf.constant(value=self.hr),
-                             tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
-                             tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))
+                    tensors=(
+                        tf.constant(value=self.file_paths),
+                        tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1]),
+                        tf.constant(value=self.hr),
+                        tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
+                        tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]),
+                    )
                 )
                 .map(map_func=self.import_waveforms_fn_val, num_parallel_calls=self.num_parallel_calls)
                 .repeat()

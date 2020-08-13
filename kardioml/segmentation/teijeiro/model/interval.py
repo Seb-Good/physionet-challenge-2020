@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Module defining Interval model and operations"""
-#ActiveState recipe 576816
+# ActiveState recipe 576816
+
 
 class Interval(object):
     """
@@ -15,8 +16,7 @@ class Interval(object):
     def __init__(self, start, end):
         "Construct, start must be <= end."
         if start > end:
-            raise ValueError('Start (%s) must not be greater than end (%s)'
-                              % (start, end))
+            raise ValueError('Start (%s) must not be greater than end (%s)' % (start, end))
         self._start = start
         self._end = end
 
@@ -80,7 +80,7 @@ class Interval(object):
 
     def move(self, offset):
         "@return: Interval displaced offset to start and end"
-        return Interval(self.start+offset, self.end+offset)
+        return Interval(self.start + offset, self.end + offset)
 
     def __contains__(self, item):
         "@return: True iff item in self."

@@ -38,7 +38,7 @@ class wave_block(nn.Module):
 
 
 class CBR(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size, dilation,pool_size):
+    def __init__(self, in_ch, out_ch, kernel_size, dilation, pool_size):
         super().__init__()
 
         self.conv = nn.Conv1d(
@@ -64,20 +64,20 @@ class WaveNet(nn.Module):
     def __init__(self, n_channels, basic_block=CBR):
         super().__init__()
 
-        #self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
+        # self.input_layer_1 = nn.RNN(input_size=n_channels,hidden_size=500,num_layers=1,batch_first=True,bidirectional=False)
 
-        #self.basic_block = basic_block
-        self.layer1 = basic_block(12, 32, 11, 1,2)
-        self.layer2 = basic_block(32, 64, 11, 1,2)
+        # self.basic_block = basic_block
+        self.layer1 = basic_block(12, 32, 11, 1, 2)
+        self.layer2 = basic_block(32, 64, 11, 1, 2)
 
-        self.layer3 = basic_block(64, 64, 11, 1,4)
-        self.layer4 = basic_block(64, 64, 11, 1,4)
-        self.layer5 = basic_block(64, 64, 11, 1,4)
+        self.layer3 = basic_block(64, 64, 11, 1, 4)
+        self.layer4 = basic_block(64, 64, 11, 1, 4)
+        self.layer5 = basic_block(64, 64, 11, 1, 4)
         self.layer5 = basic_block(64, 64, 11, 1, 4)
 
         self.fc1 = nn.Linear(9472, 300)
         self.fc2 = nn.Linear(300, 300)
-        self.fc3 = nn.Linear(300, 27)#
+        self.fc3 = nn.Linear(300, 27)  #
         self.out = torch.sigmoid
 
     def _make_layers(self, in_ch, out_ch, kernel_size, n):
@@ -89,12 +89,12 @@ class WaveNet(nn.Module):
 
     def forward(self, x):
 
-        #x, h_0 = self.input_layer_1(x)
-        #x = x.cpu().detach()
+        # x, h_0 = self.input_layer_1(x)
+        # x = x.cpu().detach()
 
-        #x,(h_0,c_0) = self.input_layer_1(x)
+        # x,(h_0,c_0) = self.input_layer_1(x)
 
-        x = x.permute(0,2,1)
+        x = x.permute(0, 2, 1)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
@@ -102,8 +102,7 @@ class WaveNet(nn.Module):
         x = self.layer4(x)
         x = self.layer5(x)
 
-        x = x.view(-1,x.shape[1]*x.shape[2])
-
+        x = x.view(-1, x.shape[1] * x.shape[2])
 
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))

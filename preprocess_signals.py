@@ -14,7 +14,7 @@ class PreProcessing:
     def run(self, X):
 
         # pre-processing
-        X = np.reshape(X,(-1,12))
+        X = np.reshape(X, (-1, 12))
 
         if X.shape[0] < 36000:
             X_new = np.zeros((36000, 12))
@@ -28,15 +28,15 @@ class PreProcessing:
         # downsample
         X = self.resample(X)
 
-        #remove baseline wander
-        #X = self.baseline_compensation(X)
+        # remove baseline wander
+        # X = self.baseline_compensation(X)
 
         # feature engineering
         R_peaks = self.apply_r_peaks_segmentation(X)
 
-        X = self.normalize_channels(X,R_peaks)
+        X = self.normalize_channels(X, R_peaks)
 
-        #X = np.concatenate((X, R_peaks.reshape(-1, 1)), axis=1)
+        # X = np.concatenate((X, R_peaks.reshape(-1, 1)), axis=1)
 
         X = self.apply_sbd(X).astype(np.float32)
         return X
@@ -54,36 +54,33 @@ class PreProcessing:
 
         return X_dec
 
-
-    def baseline_compensation(self,X):
+    def baseline_compensation(self, X):
 
         win_length = 501
 
-        #raw = X[:, 0].copy()
+        # raw = X[:, 0].copy()
 
         for i in range(X.shape[1]):
             channel = X[:, i].copy()
-            channel = np.concatenate((np.zeros((win_length-1)),channel))
-            channel = np.concatenate((channel,np.zeros((int(win_length/2)))))
+            channel = np.concatenate((np.zeros((win_length - 1)), channel))
+            channel = np.concatenate((channel, np.zeros((int(win_length / 2)))))
             channel = pd.Series(channel).rolling(win_length).median().values
-            X[:,i] -= channel[win_length-1+int(win_length/2):]
+            X[:, i] -= channel[win_length - 1 + int(win_length / 2) :]
 
         # plt.plot( X[:1000,0])
         # plt.plot(raw[:1000])
         # plt.show()
         return X
 
-
-    def normalize_channels(self, X,peaks):
+    def normalize_channels(self, X, peaks):
 
         peaks = np.where(peaks > 0)[0]
         scaling_val = np.median(X[peaks, 0])
 
         for i in range(X.shape[1]):
-            X[:, i] = X[:, i]  / scaling_val
+            X[:, i] = X[:, i] / scaling_val
 
         return X
-
 
     def apply_sbd(self, X):
         X = np.reshape(X, (1, X.shape[0], -1))
@@ -128,9 +125,6 @@ class PreProcessing:
             peaks = peaks_plus.copy()
 
         return peaks
-
-
-
 
 
 def load_data(filename):

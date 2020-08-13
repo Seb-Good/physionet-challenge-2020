@@ -5,7 +5,7 @@ import time
 # import modules
 from cv_pipeline import CVPipeline
 from pre_processing import PrepareData
-from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOLDER,Model
+from config import hparams, DATA_PATH, SPLIT_TABLE_PATH, SPLIT_TABLE_NAME, DEBUG_FOLDER, Model
 
 
 @click.command()
@@ -16,7 +16,7 @@ from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOL
 @click.option('--p_proc', default=False, help='does it need to run preprocessing?')
 @click.option('--train', default=True, help='does it need to train the model?')
 @click.option('--gpu', default=[], help='list of GPUs will be used for training')
-def main(start_fold, batch_size, lr, n_epochs,p_proc,train,gpu):
+def main(start_fold, batch_size, lr, n_epochs, p_proc, train, gpu):
 
     # update hparams
     hparams['lr'] = lr
@@ -25,7 +25,9 @@ def main(start_fold, batch_size, lr, n_epochs,p_proc,train,gpu):
     hparams['n_epochs'] = n_epochs
 
     if p_proc:
-        pre_processing = PrepareData(input_folders=DATA_PATH, split_folder=SPLIT_TABLE_PATH,split_table_name=SPLIT_TABLE_NAME)
+        pre_processing = PrepareData(
+            input_folders=DATA_PATH, split_folder=SPLIT_TABLE_PATH, split_table_name=SPLIT_TABLE_NAME
+        )
         pre_processing.run()
 
     if train:
@@ -34,13 +36,11 @@ def main(start_fold, batch_size, lr, n_epochs,p_proc,train,gpu):
             split_table_path=SPLIT_TABLE_PATH,
             split_table_name=SPLIT_TABLE_NAME,
             debug_folder=DEBUG_FOLDER,
-            model = Model,
-            gpu = gpu
+            model=Model,
+            gpu=gpu,
         )
 
         score = cross_val.train()
-
-
 
         logger = logging.getLogger('Training pipeline')
         logger.setLevel(logging.DEBUG)

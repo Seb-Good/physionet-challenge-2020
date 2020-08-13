@@ -23,7 +23,9 @@ def run_12ECG_classifier(data, header_data, classes, model):
 def load_12ECG_model():
     """Load Physionet2017 Model"""
     # Unpickle data model
-    with open(os.path.join(WORKING_PATH, 'models', 'physionet2017', 'physionet2017.model'), "rb") as input_file:
+    with open(
+        os.path.join(WORKING_PATH, 'models', 'physionet2017', 'physionet2017.model'), "rb"
+    ) as input_file:
         phyionet2017_model = pickle.load(input_file)
 
     return phyionet2017_model

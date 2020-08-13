@@ -16,7 +16,7 @@ import torch
 
 
 class PrepareData:
-    def __init__(self, input_folders, split_folder,split_table_name):
+    def __init__(self, input_folders, split_folder, split_table_name):
 
         self.input_folders = input_folders
         self.split_folder = split_folder
@@ -30,12 +30,11 @@ class PrepareData:
         # get a list of patients
         self.patients = []
         for input_folder in self.input_folders:
-            for patient in [i for i in os.listdir(input_folder) if i.find('.npy')!=-1]:
+            for patient in [i for i in os.listdir(input_folder) if i.find('.npy') != -1]:
                 if patient[:-4] in exclude.items():
                     continue
                 else:
                     self.patients.append(patient)
-
 
         # split data into folds
 
@@ -43,11 +42,9 @@ class PrepareData:
         print('Total number of patients: ', len(self.patients))
         return 0
 
-    def load_labels(self,name):
+    def load_labels(self, name):
         y = json.load(open(name + '.json'))
         return y
-
-
 
     def create_split_table(self):
 
@@ -57,29 +54,29 @@ class PrepareData:
 
         for index, (train, val) in enumerate(kfold.split(self.input_folders)):
             split = {}
-            train = [i for index,i in enumerate(self.input_folders) if index in train.tolist()]
-            val = [i for index,i in enumerate(self.input_folders) if index in val.tolist()]
+            train = [i for index, i in enumerate(self.input_folders) if index in train.tolist()]
+            val = [i for index, i in enumerate(self.input_folders) if index in val.tolist()]
 
             patients_train = []
             patients_val = []
 
             for dataset in train:
-                patients = [i for i in os.listdir(dataset) if i.find('.npy')!=-1]
+                patients = [i for i in os.listdir(dataset) if i.find('.npy') != -1]
                 print(f'Start checking each patient in dataset {dataset[7]}... for training')
                 for patient in tqdm(patients):
-                    y = self.load_labels(dataset+patient[:-4])
+                    y = self.load_labels(dataset + patient[:-4])
                     if y['labels_training_merged'] == None:
                         continue
-                    patients_train.append(dataset+patient[:-4])
+                    patients_train.append(dataset + patient[:-4])
 
             for dataset in val:
-                patients = [i for i in os.listdir(dataset) if i.find('.npy')!=-1]
+                patients = [i for i in os.listdir(dataset) if i.find('.npy') != -1]
                 print(f'Start checking each patient in dataset {dataset[7]}... for validation')
                 for patient in patients:
                     y = self.load_labels(dataset + patient[:-4])
                     if y['labels_training_merged'] == None:
                         continue
-                    patients_val.append(dataset+patient[:-4])
+                    patients_val.append(dataset + patient[:-4])
 
             split['train'] = patients_train
             split['val'] = patients_val

@@ -1,4 +1,3 @@
-
 # basic libs
 import numpy as np
 import json
@@ -13,9 +12,8 @@ from torch.utils.data import Dataset
 np.random.seed(42)
 
 
-
 class Dataset_train(Dataset):
-    def __init__(self, patients,aug):
+    def __init__(self, patients, aug):
 
         self.patients = patients
         self.aug = aug
@@ -53,26 +51,26 @@ class Dataset_train(Dataset):
         data_folder = f'./data/{data_folder}/formatted/'
 
         # load waveforms
-        X = np.load(data_folder+self.patients[id] + '.npy')
+        X = np.load(data_folder + self.patients[id] + '.npy')
 
         # load annotation
         y = json.load(open(data_folder + self.patients[id] + '.json'))
 
         # Scale waveform amplitudes
-        #X = (X - np.mean(X)) / np.std(X)
-        #"""
-        #Maybe try this (see method below).
+        # X = (X - np.mean(X)) / np.std(X)
+        # """
+        # Maybe try this (see method below).
         X = self.apply_amplitude_scaling(X=X, y=y)
-        #"""
+        # """
 
         # TODO: Seb's augmentation implementation point
         # We need a way to inform this method of the sample rate for the dataset.
         fs_training = 1000
         if self.aug is True:
-            #pass
+            # pass
             X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
-        #padding
+        # padding
         if X.shape[0] < 38000:
             padding = np.zeros((38000 - X.shape[0], X.shape[1]))
             X = np.concatenate([X, padding], axis=0)
@@ -115,9 +113,9 @@ class Dataset_train(Dataset):
         bradycardia=3, sinus bradycardia=20, sinus tachycardia=22
         """
         if (
-                meta_data['hr'] != 'nan' and
-                all(meta_data['labels_training_merged'][label] == 0 for label in [3, 20, 22]) and
-                self._coin_flip(probability=probability)
+            meta_data['hr'] != 'nan'
+            and all(meta_data['labels_training_merged'][label] == 0 for label in [3, 20, 22])
+            and self._coin_flip(probability=probability)
         ):
             # Get waveform duration
             duration = waveform.shape[0] / fs_training
@@ -147,7 +145,7 @@ class Dataset_train(Dataset):
     def _random_scale(self, waveform, probability):
         """Apply random scale factor between 0.25 and 3 to the waveform amplitudes."""
         # Get random scale factor
-        scale_factor = random.uniform(0.25, 3.)
+        scale_factor = random.uniform(0.25, 3.0)
 
         if self._coin_flip(probability):
             return waveform * scale_factor
@@ -157,11 +155,15 @@ class Dataset_train(Dataset):
         """Add different kinds of synthetic noise to the signal."""
         waveform = waveform.squeeze()
         for idx in range(waveform.shape[1]):
-            waveform[:, idx] = self._generate_baseline_wandering_noise(waveform=waveform[:, idx],
-                                                                       fs=fs_training, probability=probability)
-            waveform[:, idx] = self._generate_high_frequency_noise(waveform=waveform[:, idx],
-                                                                   fs=fs_training, probability=probability)
-            waveform[:, idx] = self._generate_gaussian_noise(waveform=waveform[:, idx], probability=probability)
+            waveform[:, idx] = self._generate_baseline_wandering_noise(
+                waveform=waveform[:, idx], fs=fs_training, probability=probability
+            )
+            waveform[:, idx] = self._generate_high_frequency_noise(
+                waveform=waveform[:, idx], fs=fs_training, probability=probability
+            )
+            waveform[:, idx] = self._generate_gaussian_noise(
+                waveform=waveform[:, idx], probability=probability
+            )
             waveform[:, idx] = self._generate_pulse_noise(waveform=waveform[:, idx], probability=probability)
         return waveform
 
@@ -179,8 +181,9 @@ class Dataset_train(Dataset):
             # Loop through baseline signals
             for baseline_signal in range(baseline_signals):
                 # Add noise
-                waveform += random.uniform(0.01, 0.75) * np.sin(2 * np.pi * random.uniform(0.001, 0.5) *
-                                                                time + random.uniform(0, 60))
+                waveform += random.uniform(0.01, 0.75) * np.sin(
+                    2 * np.pi * random.uniform(0.001, 0.5) * time + random.uniform(0, 60)
+                )
 
         return waveform
 
@@ -192,8 +195,9 @@ class Dataset_train(Dataset):
             time = np.arange(len(waveform)) * 1 / fs
 
             # Add noise
-            waveform += random.uniform(0.001, 0.3) * np.sin(2 * np.pi * random.uniform(50, 200) *
-                                                            time + random.uniform(0, 60))
+            waveform += random.uniform(0.001, 0.3) * np.sin(
+                2 * np.pi * random.uniform(50, 200) * time + random.uniform(0, 60)
+            )
 
         return waveform
 
@@ -211,13 +215,15 @@ class Dataset_train(Dataset):
         if self._coin_flip(probability):
 
             # Get pulse
-            pulse = signal.gaussian(int(len(waveform) * random.uniform(0.05, 0.010)), std=random.randint(50, 200))
+            pulse = signal.gaussian(
+                int(len(waveform) * random.uniform(0.05, 0.010)), std=random.randint(50, 200)
+            )
             pulse = np.diff(pulse)
 
             # Get remainder
             remainder = len(waveform) - len(pulse)
             if remainder >= 0:
-                left_pad = int(remainder * random.uniform(0., 1.))
+                left_pad = int(remainder * random.uniform(0.0, 1.0))
                 right_pad = remainder - left_pad
                 pulse = np.pad(pulse, (left_pad, right_pad), 'constant', constant_values=0)
                 pulse = pulse / pulse.max()
@@ -260,18 +266,17 @@ class Dataset_train(Dataset):
 
             data_folder = f'./data/{data_folder}/formatted/'
 
-
             if index == 0:
-                y = np.array([json.load(open(data_folder+record + '.json'))['labels_training_merged']])
+                y = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']])
                 y = np.reshape(y, (1, 27))
             else:
-                temp = np.array([json.load(open(data_folder+record + '.json'))['labels_training_merged']])
+                temp = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']])
                 temp = np.reshape(temp, (1, 27))
                 y = np.concatenate((y, temp), axis=0)
 
         return y
 
-    def my_collate(self,batch):
+    def my_collate(self, batch):
         """
         This function was created to handle a variable-length of the
         :param batch: tuple(data,target)
@@ -289,7 +294,7 @@ class Dataset_train(Dataset):
         # zero pooling
         for index, element in enumerate(data):
             if m_size > element.shape[0]:
-                padding = np.zeros((m_size-element.shape[0], element.shape[1]))
+                padding = np.zeros((m_size - element.shape[0], element.shape[1]))
                 padding = torch.from_numpy(padding)
                 data[index] = torch.cat([element, padding], dim=0)
                 padding = padding.detach()
@@ -306,7 +311,7 @@ class Dataset_test(Dataset_train):
 
     def __getitem__(self, idx):
 
-        X,y = self.load_data(idx, train=False)
+        X, y = self.load_data(idx, train=False)
 
         X = torch.tensor(X, dtype=torch.float)
 

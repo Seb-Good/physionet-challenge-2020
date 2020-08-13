@@ -7,12 +7,17 @@ By: Sebastian D. Goodfellow, Ph.D.
 
 # Local imports
 from kardioml import WEIGHTS_PATH
-from kardioml.scoring.scoring_metrics import (load_weights, compute_challenge_metric, compute_auc,
-                                              compute_beta_measures, compute_f_measure, compute_accuracy)
+from kardioml.scoring.scoring_metrics import (
+    load_weights,
+    compute_challenge_metric,
+    compute_auc,
+    compute_beta_measures,
+    compute_f_measure,
+    compute_accuracy,
+)
 
 
 class CVScore(object):
-
     def __init__(self, model, cv_index, train_index, test_index, x, y):
 
         # Set parameters
@@ -57,20 +62,26 @@ class CVScore(object):
 
     def get_cv_score(self):
         """Return a dictionary of final scores."""
-        return {'train': {'accuracy': self.train_accuracy,
-                          'macro_f_measure': self.train_macro_f_measure,
-                          'macro_f_beta_measure': self.train_macro_f_beta_measure,
-                          'macro_g_beta_measure': self.train_macro_g_beta_measure,
-                          'macro_auroc': self.train_macro_auroc,
-                          'macro_auprc': self.train_macro_auprc,
-                          'challenge_metric': self.train_challenge_metric},
-                'test': {'accuracy': self.test_accuracy,
-                         'macro_f_measure': self.test_macro_f_measure,
-                         'macro_f_beta_measure': self.test_macro_f_beta_measure,
-                         'macro_g_beta_measure': self.test_macro_g_beta_measure,
-                         'macro_auroc': self.test_macro_auroc,
-                         'macro_auprc': self.test_macro_auprc,
-                         'challenge_metric': self.test_challenge_metric}}
+        return {
+            'train': {
+                'accuracy': self.train_accuracy,
+                'macro_f_measure': self.train_macro_f_measure,
+                'macro_f_beta_measure': self.train_macro_f_beta_measure,
+                'macro_g_beta_measure': self.train_macro_g_beta_measure,
+                'macro_auroc': self.train_macro_auroc,
+                'macro_auprc': self.train_macro_auprc,
+                'challenge_metric': self.train_challenge_metric,
+            },
+            'test': {
+                'accuracy': self.test_accuracy,
+                'macro_f_measure': self.test_macro_f_measure,
+                'macro_f_beta_measure': self.test_macro_f_beta_measure,
+                'macro_g_beta_measure': self.test_macro_g_beta_measure,
+                'macro_auroc': self.test_macro_auroc,
+                'macro_auprc': self.test_macro_auprc,
+                'challenge_metric': self.test_challenge_metric,
+            },
+        }
 
     def _compute_score(self):
         """Compute the CV score."""
@@ -79,43 +90,51 @@ class CVScore(object):
         self.train_accuracy = compute_accuracy(labels=self.y_train.values, outputs=self.y_train_pred)
 
         # Compute F-measures
-        self.train_macro_f_measure = compute_f_measure(labels=self.y_train.values,
-                                                       outputs=self.y_train_pred)
+        self.train_macro_f_measure = compute_f_measure(labels=self.y_train.values, outputs=self.y_train_pred)
 
         # Compute Beta-measures
-        self.train_macro_f_beta_measure, self.train_macro_g_beta_measure = \
-            compute_beta_measures(labels=self.y_train.values, outputs=self.y_train_pred, beta=2)
+        self.train_macro_f_beta_measure, self.train_macro_g_beta_measure = compute_beta_measures(
+            labels=self.y_train.values, outputs=self.y_train_pred, beta=2
+        )
 
         # Compute AUC
-        self.train_macro_auroc, self.train_macro_auprc = compute_auc(labels=self.y_train.values,
-                                                                     outputs=self.y_train_pred)
+        self.train_macro_auroc, self.train_macro_auprc = compute_auc(
+            labels=self.y_train.values, outputs=self.y_train_pred
+        )
 
         # Compute challenge metric
         weights = load_weights(weight_file=WEIGHTS_PATH, classes=self.y.columns.tolist())
-        self.train_challenge_metric = compute_challenge_metric(weights=weights, labels=self.y_train.values,
-                                                               outputs=self.y_train_pred,
-                                                               classes=self.y.columns.tolist(),
-                                                               normal_class='426783006')
+        self.train_challenge_metric = compute_challenge_metric(
+            weights=weights,
+            labels=self.y_train.values,
+            outputs=self.y_train_pred,
+            classes=self.y.columns.tolist(),
+            normal_class='426783006',
+        )
 
         """Test Scores"""
         # Compute accuracy
         self.test_accuracy = compute_accuracy(labels=self.y_test.values, outputs=self.y_test_pred)
 
         # Compute F-measures
-        self.test_macro_f_measure = compute_f_measure(labels=self.y_test.values,
-                                                      outputs=self.y_test_pred)
+        self.test_macro_f_measure = compute_f_measure(labels=self.y_test.values, outputs=self.y_test_pred)
 
         # Compute Beta-measures
-        self.test_macro_f_beta_measure, self.test_macro_g_beta_measure = \
-            compute_beta_measures(labels=self.y_test.values, outputs=self.y_test_pred, beta=2)
+        self.test_macro_f_beta_measure, self.test_macro_g_beta_measure = compute_beta_measures(
+            labels=self.y_test.values, outputs=self.y_test_pred, beta=2
+        )
 
         # Compute AUC
-        self.test_macro_auroc, self.test_macro_auprc = compute_auc(labels=self.y_test.values,
-                                                                   outputs=self.y_test_pred)
+        self.test_macro_auroc, self.test_macro_auprc = compute_auc(
+            labels=self.y_test.values, outputs=self.y_test_pred
+        )
 
         # Compute challenge metric
         weights = load_weights(weight_file=WEIGHTS_PATH, classes=self.y.columns.tolist())
-        self.test_challenge_metric = compute_challenge_metric(weights=weights, labels=self.y_test.values,
-                                                              outputs=self.y_test_pred,
-                                                              classes=self.y.columns.tolist(),
-                                                              normal_class='426783006')
+        self.test_challenge_metric = compute_challenge_metric(
+            weights=weights,
+            labels=self.y_test.values,
+            outputs=self.y_test_pred,
+            classes=self.y.columns.tolist(),
+            normal_class='426783006',
+        )

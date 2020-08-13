@@ -25,8 +25,8 @@ def save_challenge_predictions(output_directory, filename, scores, labels, class
     new_file = filename.replace('.mat', '.csv')
     output_file = os.path.join(output_directory, new_file)
 
-    labels=np.asarray(labels,dtype=np.int)
-    scores=np.asarray(scores,dtype=np.float64)
+    labels = np.asarray(labels, dtype=np.int)
+    scores = np.asarray(scores, dtype=np.float64)
 
     # Include the filename as the recording number
     recording_string = '#{}'.format(recording)
@@ -58,7 +58,9 @@ def get_classes(input_directory, files):
 if __name__ == '__main__':
     # Parse arguments.
     if len(sys.argv) != 3:
-        raise Exception('Include the input and output directories as arguments, e.g., python driver.py input output.')
+        raise Exception(
+            'Include the input and output directories as arguments, e.g., python driver.py input output.'
+        )
 
     input_directory = sys.argv[1]
     output_directory = sys.argv[2]
@@ -66,7 +68,11 @@ if __name__ == '__main__':
     # Find files.
     input_files = []
     for f in os.listdir(input_directory):
-        if os.path.isfile(os.path.join(input_directory, f)) and not f.lower().startswith('.') and f.lower().endswith('mat'):
+        if (
+            os.path.isfile(os.path.join(input_directory, f))
+            and not f.lower().startswith('.')
+            and f.lower().endswith('mat')
+        ):
             input_files.append(f)
 
     if not os.path.isdir(output_directory):
@@ -83,12 +89,12 @@ if __name__ == '__main__':
     num_files = len(input_files)
 
     for i, f in enumerate(input_files):
-        print('    {}/{}...'.format(i+1, num_files))
+        print('    {}/{}...'.format(i + 1, num_files))
         tmp_input_file = os.path.join(input_directory, f)
         data, header_data = load_challenge_data(tmp_input_file)
         current_label, current_score = run_12ECG_classifier(data, header_data, classes, model)
         # Save results.
-        
+
         save_challenge_predictions(output_directory, f, current_score, current_label, classes)
 
     print('Done.')

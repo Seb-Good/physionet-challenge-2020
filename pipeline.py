@@ -13,6 +13,7 @@ import torch
 import os
 from metrics import compute_beta_score
 
+
 def seed_everything(seed):
     np.random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)

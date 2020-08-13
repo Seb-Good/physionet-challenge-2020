@@ -12,6 +12,7 @@ the segmentation of the ECG signal in components.
 from kardioml.segmentation.teijeiro.model import Observable, EventObservable, FreezableObject
 import numpy as np
 
+
 class PWave(Observable):
     """Observable that represents a P Wave"""
 
@@ -19,7 +20,7 @@ class PWave(Observable):
 
     def __init__(self):
         super(PWave, self).__init__()
-        #The single reference will correspond to the start time
+        # The single reference will correspond to the start time
         self.time = self.start
         self.amplitude = {}
 
@@ -39,7 +40,7 @@ class TWave(Observable):
 
     def __init__(self):
         super(TWave, self).__init__()
-        #The single reference will correspond to the start time
+        # The single reference will correspond to the start time
         self.time = self.start
         self.amplitude = {}
 
@@ -60,15 +61,15 @@ class QRS(Observable):
     def __init__(self):
         super(QRS, self).__init__()
         self.shape = {}
-        #By default, all QRS are tagged as normal.
+        # By default, all QRS are tagged as normal.
         self.tag = 1
         self.clustered = False
 
     @property
     def paced(self):
         """Checks if this QRS complex is paced."""
-        #WFDB code for paced beats is 12. We cannot reference  it here due to
-        #cyclic references.
+        # WFDB code for paced beats is 12. We cannot reference  it here due to
+        # cyclic references.
         return self.tag == 12
 
     @paced.setter
@@ -89,6 +90,7 @@ class QRS(Observable):
         elif self.tag == 12:
             self.tag = 1
 
+
 class QRSShape(FreezableObject):
     """
     Class that represents the shape of a QRS complex in a specific leads. It
@@ -96,6 +98,7 @@ class QRSShape(FreezableObject):
     an amplitude and energy and maximum slope measures, and a numpy array
     representing the signal.
     """
+
     __slots__ = ('waves', 'amplitude', 'energy', 'maxslope', 'tag', 'sig')
 
     def __init__(self):
@@ -112,11 +115,14 @@ class QRSShape(FreezableObject):
 
     def __eq__(self, other):
         if type(self) is type(other):
-            return (self.waves == other.waves and
-                    self.amplitude == other.amplitude and
-                    self.energy == other.energy and
-                    self.maxslope == other.maxslope and
-                    self.tag == other.tag and np.all(self.sig == other.sig))
+            return (
+                self.waves == other.waves
+                and self.amplitude == other.amplitude
+                and self.energy == other.energy
+                and self.maxslope == other.maxslope
+                and self.tag == other.tag
+                and np.all(self.sig == other.sig)
+            )
         return False
 
     def move(self, displacement):
@@ -129,9 +135,10 @@ class Noise(Observable):
     """
     Observable that represents a noisy signal fragment.
     """
+
     def __init__(self):
         super(Noise, self).__init__()
-        #The single reference will correspond to the start time.
+        # The single reference will correspond to the start time.
         self.time = self.start
 
 
@@ -151,12 +158,13 @@ class RPeak(EventObservable):
         super(RPeak, self).__init__()
         self.amplitude = 0.0
 
+
 class Baseline(Observable):
     """
     Observable that represents a baseline observation.
     """
+
     def __init__(self):
         super(Baseline, self).__init__()
-        #The single reference will correspond to the start time
+        # The single reference will correspond to the start time
         self.time = self.start
-

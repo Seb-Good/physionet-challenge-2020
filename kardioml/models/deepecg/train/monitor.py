@@ -14,7 +14,6 @@ from kardioml.models.deepecg.train.state import State
 
 
 class Monitor(object):
-
     def __init__(self, sess, graph, learning_rate, batch_size, save_path, early_stopping_epoch, num_gpus):
 
         # Set parameters
@@ -32,8 +31,14 @@ class Monitor(object):
 
     def _get_model_state(self):
         """Get model state at current learning step."""
-        return State(sess=self.sess, graph=self.graph, save_path=self.save_path, learning_rate=self.learning_rate,
-                     batch_size=self.batch_size, num_gpus=self.num_gpus)
+        return State(
+            sess=self.sess,
+            graph=self.graph,
+            save_path=self.save_path,
+            learning_rate=self.learning_rate,
+            batch_size=self.batch_size,
+            num_gpus=self.num_gpus,
+        )
 
     def update_model_state(self, learning_rate):
         """Update model state and check for improvements."""
@@ -57,13 +62,19 @@ class Monitor(object):
     def _save_checkpoint(self):
         """Check for improvement in validation accuracy."""
         if self.current_state.val_geometric_mean == self.best_state.val_geometric_mean:
-            self.graph.saver.save(sess=self.sess, save_path=os.path.join(self.save_path, 'checkpoints', 'model'),
-                                  global_step=self.graph.global_step)
+            self.graph.saver.save(
+                sess=self.sess,
+                save_path=os.path.join(self.save_path, 'checkpoints', 'model'),
+                global_step=self.graph.global_step,
+            )
 
     def end_monitoring(self):
         """Save checkpoint."""
-        self.graph.saver.save(sess=self.sess, save_path=os.path.join(self.save_path, 'checkpoints', 'model'),
-                              global_step=self.graph.global_step)
+        self.graph.saver.save(
+            sess=self.sess,
+            save_path=os.path.join(self.save_path, 'checkpoints', 'model'),
+            global_step=self.graph.global_step,
+        )
 
     def early_stopping_check(self):
         """Check for early stopping."""

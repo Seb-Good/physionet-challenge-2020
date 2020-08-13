@@ -40,24 +40,25 @@ class Model:
         # define the models
         self.model = WaveNet(n_channels=n_channels).to(self.device)
         summary(self.model, (input_size, n_channels))
-        #self.model.half()
+        # self.model.half()
 
         if torch.cuda.device_count() > 1:
-            print("Number of GPUs will be used: ", torch.cuda.device_count()-3)
-            self.model = DP(self.model, device_ids=list(range(torch.cuda.device_count()-3)))
+            print("Number of GPUs will be used: ", torch.cuda.device_count() - 3)
+            self.model = DP(self.model, device_ids=list(range(torch.cuda.device_count() - 3)))
         else:
             print('Only one GPU is available')
-
 
         self.metric = Metric()
         self.num_workers = 1
         ########################## compile the model ###############################
 
         # define optimizer
-        self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.hparams['lr'], weight_decay=1e-5)
+        self.optimizer = torch.optim.Adam(
+            params=self.model.parameters(), lr=self.hparams['lr'], weight_decay=1e-5
+        )
 
         # weights = torch.Tensor([0.025,0.033,0.039,0.046,0.069,0.107,0.189,0.134,0.145,0.262,1]).cuda()
-        self.loss = nn.BCELoss() #CompLoss(self.device)
+        self.loss = nn.BCELoss()  # CompLoss(self.device)
 
         # define early stopping
         self.early_stopping = EarlyStopping(
@@ -90,11 +91,11 @@ class Model:
     def fit(self, train, valid):
 
         train_loader = DataLoader(
-            train, batch_size=self.hparams['batch_size'], shuffle=True,num_workers=self.num_workers
-        )#,collate_fn=train.my_collate
+            train, batch_size=self.hparams['batch_size'], shuffle=True, num_workers=self.num_workers
+        )  # ,collate_fn=train.my_collate
         valid_loader = DataLoader(
-            valid, batch_size=self.hparams['batch_size'], shuffle=False,num_workers=self.num_workers
-        )#,collate_fn=train.my_collate
+            valid, batch_size=self.hparams['batch_size'], shuffle=False, num_workers=self.num_workers
+        )  # ,collate_fn=train.my_collate
 
         # tensorboard object
         writer = SummaryWriter()
@@ -123,15 +124,14 @@ class Model:
                 y_batch = y_batch.float().cpu().detach()
                 pred = pred.float().cpu().detach()
 
-                self.scaler.scale(train_loss).backward() #train_loss.backward()
+                self.scaler.scale(train_loss).backward()  # train_loss.backward()
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
                 # torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.5)
-                self.scaler.step(self.optimizer)#self.optimizer.step()
+                self.scaler.step(self.optimizer)  # self.optimizer.step()
                 self.scaler.update()
 
                 # calc metric
                 avg_loss += train_loss.item() / len(train_loader)
-
 
                 train_true = torch.cat([train_true, y_batch], 0)
                 train_preds = torch.cat([train_preds, pred], 0)
@@ -218,13 +218,13 @@ class Model:
         self.model.eval()
 
         test_loader = torch.utils.data.DataLoader(
-            X_test, batch_size=self.hparams['batch_size'], shuffle=False,num_workers=self.num_workers
-        )#,collate_fn=train.my_collate
+            X_test, batch_size=self.hparams['batch_size'], shuffle=False, num_workers=self.num_workers
+        )  # ,collate_fn=train.my_collate
 
         test_preds = torch.Tensor([])
         print('Start generation of predictions')
         with torch.no_grad():
-            for i, (X_batch,y_batch) in enumerate(tqdm(test_loader)):
+            for i, (X_batch, y_batch) in enumerate(tqdm(test_loader)):
                 X_batch = X_batch.float().to(self.device)
 
                 pred = self.model(X_batch)
@@ -240,7 +240,9 @@ class Model:
         # evaluate the model
         self.model.eval()
 
-        test_loader = torch.utils.data.DataLoader(X_test, batch_size=self.batch_size, shuffle=False,num_workers=self.num_workers)#,collate_fn=train.my_collate
+        test_loader = torch.utils.data.DataLoader(
+            X_test, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers
+        )  # ,collate_fn=train.my_collate
 
         test_preds = torch.Tensor([])
         with torch.no_grad():
@@ -272,17 +274,16 @@ class Model:
 
 
 class CompLoss(nn.Module):
-
-    def __init__(self,device):
+    def __init__(self, device):
         super().__init__()
-        self.weights_matrix = pd.read_csv('./metrics/weights.csv').values[:,1:]
+        self.weights_matrix = pd.read_csv('./metrics/weights.csv').values[:, 1:]
         self.weights_matrix = torch.Tensor(self.weights_matrix).to(device)
         self.device = device
 
-    def forward(self,pred, target):
+    def forward(self, pred, target):
 
-        pred = (pred - 0.5)*2
-        target = (target - 0.5)*2
+        pred = (pred - 0.5) * 2
+        target = (target - 0.5) * 2
 
         # matrix for ideal prediction
         matrix_ideal = torch.mm(target.t(), target)
@@ -290,27 +291,24 @@ class CompLoss(nn.Module):
         matrix_ideal = torch.matmul(matrix_ideal, self.weights_matrix)
         matrix_ideal = torch.sum(matrix_ideal)
 
-        #matrix for predictions
+        # matrix for predictions
         matrix = torch.mm(target.t(), pred)
         matrix = torch.abs(matrix)
-        matrix = torch.matmul(matrix,self.weights_matrix)
+        matrix = torch.matmul(matrix, self.weights_matrix)
         matrix = torch.sum(matrix)
 
-
-
         # matrix for prediction of only normal labels
-        normal_predictions = torch.Tensor(np.zeros((target.shape[0],target.shape[1]))).to(self.device)
-        normal_predictions[:,21] = 1
+        normal_predictions = torch.Tensor(np.zeros((target.shape[0], target.shape[1]))).to(self.device)
+        normal_predictions[:, 21] = 1
         matrix_norm = torch.mm(target.t(), normal_predictions)
         matrix_norm = torch.abs(matrix_norm)
-        #matrix_norm = matrix_norm / torch.sum(matrix_norm)
+        # matrix_norm = matrix_norm / torch.sum(matrix_norm)
         matrix_norm = torch.matmul(matrix_norm, self.weights_matrix)
         matrix_norm = torch.sum(matrix_norm)
 
         norm = torch.sum(matrix_ideal)
         norm = norm + torch.sum(matrix)
 
-        loss = (matrix/norm - matrix_norm/norm) / (matrix_ideal/norm - matrix_norm/norm)
+        loss = (matrix / norm - matrix_norm / norm) / (matrix_ideal / norm - matrix_norm / norm)
 
-        return 2-loss
-
+        return 2 - loss

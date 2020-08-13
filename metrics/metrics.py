@@ -3,18 +3,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-class Metric():
 
+class Metric:
     def __init__(self):
 
-        #load weights for confusion matrix
+        # load weights for confusion matrix
         self.weights = pd.read_csv('./metrics/weights.csv', header=0)
         self.weights = self.weights.values[:, 1:]
 
-
-    #================ Utils ================
+    # ================ Utils ================
     # Compute modified confusion matrix for multi-class, multi-label tasks.
-    def compute_modified_confusion_matrix(self,labels, outputs):
+    def compute_modified_confusion_matrix(self, labels, outputs):
         # Compute a binary multi-class, multi-label confusion matrix, where the rows
         # are the labels and the columns are the outputs.
         num_recordings, num_classes = np.shape(labels)
@@ -60,23 +59,21 @@ class Metric():
 
         return normalized_score
 
-    def find_opt_thresold(self,labels, outputs):
+    def find_opt_thresold(self, labels, outputs):
 
-        threshold_grid = np.arange(0.01,0.99,0.05).tolist()
+        threshold_grid = np.arange(0.01, 0.99, 0.05).tolist()
         threshold_opt = np.zeros((27))
 
-
-
-        #TODO
+        # TODO
         print('Finding the optimal threshold')
         for i in tqdm(range(27)):
             outputs_thresholded = np.zeros((outputs.shape[0], outputs.shape[1]))
             scores = []
             for threshold in threshold_grid:
-                outputs_thresholded[:,i] = outputs[:,i]
+                outputs_thresholded[:, i] = outputs[:, i]
                 outputs_thresholded[np.where(outputs_thresholded >= threshold)] = 1
                 outputs_thresholded[np.where(outputs_thresholded < threshold)] = 0
-                scores.append(self.compute(labels,outputs_thresholded))
+                scores.append(self.compute(labels, outputs_thresholded))
             scores = np.array(scores)
             threshold_opt[i] = threshold_grid[np.where(scores == np.max(scores))]
 
@@ -85,9 +82,6 @@ class Metric():
             output[np.where(output) >= threshold_opt[i]] = 1
             output[np.where(output) < threshold_opt[i]] = 0
             outputs[:, i] = output
-        #save thresholds
-
+        # save thresholds
 
         return labels, outputs
-
-

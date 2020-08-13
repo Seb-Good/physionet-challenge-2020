@@ -20,11 +20,11 @@ class Graph(object):
     def __init__(self, network, save_path, data_path, lookup_path, max_to_keep):
 
         # Set input parameters
-        self.network = network                # network: neural network architecture
-        self.save_path = save_path            # save_path: checkpoints, summaries, and graphs
-        self.data_path = data_path            # data_path: waveforms, labels
-        self.lookup_path = lookup_path        # lookup_path: dictionary
-        self.max_to_keep = max_to_keep        # Maximum number of checkpoints to keep
+        self.network = network  # network: neural network architecture
+        self.save_path = save_path  # save_path: checkpoints, summaries, and graphs
+        self.data_path = data_path  # data_path: waveforms, labels
+        self.lookup_path = lookup_path  # lookup_path: dictionary
+        self.max_to_keep = max_to_keep  # Maximum number of checkpoints to keep
 
         # Set attributes
         self.waveforms = None
@@ -80,8 +80,13 @@ class Graph(object):
         with tf.device('/cpu:0'):
 
             # Create placeholders
-            self.is_training, self.learning_rate, self.batch_size, self.mode_handle, self.val_cam_plots = \
-                self._create_placeholders()
+            (
+                self.is_training,
+                self.learning_rate,
+                self.batch_size,
+                self.mode_handle,
+                self.val_cam_plots,
+            ) = self._create_placeholders()
 
             # Get or create global step
             self.global_step = tf.train.get_or_create_global_step()
@@ -103,8 +108,9 @@ class Graph(object):
 
             """Training"""
             # Run training operation
-            self.train_op = self._run_optimization_step(optimizer=self.optimizer, gradients=self.gradients,
-                                                        global_step=self.global_step)
+            self.train_op = self._run_optimization_step(
+                optimizer=self.optimizer, gradients=self.gradients, global_step=self.global_step
+            )
 
             """Metrics"""
             # Compute loss
@@ -119,7 +125,9 @@ class Graph(object):
             """Summaries"""
             # Merge training summaries
             self.train_summary_metrics_op = tf.summary.merge_all('train_metrics')
-            self.val_cam_plots_summary_op = tf.summary.image(name='val', tensor=self.val_cam_plots, max_outputs=256)
+            self.val_cam_plots_summary_op = tf.summary.image(
+                name='val', tensor=self.val_cam_plots, max_outputs=256
+            )
 
             """Initialize Variables"""
             # Initialize global variables
@@ -145,9 +153,15 @@ class Graph(object):
         self.waveforms, self.labels, age, sex = self._get_next_batch()
 
         # Compute forward propagation
-        self.logits, self.cams = self.network.inference(input_layer=self.waveforms, age=age, sex=sex,
-                                                        reuse=tf.AUTO_REUSE, is_training=self.is_training,
-                                                        name='ECGNet', print_shape=False)
+        self.logits, self.cams = self.network.inference(
+            input_layer=self.waveforms,
+            age=age,
+            sex=sex,
+            reuse=tf.AUTO_REUSE,
+            is_training=self.is_training,
+            name='ECGNet',
+            print_shape=False,
+        )
 
         # Compute loss
         self.loss = self._compute_loss(logits=self.logits, labels=self.labels)
@@ -182,9 +196,15 @@ class Graph(object):
                     waveforms, labels, age, sex = self._get_next_batch()
 
                     # Compute inference
-                    logits, cams = self.network.inference(input_layer=waveforms, age=age, sex=sex,
-                                                          reuse=tf.AUTO_REUSE, is_training=self.is_training,
-                                                          name='ECGNet', print_shape=True)
+                    logits, cams = self.network.inference(
+                        input_layer=waveforms,
+                        age=age,
+                        sex=sex,
+                        reuse=tf.AUTO_REUSE,
+                        is_training=self.is_training,
+                        name='ECGNet',
+                        print_shape=True,
+                    )
 
                     # Compute loss
                     loss = self._compute_loss(logits=logits, labels=labels)
@@ -230,7 +250,9 @@ class Graph(object):
         self.loss = self._compute_mean_loss(tower_losses=self.tower_losses)
         self.f_beta = self._compute_mean_f_beta(tower_f_beta=self.tower_f_beta)
         self.g_beta = self._compute_mean_g_beta(tower_g_beta=self.tower_g_beta)
-        self.geometric_mean = self._compute_mean_geometric_mean(tower_geometric_mean=self.tower_geometric_mean)
+        self.geometric_mean = self._compute_mean_geometric_mean(
+            tower_geometric_mean=self.tower_geometric_mean
+        )
         self.gradients = self._compute_mean_gradients(tower_gradients=self.tower_gradients)
         self._group_data()
 
@@ -245,10 +267,12 @@ class Graph(object):
     def _compute_metrics(self):
         """Collect loss metric."""
         with tf.variable_scope('metrics'):
-            metrics = {'f_beta': tf.metrics.mean(values=self.f_beta),
-                       'g_beta': tf.metrics.mean(values=self.g_beta),
-                       'geometric_mean': tf.metrics.mean(values=self.geometric_mean),
-                       'loss': tf.metrics.mean(values=self.loss)}
+            metrics = {
+                'f_beta': tf.metrics.mean(values=self.f_beta),
+                'g_beta': tf.metrics.mean(values=self.g_beta),
+                'geometric_mean': tf.metrics.mean(values=self.geometric_mean),
+                'loss': tf.metrics.mean(values=self.loss),
+            }
         return metrics
 
     def _update_metrics(self):
@@ -263,8 +287,11 @@ class Graph(object):
     def _initialize_iterator(self):
         """Initialize the iterator from a mode handle placeholder."""
         with tf.variable_scope('iterator'):
-            iterator = tf.data.Iterator.from_string_handle(self.mode_handle, self.generator_train.dataset.output_types,
-                                                           self.generator_train.dataset.output_shapes)
+            iterator = tf.data.Iterator.from_string_handle(
+                self.mode_handle,
+                self.generator_train.dataset.output_types,
+                self.generator_train.dataset.output_shapes,
+            )
         return iterator
 
     def _get_next_batch(self):
@@ -277,11 +304,19 @@ class Graph(object):
     def _get_generators(self):
         """Create train, val, and test data generators."""
         with tf.variable_scope('train_generator'):
-            generator_train = self.network.create_generator(data_path=self.data_path, lookup_path=self.lookup_path,
-                                                            mode='train', batch_size=self.batch_size)
+            generator_train = self.network.create_generator(
+                data_path=self.data_path,
+                lookup_path=self.lookup_path,
+                mode='train',
+                batch_size=self.batch_size,
+            )
         with tf.variable_scope('val_generator'):
-            generator_val = self.network.create_generator(data_path=self.data_path, lookup_path=self.lookup_path,
-                                                          mode='val', batch_size=self.batch_size)
+            generator_val = self.network.create_generator(
+                data_path=self.data_path,
+                lookup_path=self.lookup_path,
+                mode='val',
+                batch_size=self.batch_size,
+            )
         return generator_train, generator_val
 
     def _get_saver(self):
@@ -312,7 +347,9 @@ class Graph(object):
             optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
         # Get learning rate summary
-        tf.summary.scalar(name='learning_rate/learning_rate', tensor=learning_rate, collections=['train_metrics'])
+        tf.summary.scalar(
+            name='learning_rate/learning_rate', tensor=learning_rate, collections=['train_metrics']
+        )
 
         return optimizer
 
@@ -322,16 +359,28 @@ class Graph(object):
         with tf.variable_scope('loss'):
 
             # Specify class weightings ['AF', 'I-AVB', 'LBBB', 'Normal', 'PAC', 'PVC', 'RBBB', 'STD', 'STE']
-            class_weights = tf.constant([0.17772318, 0.30055402, 0.91949153, 0.23638344,
-                                         0.35227273, 0.31,  0.11685514, 0.25057737, 1.])
+            class_weights = tf.constant(
+                [
+                    0.17772318,
+                    0.30055402,
+                    0.91949153,
+                    0.23638344,
+                    0.35227273,
+                    0.31,
+                    0.11685514,
+                    0.25057737,
+                    1.0,
+                ]
+            )
 
             # Specify the weights for each sample in the batch
             weights = tf.gather(params=class_weights, indices=tf.cast(labels, tf.int32))
 
             # compute the loss
-            losses = tf.losses.sigmoid_cross_entropy(logits=logits, multi_class_labels=tf.cast(labels, tf.int32),
-                                                     weights=weights)
-            
+            losses = tf.losses.sigmoid_cross_entropy(
+                logits=logits, multi_class_labels=tf.cast(labels, tf.int32), weights=weights
+            )
+
             # Compute mean loss
             loss = tf.reduce_mean(losses)
 
@@ -345,8 +394,8 @@ class Graph(object):
             logits = tf.nn.sigmoid(logits)
 
             # Calculate average scores
-            f_beta = self._compute_f_beta_loss(y_true=labels, y_pred=logits, beta=2.)
-            g_beta = self._compute_g_beta_loss(y_true=labels, y_pred=logits, beta=2.)
+            f_beta = self._compute_f_beta_loss(y_true=labels, y_pred=logits, beta=2.0)
+            g_beta = self._compute_g_beta_loss(y_true=labels, y_pred=logits, beta=2.0)
 
         return tf.sqrt(f_beta * g_beta)
 
@@ -482,7 +531,9 @@ class Graph(object):
             geometric_mean = tf.reduce_mean(tower_geometric_mean)
 
         # Get summary
-        tf.summary.scalar(name='geometric_mean/geometric_mean', tensor=geometric_mean, collections=['train_metrics'])
+        tf.summary.scalar(
+            name='geometric_mean/geometric_mean', tensor=geometric_mean, collections=['train_metrics']
+        )
 
         return geometric_mean
 

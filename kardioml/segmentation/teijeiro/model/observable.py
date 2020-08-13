@@ -14,13 +14,14 @@ from .interval import Interval
 from numpy import inf
 import itertools as it
 
+
 def overlap(obs1, obs2):
     """
     Determine if two observations overlap. Returns True only if we are sure
     that the observations overlap.
     """
-    return (not obs1.earlyend <= obs2.latestart and
-                                           not obs2.earlyend <= obs1.latestart)
+    return not obs1.earlyend <= obs2.latestart and not obs2.earlyend <= obs1.latestart
+
 
 def between(o1, o2, o3):
     """
@@ -28,12 +29,13 @@ def between(o1, o2, o3):
     True if it is sure that the *o2* has an instant between *o1* and *o3*. It
     is assumed than *o1* is before *o3*.
     """
-    #We create a "dummy" observation between o1 and o3, and we check if it
-    #overlaps with the checked observation.
+    # We create a "dummy" observation between o1 and o3, and we check if it
+    # overlaps with the checked observation.
     hole = Observable()
     hole.start.value = o1.end.value
     hole.end.value = o3.start.value
     return overlap(hole, o2)
+
 
 def overlap_any(obs, obs_lst):
     """
@@ -42,22 +44,22 @@ def overlap_any(obs, obs_lst):
     an observation in *obs_lst*. It is assumed the list has at least one
     element.
     """
-    #We join the observations sharing their limits to avoid the side effect
-    #of considering possible the presence of *obs* in a zero-size interval
-    #between two consecutive observations in the list.
+    # We join the observations sharing their limits to avoid the side effect
+    # of considering possible the presence of *obs* in a zero-size interval
+    # between two consecutive observations in the list.
     dummy = Observable()
     dummy.start.value = obs_lst[0].start.value
     dummy.end.value = obs_lst[0].end.value
     i = 1
     while i < len(obs_lst):
-        if (dummy.earlyend != dummy.lateend or
-                                    dummy.end.value != obs_lst[i].start.value):
+        if dummy.earlyend != dummy.lateend or dummy.end.value != obs_lst[i].start.value:
             dummy.start.value = obs_lst[i].start.value
         dummy.end.value = obs_lst[i].end.value
         if overlap(obs, dummy):
             return True
-        i+=1
+        i += 1
     return False
+
 
 def end_cmp_key(obs):
     """
@@ -68,6 +70,7 @@ def end_cmp_key(obs):
     during the interpretation.
     """
     return (obs.lateend, obs.earlyend, obs.latestart, obs.earlystart)
+
 
 def singleton_observable(observable):
     """
@@ -114,9 +117,9 @@ class Observable(FreezableObject):
 
     def __init__(self):
         super(Observable, self).__init__()
-        self.start = Variable(value = Interval(0, inf))
-        self.time = Variable(value = Interval(0, inf))
-        self.end = Variable(value = Interval(0, inf))
+        self.start = Variable(value=Interval(0, inf))
+        self.time = Variable(value=Interval(0, inf))
+        self.end = Variable(value=Interval(0, inf))
 
     def __str__(self):
         """
@@ -138,12 +141,13 @@ class Observable(FreezableObject):
         the observable. This allows for the sorting of the set of observations
         in the event system.
         """
-        return ((self.earlystart, self.latestart,
-                   self.earlyend, self.lateend,
-                   type(self).__name__)  <
-                                           (other.earlystart, other.latestart,
-                                              other.earlyend, other.lateend,
-                                              type(other).__name__))
+        return (self.earlystart, self.latestart, self.earlyend, self.lateend, type(self).__name__) < (
+            other.earlystart,
+            other.latestart,
+            other.earlyend,
+            other.lateend,
+            type(other).__name__,
+        )
 
     @property
     def earlystart(self):
@@ -177,9 +181,8 @@ class EventObservable(Observable):
         This type of observables have only one temporal variable, to which the
         two temporal variables of full observables are referenced.
         """
-        self.time = Variable(value = Interval(0, inf))
+        self.time = Variable(value=Interval(0, inf))
         self.start = self.end = self.time
-
 
 
 if __name__ == "__main__":

@@ -96,12 +96,15 @@ class FullWaveformFeatures:
             mean_power_high = np.trapz(y=pxx[freq_band_high_index], x=fxx[freq_band_high_index])
 
             # Calculate max/mean power ratio
-            stationary_wavelet_transform_features['swt_d_' + str(level+1) + '_low_power_ratio'] = \
+            stationary_wavelet_transform_features['swt_d_' + str(level + 1) + '_low_power_ratio'] = (
                 max_power_low / mean_power_low
-            stationary_wavelet_transform_features['swt_d_' + str(level+1) + '_med_power_ratio'] = \
+            )
+            stationary_wavelet_transform_features['swt_d_' + str(level + 1) + '_med_power_ratio'] = (
                 max_power_med / mean_power_med
-            stationary_wavelet_transform_features['swt_d_' + str(level+1) + '_high_power_ratio'] = \
+            )
+            stationary_wavelet_transform_features['swt_d_' + str(level + 1) + '_high_power_ratio'] = (
                 max_power_high / mean_power_high
+            )
 
             """Approximation"""
             # Compute Welch periodogram
@@ -123,33 +126,40 @@ class FullWaveformFeatures:
             mean_power_high = np.trapz(y=pxx[freq_band_high_index], x=fxx[freq_band_high_index])
 
             # Calculate max/mean power ratio
-            stationary_wavelet_transform_features['swt_a_' + str(level+1) + '_low_power_ratio'] = \
+            stationary_wavelet_transform_features['swt_a_' + str(level + 1) + '_low_power_ratio'] = (
                 max_power_low / mean_power_low
-            stationary_wavelet_transform_features['swt_a_' + str(level+1) + '_med_power_ratio'] = \
+            )
+            stationary_wavelet_transform_features['swt_a_' + str(level + 1) + '_med_power_ratio'] = (
                 max_power_med / mean_power_med
-            stationary_wavelet_transform_features['swt_a_' + str(level+1) + '_high_power_ratio'] = \
+            )
+            stationary_wavelet_transform_features['swt_a_' + str(level + 1) + '_high_power_ratio'] = (
                 max_power_high / mean_power_high
+            )
 
         """Non-Linear"""
         for level in range(len(swt)):
 
             """Detail"""
             # Log-energy entropy
-            stationary_wavelet_transform_features['swt_d_' + str(level+1) + '_energy_entropy'] = \
-                np.sum(np.log10(np.power(swt[level]['d'], 2)))
+            stationary_wavelet_transform_features['swt_d_' + str(level + 1) + '_energy_entropy'] = np.sum(
+                np.log10(np.power(swt[level]['d'], 2))
+            )
 
             # Higuchi_fractal
-            stationary_wavelet_transform_features['swt_d_' + str(level+1) + '_higuchi_fractal'] = \
-                hfd(swt[level]['d'], k_max=10)
+            stationary_wavelet_transform_features['swt_d_' + str(level + 1) + '_higuchi_fractal'] = hfd(
+                swt[level]['d'], k_max=10
+            )
 
             """Approximation"""
             # Log-energy entropy
-            stationary_wavelet_transform_features['swt_a_' + str(level+1) + '_energy_entropy'] = \
-                np.sum(np.log10(np.power(swt[level]['a'], 2)))
+            stationary_wavelet_transform_features['swt_a_' + str(level + 1) + '_energy_entropy'] = np.sum(
+                np.log10(np.power(swt[level]['a'], 2))
+            )
 
             # Higuchi_fractal
-            stationary_wavelet_transform_features['swt_a_' + str(level+1) + '_higuchi_fractal'] = \
-                hfd(swt[level]['a'], k_max=10)
+            stationary_wavelet_transform_features['swt_a_' + str(level + 1) + '_higuchi_fractal'] = hfd(
+                swt[level]['a'], k_max=10
+            )
 
         return stationary_wavelet_transform_features
 
@@ -163,10 +173,10 @@ class FullWaveformFeatures:
         waveform_length_updated = None
 
         # If waveform is not the correct length for proposed decomposition level
-        if waveform_length % 2**level != 0:
+        if waveform_length % 2 ** level != 0:
 
             # Calculate remainder
-            remainder = waveform_length % 2**level
+            remainder = waveform_length % 2 ** level
 
             # Loop through multiplication factors until minimum factor found
             while remainder != 0:
@@ -178,7 +188,7 @@ class FullWaveformFeatures:
                 waveform_length_updated = factor * waveform_length
 
                 # Calculate updated remainder
-                remainder = waveform_length_updated % 2**level
+                remainder = waveform_length_updated % 2 ** level
 
             return waveform_length_updated
 
@@ -221,9 +231,9 @@ class FullWaveformFeatures:
         for lev in range(len(swt)):
 
             # Approximation
-            swt[lev]['a'] = swt[lev]['a'][pad_before:len(waveform_padded) - pad_after]
+            swt[lev]['a'] = swt[lev]['a'][pad_before : len(waveform_padded) - pad_after]
 
             # Detail
-            swt[lev]['d'] = swt[lev]['d'][pad_before:len(waveform_padded) - pad_after]
+            swt[lev]['d'] = swt[lev]['d'][pad_before : len(waveform_padded) - pad_after]
 
         return swt

@@ -50,26 +50,36 @@ def waveform_plot(filename_id, filenames, path):
     ax1 = plt.subplot2grid((1, 1), (0, 0))
 
     # ECG
-    ax1.set_title('File Name: {}\nAge: {}\nSex: {}\nLabel: {}\nHR: {} BPM'.format(filename,
-                                                                                  meta_data['age'],
-                                                                                  meta_data['sex'],
-                                                                                  label,
-                                                                                  int(meta_data['hr'])),
-                  fontsize=20, loc='left',
-                  x=0)
+    ax1.set_title(
+        'File Name: {}\nAge: {}\nSex: {}\nLabel: {}\nHR: {} BPM'.format(
+            filename, meta_data['age'], meta_data['sex'], label, int(meta_data['hr'])
+        ),
+        fontsize=20,
+        loc='left',
+        x=0,
+    )
     shift = 0
     for channel_id in range(waveforms.shape[1]):
         ax1.plot(time, waveforms[:, channel_id] + shift, '-k', lw=2)
         if meta_data['rpeaks'] is not None:
-            ax1.plot(time[meta_data['rpeaks'][channel_id]],
-                     waveforms[meta_data['rpeaks'][channel_id], channel_id] + shift, 'ob')
+            ax1.plot(
+                time[meta_data['rpeaks'][channel_id]],
+                waveforms[meta_data['rpeaks'][channel_id], channel_id] + shift,
+                'ob',
+            )
         if meta_data['p_and_t_waves']:
             if meta_data['p_waves'] is not None:
-                ax1.plot(time[meta_data['p_waves'][channel_id]],
-                         waveforms[meta_data['p_waves'][channel_id], channel_id] + shift, 'or')
+                ax1.plot(
+                    time[meta_data['p_waves'][channel_id]],
+                    waveforms[meta_data['p_waves'][channel_id], channel_id] + shift,
+                    'or',
+                )
             if meta_data['t_waves'] is not None:
-                ax1.plot(time[meta_data['t_waves'][channel_id]],
-                         waveforms[meta_data['t_waves'][channel_id], channel_id] + shift, 'og')
+                ax1.plot(
+                    time[meta_data['t_waves'][channel_id]],
+                    waveforms[meta_data['t_waves'][channel_id], channel_id] + shift,
+                    'og',
+                )
         ax1.text(0.1, 0.25 + shift, ECG_LEADS[channel_id], color='red', fontsize=16, ha='left')
         shift += 3
     ax1.plot(time, np.array(meta_data['rpeak_array']) + shift, '-k', lw=2)
@@ -98,7 +108,9 @@ def waveform_plot_interact(dataset):
     # Get filenames
     filenames = [filename.split('.')[0] for filename in os.listdir(path) if 'npy' in filename]
 
-    interact(waveform_plot,
-             filename_id=IntSlider(value=0, min=0, max=len(filenames) - 1, step=1,),
-             filenames=fixed(filenames),
-             path=fixed(path))
+    interact(
+        waveform_plot,
+        filename_id=IntSlider(value=0, min=0, max=len(filenames) - 1, step=1,),
+        filenames=fixed(filenames),
+        path=fixed(path),
+    )

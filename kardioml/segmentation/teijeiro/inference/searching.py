@@ -18,9 +18,9 @@ from sortedcontainers import SortedList
 from operator import attrgetter
 from collections import namedtuple
 
-#Tuple containing the search heuristic.
+# Tuple containing the search heuristic.
 Heuristic = namedtuple('Heuristic', 'ocov, scov, time, nhyp')
-#Tuple containing the information of each node (heuristic and interpretation)
+# Tuple containing the information of each node (heuristic and interpretation)
 Node = namedtuple('Node', 'h, node')
 
 
@@ -48,15 +48,16 @@ def valuation(node, time=None):
     tp, abst, abstime, nhyp = node.past_metrics
     assert time >= tp
     if time > tp:
-        abstime += sum(o.earlyend - o.latestart + 1 for o in node.abstracted
-                       if ap.get_obs_level(type(o)) == 0)
+        abstime += sum(
+            o.earlyend - o.latestart + 1 for o in node.abstracted if ap.get_obs_level(type(o)) == 0
+        )
         abst += len(node.abstracted)
         nhyp += len(node.observations) + node.focus.nhyp
     total = IN.BUF.nobs_before(time) + node.nabd
     if total == 0:
         return (0.0, 0.0, 0.0)
     else:
-        return (1.0 - abst/float(total), -abstime, nhyp)
+        return (1.0 - abst / float(total), -abstime, nhyp)
 
 
 def goal(node):
@@ -64,8 +65,9 @@ def goal(node):
     Checks if a node is a goal node, it is, an enough good interpretation to
     immediately stop the search process.
     """
-    return (IN.BUF.get_status() is IN.BUF.Status.STOPPED
-            and valuation(node, np.inf)[0] == 0.0 and node.is_firm)
+    return (
+        IN.BUF.get_status() is IN.BUF.Status.STOPPED and valuation(node, np.inf)[0] == 0.0 and node.is_firm
+    )
 
 
 class Construe(object):
@@ -73,6 +75,7 @@ class Construe(object):
     This class implements the **kardioml.segmentation.teijeiro.* algorithm allowing fine-grained
     control of the steps of the algorithm.
     """
+
     def __init__(self, root_node, K):
         """
         Initializes a new algorithm execution, receiving as arguments the
@@ -146,14 +149,13 @@ class Construe(object):
         optimal = False
 
         for _ in range(self.K):
-            node = next((n for n in self.open if filt(n)
-                              and not (optimal and n.node in ancestors)), None)
-            #The search stops if no nodes can be expanded or if, being in an
-            #optimal context, we need to expand a non-optimal node.
+            node = next((n for n in self.open if filt(n) and not (optimal and n.node in ancestors)), None)
+            # The search stops if no nodes can be expanded or if, being in an
+            # optimal context, we need to expand a non-optimal node.
             if node is None or (optimal and node.h.ocov > 0.0):
                 break
             self.open.remove(node)
-            #Go a step further
+            # Go a step further
             nxt = self.successors[node.node].next()
             self.successors[nxt] = PredictableIter(reasoning.firm_succ(nxt))
             nxtime = nxt.time_point
@@ -161,21 +163,25 @@ class Construe(object):
                 self.last_time = nxtime
             ocov, scov, nhyp = valuation(nxt, nxtime)
             nxt = Node(Heuristic(ocov, scov, -nxtime, nhyp), nxt)
-            #Optimality is determined by the coverage of the successors.
+            # Optimality is determined by the coverage of the successors.
             optimal = optimal or ocov == 0.0
-            #Reorganize the open and closed list.
+            # Reorganize the open and closed list.
             for n in (node, nxt):
                 if self.successors[n.node].hasnext():
                     newopen.append(n)
                     reasoning.save_hierarchy(n.node, ancestors)
                 else:
                     newclosed.append(n)
-                    if (n is nxt and n.h.ocov == 0.0 and goal(n.node) and
-                            (self.best is None or n.h < self.best.h)):
+                    if (
+                        n is nxt
+                        and n.h.ocov == 0.0
+                        and goal(n.node)
+                        and (self.best is None or n.h < self.best.h)
+                    ):
                         self.best = n
         for node in newopen:
             self.open.add(node)
-        #The closed list is recalculated by keeping only the best one.
+        # The closed list is recalculated by keeping only the best one.
         self._update_closed(newclosed)
         if not self.open:
             if not self.closed:
@@ -187,7 +193,7 @@ class Construe(object):
         Perform a pruning operation by limiting the size of the *open* list
         only to the K best.
         """
-        #Now we get the best nodes with a common valuation.
+        # Now we get the best nodes with a common valuation.
         newopened = SortedList(key=attrgetter('h'))
         for h, node in self.open:
             ocov, scov, nhyp = valuation(node, self.last_time)
@@ -195,7 +201,7 @@ class Construe(object):
         self.open = newopened
         n = min(len(self.open), self.K)
         if not reasoning.SAVE_TREE:
-            #We track all interesting nodes in the hierarchy.
+            # We track all interesting nodes in the hierarchy.
             saved = set()
             stop = set()
             for i in range(n):
@@ -210,7 +216,7 @@ class Construe(object):
                 reasoning.save_hierarchy(node, saved)
             if self.best is not None:
                 reasoning.save_hierarchy(self.best.node, saved)
-            #And we prune all nodes outside the saved hierarchy
+            # And we prune all nodes outside the saved hierarchy
             stack = [self.root]
             while stack:
                 node = stack.pop()
@@ -219,8 +225,8 @@ class Construe(object):
                 elif node not in stop:
                     stack.extend(node.child)
         del self.open[n:]
-        #We also clear the reasoning cache, since some interpretations cannot
-        #be eligible for merging anymore.
+        # We also clear the reasoning cache, since some interpretations cannot
+        # be eligible for merging anymore.
         if self.open:
             earliestime = min(n.past_metrics.time for _, n in self.open)
             reasoning.clear_cache(earliestime)
@@ -234,6 +240,8 @@ class Construe(object):
         the current best interpretation and that are not ancestors of the
         current best interpretation.
         """
-        return (self.best is not None and
-                all(self.best.node.is_ancestor(n.node) for n in self.open
-                    if n.h.ocov == 0.0 and n.h.nhyp < self.best.h.nhyp))
+        return self.best is not None and all(
+            self.best.node.is_ancestor(n.node)
+            for n in self.open
+            if n.h.ocov == 0.0 and n.h.nhyp < self.best.h.nhyp
+        )
