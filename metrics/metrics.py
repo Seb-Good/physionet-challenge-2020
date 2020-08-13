@@ -60,4 +60,11 @@ class Metric():
 
         return normalized_score
 
+    def find_opt_thresold(self,labels, outputs):
+
+        threshold_grid = np.arange(0,0.01,0.99)
+
+
+        return labels, outputs
+
 

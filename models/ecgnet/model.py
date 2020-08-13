@@ -57,7 +57,7 @@ class Model:
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.hparams['lr'], weight_decay=1e-5)
 
         # weights = torch.Tensor([0.025,0.033,0.039,0.046,0.069,0.107,0.189,0.134,0.145,0.262,1]).cuda()
-        self.loss = CompLoss(self.device) #nn.BCELoss() #
+        self.loss = nn.BCELoss() #CompLoss(self.device) #
 
         # define early stopping
         self.early_stopping = EarlyStopping(
