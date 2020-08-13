@@ -9,21 +9,31 @@ By: Sebastian D. Goodfellow, Ph.D., 2020
 import os
 import pickle
 
-# Local imports
-from kardioml import WORKING_PATH
+
+def run_12ECG_classifier(data, header_data, model):
+    """Get predictions.
+    Input
+    -----
+    data: .mat file
+    header_data: .hea file
+    model: pytorch model file/custom model class.
+
+    Output
+    ------
+    current_label: [0, 1, 0, 0, ... , 0, 0]
+    current_score: [0.1, 0.92, 0.2, 0.23, ... , 0.01, 0.002]
+    classes: ['270492004', '164889003', ... , '17338001']
+    """
+    current_label, current_score, classes = model.predict(data=data, header_data=header_data)
+
+    return current_label, current_score, classes
 
 
-def run_12ECG_classifier(data, header_data, classes, model):
-    """Get predictions."""
-    current_label, current_score = model.challenge_prediction(data=data, header_data=header_data)
+def load_12ECG_model(model_input):
+    """Load Physionet2017 Model
+    model_input: This is an argument from running driver.py on command line. I think we just ignore it and hard-code
+    out model path.
+    """
+    dmitrii_model = pytorch.load_model('where_did_you_save_the_model/model_12.ckp')
 
-    return current_label, current_score
-
-
-def load_12ECG_model():
-    """Load Physionet2017 Model"""
-    # Unpickle data model
-    with open(os.path.join(WORKING_PATH, 'models', 'physionet2017', 'physionet2017.model'), "rb") as input_file:
-        phyionet2017_model = pickle.load(input_file)
-
-    return phyionet2017_model
+    return dmitrii_model

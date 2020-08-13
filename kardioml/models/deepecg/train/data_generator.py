@@ -1,5 +1,5 @@
 """
-data_generator.py
+data_generator_pytorch.py
 -----------------
 This module provides a class for generating data batches for training and evaluation.
 By: Sebastian D. Goodfellow, Ph.D., 2018
@@ -286,7 +286,7 @@ class DataGenerator(object):
             duration = waveform.shape[0] / self.fs
 
             # Get new heart rate
-            hr_new = int(hr * np.random.uniform(0.75, 1.25))
+            hr_new = int(hr * np.random.uniform(0.9, 1.1))
             if hr_new > 300:
                 hr_new = 300
             elif hr_new < 40:

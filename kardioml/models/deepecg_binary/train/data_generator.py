@@ -1,5 +1,5 @@
 """
-data_generator.py
+data_generator_pytorch.py
 -----------------
 This module provides a class for generating data batches for training and evaluation.
 By: Sebastian D. Goodfellow, Ph.D., 2018
