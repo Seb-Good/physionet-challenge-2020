@@ -67,10 +67,11 @@ class Metric():
         outputs_thresholded = np.zeros((outputs.shape[0],outputs.shape[1]))
 
         #TODO
-        for threshold in threshold_grid:
-            scores = []
-            for i in range(27):
-                print(1)
+        for i in range(27):
+            print(1)
+            for threshold in threshold_grid:
+                scores = []
+
 
         return labels, outputs
 

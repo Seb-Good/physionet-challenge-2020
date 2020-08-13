@@ -57,8 +57,34 @@ class Model:
         # define optimizer
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.hparams['lr'], weight_decay=1e-5)
 
-        # weights = torch.Tensor([0.025,0.033,0.039,0.046,0.069,0.107,0.189,0.134,0.145,0.262,1]).cuda()
-        self.loss = nn.BCELoss() #CompLoss(self.device) #
+        weights = torch.Tensor([0.39248203427307904,
+ 0.6511885019347706,
+ 0.0,
+ 0.0,
+ 1.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.1271420674405749,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.3067993366500829,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.49917081260364843,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0]).to(self.device)
+        self.loss = nn.BCELoss(weight=weights) #CompLoss(self.device) #
 
         # define early stopping
         self.early_stopping = EarlyStopping(
@@ -140,9 +166,10 @@ class Model:
 
             # calc triaing metric
             train_preds = train_preds.numpy()
+            train_true = train_true.numpy()
             train_preds[np.where(train_preds >= self.threshold)] = 1
             train_preds[np.where(train_preds < self.threshold)] = 0
-            metric_train = self.metric.compute(labels=train_true.numpy(), outputs=train_preds)
+            metric_train = self.metric.compute(labels=train_true, outputs=train_preds)
 
             # evaluate the model
             print('Model evaluation...')
@@ -170,9 +197,10 @@ class Model:
 
             # evalueate metric
             val_preds = val_preds.numpy()
+            val_true = val_true.numpy()
             val_preds[np.where(val_preds >= self.threshold)] = 1
             val_preds[np.where(val_preds < self.threshold)] = 0
-            metric_val = self.metric.compute(val_true.numpy(), val_preds)
+            metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(avg_val_loss)
             res = self.early_stopping(score=avg_val_loss, model=self.model)
