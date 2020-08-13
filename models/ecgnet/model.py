@@ -167,9 +167,9 @@ class Model:
             # calc triaing metric
             train_preds = train_preds.numpy()
             train_true = train_true.numpy()
-            train_true,train_preds = self.metric.find_opt_thresold(train_true,train_preds)
-            # train_preds[np.where(train_preds >= self.threshold)] = 1
-            # train_preds[np.where(train_preds < self.threshold)] = 0
+            #train_true,train_preds = self.metric.find_opt_thresold(train_true,train_preds)
+            train_preds[np.where(train_preds >= self.threshold)] = 1
+            train_preds[np.where(train_preds < self.threshold)] = 0
             metric_train = self.metric.compute(labels=train_true, outputs=train_preds)
 
             # evaluate the model
@@ -199,9 +199,9 @@ class Model:
             # evalueate metric
             val_preds = val_preds.numpy()
             val_true = val_true.numpy()
-            val_true, val_preds = self.metric.find_opt_thresold(val_true, val_preds)
-            # val_preds[np.where(val_preds >= self.threshold)] = 1
-            # val_preds[np.where(val_preds < self.threshold)] = 0
+            #val_true, val_preds = self.metric.find_opt_thresold(val_true, val_preds)
+            val_preds[np.where(val_preds >= self.threshold)] = 1
+            val_preds[np.where(val_preds < self.threshold)] = 0
             metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(avg_val_loss)
