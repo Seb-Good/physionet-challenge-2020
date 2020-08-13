@@ -1,7 +1,7 @@
 import numpy as np, os, os.path, sys
 import pandas as pd
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 
 class Metric():
 
@@ -62,13 +62,14 @@ class Metric():
 
     def find_opt_thresold(self,labels, outputs):
 
-        threshold_grid = np.arange(0.01,0.99,0.01).tolist()
+        threshold_grid = np.arange(0.01,0.99,0.05).tolist()
         threshold_opt = np.zeros((27))
 
 
 
         #TODO
-        for i in range(27):
+        print('Finding the optimal threshold')
+        for i in tqdm(range(27)):
             outputs_thresholded = np.zeros((outputs.shape[0], outputs.shape[1]))
             scores = []
             for threshold in threshold_grid:

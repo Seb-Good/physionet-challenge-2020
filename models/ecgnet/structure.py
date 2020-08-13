@@ -13,10 +13,12 @@ class Stem_layer(nn.Module):
             kernel_size,
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
             dilation=dilation,
+            stride=1,
+            bias = False,
         )
         #self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
-        self.pooling = nn.MaxPool1d(kernel_size=pool_size)
+        self.pooling = nn.MaxPool1d(kernel_size=pool_size,stride=2)
         self.drop = nn.Dropout(drop_rate)
 
     def forward(self, x):
@@ -39,6 +41,7 @@ class Wave_block(nn.Module):
             kernel_size,
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
             dilation=dilation,
+            bias=False,
         )
         self.conv2 = nn.Conv1d(
             out_ch,
@@ -46,6 +49,7 @@ class Wave_block(nn.Module):
             kernel_size,
             padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
             dilation=dilation,
+            bias=False,
         )
 
         self.conv_res = nn.Conv1d(
@@ -54,6 +58,7 @@ class Wave_block(nn.Module):
             1,
             padding=0,
             dilation=dilation,
+            bias=False,
         )
 
 
@@ -63,6 +68,7 @@ class Wave_block(nn.Module):
             1,
             padding=0,
             dilation=dilation,
+            bias=False,
         )
 
 
@@ -133,6 +139,7 @@ class ECGNet(nn.Module):
             9,
             padding=int((10 + (10 - 1) * (0 - 1)) / 2),
             dilation=1,
+            bias=False,
         )
 
         self.conv_out_2 = self.conv2 = nn.Conv1d(
@@ -141,6 +148,7 @@ class ECGNet(nn.Module):
             9,
             padding=int((10 + (10 - 1) * (0 - 1)) / 2),
             dilation=1,
+            bias=False,
         )
 
 
