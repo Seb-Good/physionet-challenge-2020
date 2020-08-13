@@ -15,7 +15,7 @@ from config import hparams,DATA_PATH,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOL
 @click.option('--n_epochs', default=hparams['n_epochs'], help='number of epoches to run')
 @click.option('--p_proc', default=False, help='does it need to run preprocessing?')
 @click.option('--train', default=True, help='does it need to train the model?')
-@click.option('--gpu', default=[0], help='list of GPUs will be used for training')
+@click.option('--gpu', default=[], help='list of GPUs will be used for training')
 def main(start_fold, batch_size, lr, n_epochs,p_proc,train,gpu):
 
     # update hparams
@@ -34,7 +34,8 @@ def main(start_fold, batch_size, lr, n_epochs,p_proc,train,gpu):
             split_table_path=SPLIT_TABLE_PATH,
             split_table_name=SPLIT_TABLE_NAME,
             debug_folder=DEBUG_FOLDER,
-            model = Model
+            model = Model,
+            gpu = gpu
         )
 
         score = cross_val.train()

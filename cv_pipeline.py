@@ -23,13 +23,14 @@ seed_everything(42)
 
 class CVPipeline:
     def __init__(
-        self, hparams, split_table_path, split_table_name, debug_folder,model
+        self, hparams, split_table_path, split_table_name, debug_folder,model,gpu
     ):
 
         # load the model
 
         self.hparams = hparams
         self.model = model
+        self.gpu = gpu
 
         print('\n')
         print('Selected Learning rate:', self.hparams['lr'])
@@ -447,7 +448,7 @@ class CVPipeline:
 
             X, y = train.__getitem__(0)
 
-            self.model = self.model(input_size=X.shape[0], n_channels=X.shape[1], hparams=self.hparams)
+            self.model = self.model(input_size=X.shape[0], n_channels=X.shape[1], hparams=self.hparams,gpu = self.gpu)
 
             # train model
             self.model.fit(train=train, valid=valid)
