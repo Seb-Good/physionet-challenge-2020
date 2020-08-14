@@ -97,12 +97,12 @@ class Model:
             checkpoint_path=self.hparams['checkpoint_path'] + '/checkpoint.pt',
             patience=self.hparams['patience'],
             delta=self.hparams['min_delta'],
-            is_maximize=True,
+            is_maximize=False,
         )
         # lr cheduler
         self.scheduler = ReduceLROnPlateau(
             optimizer=self.optimizer,
-            mode='max',
+            mode='min',
             factor=0.2,
             patience=5,
             verbose=True,
@@ -208,8 +208,8 @@ class Model:
             val_preds[np.where(val_preds < self.threshold)] = 0
             metric_val = self.metric.compute(val_true, val_preds)
 
-            self.scheduler.step(metric_val)
-            res = self.early_stopping(score=metric_val, model=self.model)
+            self.scheduler.step(avg_val_loss)
+            res = self.early_stopping(score=avg_val_loss, model=self.model)
 
             # print statistics
             if self.hparams['verbose_train']:
@@ -237,11 +237,11 @@ class Model:
 
             if res == 2:
                 print("Early Stopping")
-                print(f'global best max val_metric model score {self.early_stopping.best_score}')
+                print(f'global best max val_loss model score {self.early_stopping.best_score}')
                 self.model = self.early_stopping.load_best_weights(self.model)
                 break
             elif res == 1:
-                print(f'save global val_metric model score {metric_val}')
+                print(f'save global val_loss model score {avg_val_loss}')
 
         writer.close()
 
