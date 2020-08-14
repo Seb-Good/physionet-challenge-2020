@@ -16,14 +16,14 @@ class Stem_layer(nn.Module):
             stride=1,
             bias=False,
         )
-        # self.bn = nn.BatchNorm1d(out_ch)
+        self.bn = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU()
         self.pooling = nn.MaxPool1d(kernel_size=pool_size, stride=2)
         self.drop = nn.Dropout(drop_rate)
 
     def forward(self, x):
         x = self.conv(x)
-        # x = self.bn(x)
+        x = self.bn(x)
         x = self.relu(x)
         x = self.pooling(x)
         x = self.drop(x)
@@ -73,27 +73,7 @@ class Wave_block(nn.Module):
         return res_out, skip_out
 
 
-class CBR(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size, dilation):
-        super().__init__()
 
-        self.conv = nn.Conv1d(
-            in_ch,
-            out_ch,
-            kernel_size,
-            padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2),
-            dilation=dilation,
-        )
-        self.bn = nn.BatchNorm1d(out_ch)
-        self.relu = nn.ReLU()
-        self.pooling = nn.MaxPool1d(kernel_size=4)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.relu(x)
-        x = self.pooling(x)
-        return x
 
 
 class ECGNet(nn.Module):

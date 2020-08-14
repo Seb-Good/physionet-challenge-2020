@@ -75,7 +75,7 @@ class Metric:
                 outputs_thresholded[np.where(outputs_thresholded < threshold)] = 0
                 scores.append(self.compute(labels, outputs_thresholded))
             scores = np.array(scores)
-            threshold_opt[i] = threshold_grid[np.where(scores == np.max(scores))]
+            threshold_opt[i] = threshold_grid[np.where(scores == np.max(scores))[0][0]]
 
         for i in range(27):
             output = outputs[:, i]
