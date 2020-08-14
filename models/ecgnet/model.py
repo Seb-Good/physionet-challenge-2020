@@ -104,7 +104,7 @@ class Model:
             optimizer=self.optimizer,
             mode='max',
             factor=0.2,
-            patience=int(self.hparams['patience'] / 5),
+            patience=5,
             verbose=True,
             threshold=self.hparams['min_delta'],
             threshold_mode='abs',
