@@ -23,7 +23,7 @@ class Stem_layer(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        #x = self.bn(x)
+        x = self.bn(x)
         x = self.relu(x)
         x = self.pooling(x)
         x = self.drop(x)
