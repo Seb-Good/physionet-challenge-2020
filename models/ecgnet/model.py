@@ -209,7 +209,7 @@ class Model:
             metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(metric_val)
-            res = self.early_stopping(score=avg_val_loss, model=self.model)
+            res = self.early_stopping(score=metric_val, model=self.model)
 
             # print statistics
             if self.hparams['verbose_train']:

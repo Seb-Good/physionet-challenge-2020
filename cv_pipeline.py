@@ -407,7 +407,7 @@ class CVPipeline:
             for i in train_data:
                 if i in self.exclusions:
                     continue
-                if i[0] != 'A' and i[0] != 'Q' and i[0] != 'S' and i[0] != 'H':  # A, B , D, E datasets
+                if i[0] != 'A':# and i[0] != 'Q' and i[0] != 'S' and i[0] != 'H':  # A, B , D, E datasets
                     continue
                 dataset_train.append(i)
 
@@ -415,7 +415,7 @@ class CVPipeline:
             for i in val_data:
                 if i in self.exclusions:
                     continue
-                if i[0] != 'A' and i[0] != 'Q' and i[0] != 'S' and i[0] != 'H':  # A, B , D, E datasets
+                if i[0] != 'A':# and i[0] != 'Q' and i[0] != 'S' and i[0] != 'H':  # A, B , D, E datasets
                     continue
                 dataset_val.append(i)
 
@@ -438,8 +438,8 @@ class CVPipeline:
                     continue
 
             # TODO: full dataset
-            train = Dataset_train(self.splits['train'].values[fold], aug=False)
-            valid = Dataset_train(self.splits['val'].values[fold], aug=False)
+            train = Dataset_train(self.splits['train'].values[fold][:10], aug=False)
+            valid = Dataset_train(self.splits['val'].values[fold][:10], aug=False)
 
             X, y = train.__getitem__(0)
 
