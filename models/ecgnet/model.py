@@ -238,6 +238,7 @@ class Model:
             if res == 2:
                 print("Early Stopping")
                 print(f'global best min val_loss model score {self.early_stopping.best_score}')
+                self.model = self.early_stopping.load_best_weights(self.model)
                 break
             elif res == 1:
                 print(f'save global val_metric model score {metric_val}')

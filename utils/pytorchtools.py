@@ -20,16 +20,20 @@ class EarlyStopping:
         model.load_state_dict(torch.load(self.checkpoint_path))
 
     def __call__(self, score, model):
-        if self.best_score is None or (
-            score > self.best_score + self.delta
-            if self.is_maximize
-            else score < self.best_score - self.delta
-        ):
-            torch.save(model.state_dict(), self.checkpoint_path)
-            self.best_score, self.counter = score, 0
-            return 1
+
+        if self.is_maximize:
+            if self.best_score is None or (score - self.delta > self.best_score):
+                torch.save(model.state_dict(), self.checkpoint_path)
+                self.best_score, self.counter = score, 0
+            else:
+                self.counter += 1
+                if self.counter >= self.patience:
+                    return 2
         else:
-            self.counter += 1
-            if self.counter >= self.patience:
-                return 2
-        return 0
+            if self.best_score is None or (score + self.delta < self.best_score):
+                torch.save(model.state_dict(), self.checkpoint_path)
+                self.best_score, self.counter = score, 0
+            else:
+                self.counter += 1
+                if self.counter >= self.patience:
+                    return 2
