@@ -17,7 +17,7 @@ from utils.torchsummary import summary
 from utils.pytorchtools import EarlyStopping
 from torch.nn.parallel import DataParallel as DP
 from loss_functions import CompLoss
-
+from postprocessing import PostProcessing
 
 # model
 from models.ecgnet.structure import ECGNet
@@ -114,6 +114,7 @@ class Model:
 
         self.seed_everything(42)
 
+        self.postprocessing = PostProcessing()
         self.scaler = torch.cuda.amp.GradScaler()
 
     def seed_everything(self, seed):
@@ -173,8 +174,7 @@ class Model:
             train_preds = train_preds.numpy()
             train_true = train_true.numpy()
             # train_true,train_preds = self.metric.find_opt_thresold(train_true,train_preds)
-            train_preds[np.where(train_preds >= self.threshold)] = 1
-            train_preds[np.where(train_preds < self.threshold)] = 0
+            train_preds = self.postprocessing.run(train_preds)
             metric_train = self.metric.compute(labels=train_true, outputs=train_preds)
 
             # evaluate the model
@@ -204,8 +204,7 @@ class Model:
             val_preds = val_preds.numpy()
             val_true = val_true.numpy()
             # val_true, val_preds = self.metric.find_opt_thresold(val_true, val_preds)
-            val_preds[np.where(val_preds >= self.threshold)] = 1
-            val_preds[np.where(val_preds < self.threshold)] = 0
+            val_preds = self.postprocessing.run(val_preds)
             metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(avg_val_loss)

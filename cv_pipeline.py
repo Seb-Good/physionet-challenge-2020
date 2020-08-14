@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from data_generator import Dataset_train, Dataset_test
 from metrics import Metric
-
+from postprocessing import PostProcessing
 
 def seed_everything(seed):
     np.random.seed(seed)
@@ -381,6 +381,7 @@ class CVPipeline:
 
         self.splits = self.load_split_table()
         self.metric = Metric()
+        self.postprocessing = PostProcessing()
 
     def load_split_table(self):
 
@@ -454,6 +455,8 @@ class CVPipeline:
             # TODO: full dataset
             valid = Dataset_train(self.splits['val'].values[fold], aug=False)
             pred_val = self.model.predict(valid)
+            pred_val = self.postprocessing.run(pred_val)
+
             # TODO: add activations
             # heatmap = self.model.get_heatmap(valid)
 
