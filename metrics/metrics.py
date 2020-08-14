@@ -59,29 +59,3 @@ class Metric:
 
         return normalized_score
 
-    def find_opt_thresold(self, labels, outputs):
-
-        threshold_grid = np.arange(0.01, 0.99, 0.05).tolist()
-        threshold_opt = np.zeros((27))
-
-        # TODO
-        print('Finding the optimal threshold')
-        for i in tqdm(range(27)):
-            outputs_thresholded = np.zeros((outputs.shape[0], outputs.shape[1]))
-            scores = []
-            for threshold in threshold_grid:
-                outputs_thresholded[:, i] = outputs[:, i]
-                outputs_thresholded[np.where(outputs_thresholded >= threshold)] = 1
-                outputs_thresholded[np.where(outputs_thresholded < threshold)] = 0
-                scores.append(self.compute(labels, outputs_thresholded))
-            scores = np.array(scores)
-            threshold_opt[i] = threshold_grid[np.where(scores == np.max(scores))]
-
-        for i in range(27):
-            output = outputs[:, i]
-            output[np.where(output) >= threshold_opt[i]] = 1
-            output[np.where(output) < threshold_opt[i]] = 0
-            outputs[:, i] = output
-        # save thresholds
-
-        return labels, outputs
