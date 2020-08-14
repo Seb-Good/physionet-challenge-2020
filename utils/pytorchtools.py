@@ -25,6 +25,7 @@ class EarlyStopping:
             if self.best_score is None or (score - self.delta > self.best_score):
                 torch.save(model.state_dict(), self.checkpoint_path)
                 self.best_score, self.counter = score, 0
+                return 1
             else:
                 self.counter += 1
                 if self.counter >= self.patience:
@@ -33,6 +34,7 @@ class EarlyStopping:
             if self.best_score is None or (score + self.delta < self.best_score):
                 torch.save(model.state_dict(), self.checkpoint_path)
                 self.best_score, self.counter = score, 0
+                return 1
             else:
                 self.counter += 1
                 if self.counter >= self.patience:
