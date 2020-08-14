@@ -15,10 +15,13 @@ from config import hparams, DATA_PATH, SPLIT_TABLE_PATH, SPLIT_TABLE_NAME, DEBUG
 @click.option('--n_epochs', default=hparams['n_epochs'], help='number of epoches to run')
 @click.option('--p_proc', default=False, help='does it need to run preprocessing?')
 @click.option('--train', default=True, help='does it need to train the model?')
-@click.option('--gpu', default=[], help='list of GPUs will be used for training')
+@click.option('--gpu', default='0,1,2', help='list of GPUs will be used for training')
 def main(start_fold, batch_size, lr, n_epochs, p_proc, train, gpu):
 
     # update hparams
+
+    gpu = [int(i) for i in gpu.split(",")]
+
     hparams['lr'] = lr
     hparams['batch_size'] = batch_size
     hparams['start_fold'] = start_fold
