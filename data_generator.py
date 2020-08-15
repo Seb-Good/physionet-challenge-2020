@@ -55,6 +55,16 @@ class Dataset_train(Dataset):
 
         # load annotation
         y = json.load(open(data_folder + self.patients[id] + '.json'))
+        label = y['labels_training_merged']
+        if label[4] > 0 or label[18] > 0:
+            label[4] = 1
+            label[18] = 1
+        if label[23] > 0 or label[12] > 0:
+            label[23] = 1
+            label[12] = 1
+        if label[26] > 0 or label[13] > 0:
+            label[26] = 1
+            label[13] = 1
 
         # Scale waveform amplitudes
         # X = (X - np.mean(X)) / np.std(X)
@@ -75,7 +85,7 @@ class Dataset_train(Dataset):
             padding = np.zeros((38000 - X.shape[0], X.shape[1]))
             X = np.concatenate([X, padding], axis=0)
 
-        return X, y['labels_training_merged']
+        return X,label
 
         # if train:
         #     # load annotation
