@@ -174,9 +174,9 @@ class Model:
             # calc triaing metric
             train_preds = train_preds.numpy()
             train_true = train_true.numpy()
-            # train_true,train_preds = self.metric.find_opt_thresold(train_true,train_preds)
-            # threshold = self.postprocessing.find_opt_thresold(train_true,train_preds)
-            # self.postprocessing.update_threshold(threshold)
+
+            threshold = self.postprocessing.find_opt_thresold(train_true,train_preds)
+            self.postprocessing.update_threshold(threshold)
             train_preds = self.postprocessing.run(train_preds)
             metric_train = self.metric.compute(labels=train_true, outputs=train_preds)
 

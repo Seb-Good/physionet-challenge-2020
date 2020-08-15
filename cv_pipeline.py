@@ -381,7 +381,7 @@ class CVPipeline:
 
         self.splits = self.load_split_table()
         self.metric = Metric()
-        self.postprocessing = PostProcessing()
+
 
     def load_split_table(self):
 
@@ -437,7 +437,7 @@ class CVPipeline:
             if fold is not None:
                 if fold != self.hparams['start_fold']:
                     continue
-
+            #TODO
             train = Dataset_train(self.splits['train'].values[fold], aug=False)
             valid = Dataset_train(self.splits['val'].values[fold], aug=False)
 
@@ -453,6 +453,7 @@ class CVPipeline:
             # get model predictions
             valid = Dataset_train(self.splits['val'].values[fold], aug=False)
             pred_val = self.model.predict(valid)
+            self.postprocessing = PostProcessing() #must be initialized before usage because the threshold is updated in .fit pipeline
             pred_val_processed = self.postprocessing.run(pred_val)
 
             # TODO: add activations
