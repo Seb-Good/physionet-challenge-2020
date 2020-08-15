@@ -76,15 +76,15 @@ class Dataset_train(Dataset):
 
         # TODO: FS experiemnt
         # We need a way to inform this method of the sample rate for the dataset.
-        fs_training = 500
+        fs_training = 1000
         if self.aug is True:
             # pass
             X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
         # padding
         # TODO: FS experiemnt
-        if X.shape[0] < 19000:
-            padding = np.zeros((19000 - X.shape[0], X.shape[1]))
+        if X.shape[0] < 38000:
+            padding = np.zeros((38000 - X.shape[0], X.shape[1]))
             X = np.concatenate([X, padding], axis=0)
 
         return X,label
