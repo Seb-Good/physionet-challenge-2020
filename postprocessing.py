@@ -26,7 +26,8 @@ class PostProcessing():
         threshold_opt = np.zeros((27))
 
         scores = []
-        for threshold in threshold_grid:
+        print('Finding the optimal threshold')
+        for threshold in tqdm(threshold_grid):
             predictions = outputs.copy()
 
             predictions[np.where(predictions >= threshold)] = 1
