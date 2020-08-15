@@ -40,7 +40,7 @@ def main(start_fold, batch_size, lr, n_epochs, p_proc, train, gpu):
             split_table_name=SPLIT_TABLE_NAME,
             debug_folder=DEBUG_FOLDER,
             model=Model,
-            gpu=gpu,
+            gpu=gpu
         )
 
         score = cross_val.train()
