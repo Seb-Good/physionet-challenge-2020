@@ -89,13 +89,6 @@ class Dataset_train(Dataset):
 
         return X,label
 
-        # if train:
-        #     # load annotation
-        #     y = json.load(open(data_folder+self.patients[id] + '.json'))
-        #
-        #     return X, y['labels_training_merged']
-        # else:
-        #     return X
 
     @staticmethod
     def apply_amplitude_scaling(X, y):
