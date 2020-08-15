@@ -81,8 +81,8 @@ class Dataset_train(Dataset):
             X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
         # padding
-        if X.shape[0] < 38000:
-            padding = np.zeros((38000 - X.shape[0], X.shape[1]))
+        if X.shape[0] < 13300:
+            padding = np.zeros((13300 - X.shape[0], X.shape[1]))
             X = np.concatenate([X, padding], axis=0)
 
         return X,label
