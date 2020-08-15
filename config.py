@@ -7,7 +7,7 @@ from models.ecgnet import Model, hparams
 # names:
 DATA_PATH = []
 for dataset in ['A', 'B', 'C', 'D', 'E', 'F']:
-    DATA_PATH.append('./data/' + dataset + '/350/')
+    DATA_PATH.append('./data/' + dataset + '/formatted/')
 
 SPLIT_TABLE_PATH = './data/fold_split/'
 SPLIT_TABLE_NAME = 'fold.json'

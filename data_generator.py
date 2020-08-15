@@ -49,7 +49,7 @@ class Dataset_train(Dataset):
             print(1)
 
         # TODO: FS experiemnt
-        data_folder = f'./data/Dmitrii/{data_folder}/500/'
+        data_folder = f'./data/{data_folder}/formatted/'
 
         # load waveforms
         X = np.load(data_folder + self.patients[id] + '.npy')
