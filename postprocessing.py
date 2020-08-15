@@ -7,16 +7,18 @@ class PostProcessing():
 
     def __init__(self):
 
-        self.threshold = 0.1
+        self.threshold = 0.5#0.1
         self.metric = Metric()
 
     def run(self,predictions):
 
-        #if somth is found, its not a normal
-        predictions[np.where(predictions >= self.threshold)] = 1
-        predictions[np.where(predictions < self.threshold)] = 0
+        predictions_processed = predictions.copy()
 
-        return predictions
+        #if somth is found, its not a normal
+        predictions_processed[np.where(predictions_processed >= self.threshold)] = 1
+        predictions_processed[np.where(predictions_processed < self.threshold)] = 0
+
+        return predictions_processed
 
     def find_opt_thresold(self, labels, outputs):
 
@@ -40,6 +42,9 @@ class PostProcessing():
             threshold_opt = threshold_grid[a[0][0]]
 
         return threshold_opt
+
+    def update_threshold(self,threshold):
+        self.threshold = threshold
 
         # # TODO
         # print('Finding the optimal threshold')

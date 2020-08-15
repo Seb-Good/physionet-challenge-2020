@@ -408,7 +408,7 @@ class CVPipeline:
             for i in train_data:
                 if i in self.exclusions:
                     continue
-                if i[0] != 'A' and i[0] != 'Q' and i[0] != 'S' and i[0] != 'H':  # A, B , D, E datasets
+                if i[0] != 'Q' and i[0] != 'S' and i[0] != 'A' and i[0] != 'H':  # A, B , D, E datasets
                     continue
                 dataset_train.append(i)
 
@@ -416,7 +416,7 @@ class CVPipeline:
             for i in val_data:
                 if i in self.exclusions:
                     continue
-                if i[0] != 'A' and i[0] != 'Q' and i[0] != 'S' and i[0] != 'H':  # A, B , D, E datasets
+                if i[0] != 'Q' and i[0] != 'S' and i[0] != 'A' and i[0] != 'H':  # A, B , D, E datasets
                     continue
                 dataset_val.append(i)
 
@@ -438,7 +438,6 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
 
-            # TODO: full dataset
             train = Dataset_train(self.splits['train'].values[fold], aug=False)
             valid = Dataset_train(self.splits['val'].values[fold], aug=False)
 
@@ -452,16 +451,15 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            # TODO: full dataset
             valid = Dataset_train(self.splits['val'].values[fold], aug=False)
             pred_val = self.model.predict(valid)
-            pred_val = self.postprocessing.run(pred_val)
+            pred_val_processed = self.postprocessing.run(pred_val)
 
             # TODO: add activations
             # heatmap = self.model.get_heatmap(valid)
 
             y_val = valid.get_labels()
-            fold_score = self.metric.compute(y_val, pred_val)
+            fold_score = self.metric.compute(y_val, pred_val_processed)
 
             # save the model
             self.model.model_save(
@@ -475,21 +473,9 @@ class CVPipeline:
             )
 
             # create a dictionary for debugging
-            # TODO: full dataset
             self.save_debug_data(pred_val, self.splits['val'].values[fold])
 
-            # debugging = {}
-            # for index, i in enumerate(self.splits['val'].values[fold]):
-            #     temp = {}
-            #     temp['heatmap'] = np.abs(heatmap[index, :]).tolist()
-            #     temp['labels'] = y_val[index, :].tolist()
-            #     temp['preds'] = pred_val[index, :].tolist()
-            #     debugging[f'{i}'] = temp
-            #
-            # # save debug data
-            # with open(self.debug_folder + str(fold) + '_fold_' + str(fold_score) + '.txt', "w",) as file:
-            #     file.write(str(debugging))
-            #     file.close()
+
 
         return fold_score
 

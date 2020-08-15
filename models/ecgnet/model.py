@@ -175,6 +175,8 @@ class Model:
             train_preds = train_preds.numpy()
             train_true = train_true.numpy()
             # train_true,train_preds = self.metric.find_opt_thresold(train_true,train_preds)
+            # threshold = self.postprocessing.find_opt_thresold(train_true,train_preds)
+            # self.postprocessing.update_threshold(threshold)
             train_preds = self.postprocessing.run(train_preds)
             metric_train = self.metric.compute(labels=train_true, outputs=train_preds)
 
@@ -238,7 +240,7 @@ class Model:
             if res == 2:
                 print("Early Stopping")
                 print(f'global best max val_loss model score {self.early_stopping.best_score}')
-                self.model = self.early_stopping.load_best_weights(self.model)
+                self.model = self.early_stopping.load_best_weights()
                 break
             elif res == 1:
                 print(f'save global val_loss model score {avg_val_loss}')
