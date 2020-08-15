@@ -49,7 +49,7 @@ class Dataset_train(Dataset):
             print(1)
 
         # TODO: FS experiemnt
-        data_folder = f'./data/Dmitrii/{data_folder}/350/'
+        data_folder = f'./data/{data_folder}/500/'
 
         # load waveforms
         X = np.load(data_folder + self.patients[id] + '.npy')
@@ -76,15 +76,15 @@ class Dataset_train(Dataset):
 
         # TODO: FS experiemnt
         # We need a way to inform this method of the sample rate for the dataset.
-        fs_training = 350
+        fs_training = 500
         if self.aug is True:
             # pass
             X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
         # padding
         # TODO: FS experiemnt
-        if X.shape[0] < 13300:
-            padding = np.zeros((13300 - X.shape[0], X.shape[1]))
+        if X.shape[0] < 19000:
+            padding = np.zeros((19000 - X.shape[0], X.shape[1]))
             X = np.concatenate([X, padding], axis=0)
 
         return X,label
