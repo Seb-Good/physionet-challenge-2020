@@ -156,8 +156,8 @@ class ECGNet(nn.Module):
 
         x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
-        x = self.conv_out_1(x)
-        x = self.conv_out_2(x)
+        x = torch.relu(self.conv_out_1(x))
+        x = torch.relu(self.conv_out_2(x))
 
         x = torch.mean(x, dim=2)
 
