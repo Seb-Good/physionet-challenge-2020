@@ -63,11 +63,11 @@ class Model:
         # define optimizer
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.hparams['lr'])
 
-        weights = torch.Tensor([1. , 1. , 1. , 1. , 0.5, 1. , 1. , 1. , 1. , 1. , 1. , 1. , 0.5,
-       0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. ,
-       0.5]).to(self.device)
+       #  weights = torch.Tensor([1. , 1. , 1. , 1. , 0.5, 1. , 1. , 1. , 1. , 1. , 1. , 1. , 0.5,
+       # 0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. ,
+       # 0.5]).to(self.device)
 
-        self.loss = nn.BCELoss(weight=weights)  # CompLoss(self.device) #
+        self.loss = nn.MSELoss()#weight=weights)  # CompLoss(self.device) #
 
         # define early stopping
         self.early_stopping = EarlyStopping(
