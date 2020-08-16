@@ -89,12 +89,12 @@ class CompLoss(nn.Module):
             print(1)
         else:
 
-            tp = torch.sum(y_true * y_pred, dim=0)
-            tn = torch.sum((1 - y_true) * (1 - y_pred), dim=0)
-            fp = torch.sum((1 - y_true) * y_pred, dim=0)
-            fn = torch.sum(y_true * (1 - y_pred), dim=0)
+            tp = torch.mean(y_true * y_pred, dim=0)
+            tn = torch.mean((1 - y_true) * (1 - y_pred), dim=0)
+            fp = torch.mean((1 - y_true) * y_pred, dim=0)
+            fn = torch.mean(y_true * (1 - y_pred), dim=0)
 
             accuracy = (tp+tn)/(fp+fn+tp+tn)
-            accuracy = torch.sum(accuracy)
+            accuracy = torch.mean(accuracy)
 
         return 1- accuracy

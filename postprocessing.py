@@ -22,7 +22,7 @@ class PostProcessing():
 
     def find_opt_thresold(self, labels, outputs):
 
-        threshold_grid = np.arange(0.05, 0.99, 0.05).tolist()
+        threshold_grid = np.arange(0.05, 0.99, 0.10).tolist()
         threshold_opt = np.zeros((27))
 
         scores = []

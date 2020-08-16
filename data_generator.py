@@ -86,6 +86,8 @@ class Dataset_train(Dataset):
         if X.shape[0] < 38000:
             padding = np.zeros((38000 - X.shape[0], X.shape[1]))
             X = np.concatenate([X, padding], axis=0)
+        if X.shape[0] > 38000:
+            X = X[:38000,:]
 
         return X,label
 
