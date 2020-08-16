@@ -67,7 +67,7 @@ class Model:
        0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. ,
        0.5]).to(self.device)
 
-        self.loss = nn.BCELoss(weight=weights)  # CompLoss(self.device) #
+        self.loss = CompLoss()#nn.BCELoss(weight=weights)  # CompLoss(self.device) #
 
         # define early stopping
         self.early_stopping = EarlyStopping(
