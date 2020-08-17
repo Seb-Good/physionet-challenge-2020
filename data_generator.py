@@ -126,7 +126,7 @@ class Dataset_train(Dataset):
         if self.downsample:
             sig_length = 19000
         else:
-            sig_length = 38000
+            sig_length = 19000
 
         if X.shape[0] < sig_length:
             padding = np.zeros((sig_length - X.shape[0], X.shape[1]))
