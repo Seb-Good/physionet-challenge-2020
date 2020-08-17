@@ -22,13 +22,14 @@ seed_everything(42)
 
 
 class CVPipeline:
-    def __init__(self, hparams, split_table_path, split_table_name, debug_folder, model, gpu):
+    def __init__(self, hparams, split_table_path, split_table_name, debug_folder, model, gpu,downsample):
 
         # load the model
 
         self.hparams = hparams
         self.model = model
         self.gpu = gpu
+        self.downsample = downsample
 
         print('\n')
         print('Selected Learning rate:', self.hparams['lr'])
@@ -438,8 +439,8 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
             #TODO
-            train = Dataset_train(self.splits['train'].values[fold], aug=False)
-            valid = Dataset_train(self.splits['val'].values[fold], aug=False)
+            train = Dataset_train(self.splits['train'].values[fold], aug=False,downsample=self.downsample)
+            valid = Dataset_train(self.splits['val'].values[fold], aug=False,downsample=self.downsample)
 
             X, y = train.__getitem__(0)
 
@@ -451,7 +452,7 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            valid = Dataset_train(self.splits['val'].values[fold], aug=False)
+            valid = Dataset_train(self.splits['val'].values[fold], aug=False,downsample=self.downsample)
             pred_val = self.model.predict(valid)
             self.postprocessing = PostProcessing() #must be initialized before usage because the threshold is updated in .fit pipeline
             pred_val_processed = self.postprocessing.run(pred_val)

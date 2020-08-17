@@ -9,14 +9,20 @@ from scipy import signal
 import torch
 from torch.utils.data import Dataset
 
+#custom modules
+from kardioml.data.resample import Resampling
+
 np.random.seed(42)
 
 
 class Dataset_train(Dataset):
-    def __init__(self, patients, aug):
+    def __init__(self, patients, aug,downsample):
 
         self.patients = patients
         self.aug = aug
+        self.downsample=downsample
+
+        self.resampling = Resampling()
 
     def __len__(self):
         return len(self.patients)
@@ -71,23 +77,39 @@ class Dataset_train(Dataset):
         # X = (X - np.mean(X)) / np.std(X)
         # """
         # Maybe try this (see method below).
+
+        if self.downsample:
+            X_resampled = np.zeros((X.shape[0]//2,12))
+            for i in range(12):
+                X_resampled[:,i] = self.resampling.downsample(X[:,0],order=2)
+
         X = self.apply_amplitude_scaling(X=X, y=y)
         # """
 
+
         # TODO: FS experiemnt
         # We need a way to inform this method of the sample rate for the dataset.
-        fs_training = 1000
+        if self.downsample:
+            fs_training = 500
+        else:
+            fs_training = 1000
+
         if self.aug is True:
             # pass
             X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
         # padding
         # TODO: FS experiemnt
-        if X.shape[0] < 38000:
-            padding = np.zeros((38000 - X.shape[0], X.shape[1]))
+        if self.downsample:
+            sig_length = 19000
+        else:
+            sig_length = 38000
+
+        if X.shape[0] < sig_length:
+            padding = np.zeros((sig_length - X.shape[0], X.shape[1]))
             X = np.concatenate([X, padding], axis=0)
-        if X.shape[0] > 38000:
-            X = X[:38000,:]
+        if X.shape[0] > sig_length:
+            X = X[:sig_length,:]
 
         return X,label
 

@@ -275,3 +275,23 @@ class Resampling(nn.Module):
             resampled = resampled.numpy()
 
         return resampled
+
+    def downsample(self, X, order: int):
+
+        assert order == int(2), "2nd order values are supported at the moment"
+
+        if order == int(2):
+            self.eval()
+            X = torch.tensor(X, dtype=torch.float)
+            X = self.forward(X, order=2)
+            X = X.numpy()
+
+            resampled = np.zeros((X.shape[0]) // 2)
+            for i in range(resampled.shape[0]):
+                resampled[i] = X[i*2]
+
+
+
+
+
+        return resampled
