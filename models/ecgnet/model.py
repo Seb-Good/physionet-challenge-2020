@@ -143,6 +143,10 @@ class Model:
                 X_batch = X_batch.float().cpu().detach()
                 pred_decoder = pred_decoder.float().cpu().detach()
 
+                # calc loss
+                avg_loss += train_loss.item() / len(train_loader)
+
+                #sum up multi-head losses
                 train_loss = train_loss + decoder_train_loss
 
                 self.scaler.scale(train_loss).backward()  # train_loss.backward()
@@ -151,8 +155,7 @@ class Model:
                 self.scaler.step(self.optimizer)  # self.optimizer.step()
                 self.scaler.update()
 
-                # calc metric
-                avg_loss += train_loss.item() / len(train_loader)
+
 
                 train_true = torch.cat([train_true, y_batch], 0)
                 train_preds = torch.cat([train_preds, pred], 0)
