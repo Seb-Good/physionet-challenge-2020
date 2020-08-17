@@ -28,7 +28,7 @@ structure_hparams = dict()
 # global dropout rate
 structure_hparams['dropout'] = 0.3
 # number of filers for the models
-structure_hparams['kern_size'] = 9
+structure_hparams['kern_size'] = 5
 structure_hparams['n_filt_stem'] = 32
 structure_hparams['n_filt_res'] = 64
 structure_hparams['n_filt_out_conv_1'] = 128

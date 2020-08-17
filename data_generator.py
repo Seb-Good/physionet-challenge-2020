@@ -59,7 +59,7 @@ class Dataset_train(Dataset):
         #data_folder = f'./data/{data_folder}/formatted/' #for tests
 
         # load waveforms
-        #X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
         X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
         # #load siamese waveform
@@ -80,6 +80,7 @@ class Dataset_train(Dataset):
 
         # load annotation
         y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
         label = y['labels_training_merged']
         if label[4] > 0 or label[18] > 0:
             label[4] = 1
