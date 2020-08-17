@@ -55,8 +55,8 @@ class Dataset_train(Dataset):
             print(1)
 
         # TODO: FS experiment
-        data_folder = f'./data/scipy_resample_1000_hz/{data_folder}/formatted/'
-        #data_folder = f'./data/{data_folder}/formatted/' #for tests
+        #data_folder = f'./data/scipy_resample_1000_hz/{data_folder}/formatted/'
+        data_folder = f'./data/{data_folder}/formatted/' #for tests
 
         # load waveforms
         X = np.load(data_folder + self.patients[id] + '.npy')

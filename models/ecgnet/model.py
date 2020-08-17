@@ -290,7 +290,7 @@ class Model:
         return True
 
     def model_load(self, model_path):
-        self.model = torch.load(model_path)
+        self.model = torch.load(model_path).to(self.device)
         return True
 
     ################## Utils #####################

@@ -25,7 +25,7 @@ def main(start_fold, batch_size, lr, n_epochs, p_proc, train, gpu,downsample):
 
     hparams['lr'] = lr
     hparams['batch_size'] = batch_size
-    hparams['start_fold'] = start_fold
+    hparams['start_fold'] = int(start_fold)
     hparams['n_epochs'] = n_epochs
 
     if p_proc:
