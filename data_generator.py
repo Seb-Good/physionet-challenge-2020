@@ -96,6 +96,8 @@ class Dataset_train(Dataset):
         # """
         # Maybe try this (see method below).
 
+        X = self.apply_amplitude_scaling(X=X, y=y)
+        
         if self.downsample:
             X_resampled = np.zeros((X.shape[0]//2,12))
             for i in range(12):
@@ -105,7 +107,7 @@ class Dataset_train(Dataset):
         del X_resampled
         gc.collect()
 
-        X = self.apply_amplitude_scaling(X=X, y=y)
+
         # """
 
 
