@@ -104,7 +104,7 @@ class Dataset_train(Dataset):
             for i in range(12):
                 X_resampled[:,i] = self.resampling.downsample(X[:,0],order=2)
 
-        X = X_resampled
+            X = X_resampled
 
 
         # """
@@ -316,7 +316,7 @@ class Dataset_train(Dataset):
             elif record[0] == 'E':
                 data_folder = 'F'
 
-            data_folder = f'./data/{data_folder}/formatted/'
+            data_folder = f'.data/scipy_resample_1000_hz/{data_folder}/formatted/'
 
             if index == 0:
                 y = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']])
