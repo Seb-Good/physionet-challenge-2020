@@ -191,8 +191,9 @@ class ECGNet(nn.Module):
         decoder_out = torch.relu(self.output_decoder_1(x))
         decoder_out = self.output_decoder_2(decoder_out)
         decoder_out = decoder_out[:,:,:-2]
-        #main head
+        decoder_out = decoder_out.reshape(-1, decoder_out.shape[2], decoder_out.shape[1])
 
+        #main head
         x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
         x = torch.relu(self.conv_out_1(x))

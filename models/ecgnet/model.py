@@ -143,7 +143,7 @@ class Model:
                 X_batch = X_batch.float().cpu().detach()
                 pred_decoder = pred_decoder.float().cpu().detach()
 
-                self.loss = self.loss + decoder_train_loss
+                train_loss = train_loss + decoder_train_loss
 
                 self.scaler.scale(train_loss).backward()  # train_loss.backward()
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
