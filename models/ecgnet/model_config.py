@@ -16,9 +16,9 @@ hparams['start_fold'] = 1
 
 # directories
 hparams['model_path'] = './data/model_weights'
-hparams['model_path'] += '/wavenet_model'
+hparams['model_path'] += '/ecgnet_model'
 hparams['checkpoint_path'] = hparams['model_path'] + '/checkpoint'
-hparams['model_name'] = '/wavenet'
+hparams['model_name'] = '/ecgnet'
 
 for path in [hparams['model_path'], hparams['checkpoint_path']]:
     os.makedirs(path, exist_ok=True)

@@ -439,8 +439,8 @@ class CVPipeline:
                 if fold != self.hparams['start_fold']:
                     continue
             #TODO
-            train = Dataset_train(self.splits['train'].values[fold], aug=False,downsample=self.downsample)
-            valid = Dataset_train(self.splits['val'].values[fold], aug=False,downsample=self.downsample)
+            train = Dataset_train(self.splits['train'].values[fold][:10], aug=False,downsample=self.downsample)
+            valid = Dataset_train(self.splits['val'].values[fold][:10], aug=False,downsample=self.downsample)
 
             X, y = train.__getitem__(0)
 
@@ -452,7 +452,7 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            valid = Dataset_train(self.splits['val'].values[fold], aug=False,downsample=self.downsample)
+            valid = Dataset_train(self.splits['val'].values[fold][:10], aug=False,downsample=self.downsample)
             pred_val = self.model.predict(valid)
             self.postprocessing = PostProcessing(fold=self.hparams['start_fold']) #must be initialized before usage because the threshold is updated in .fit pipeline
             pred_val_processed = self.postprocessing.run(pred_val)
@@ -466,7 +466,7 @@ class CVPipeline:
             # save the model
             self.model.model_save(
                 self.hparams['model_path']
-                + self.hparams['model_name']
+                + self.hparams['model_name']+f"_{self.hparams['start_fold']}"
                 + '_'
                 + str(fold)
                 + '_fold_'
@@ -475,7 +475,7 @@ class CVPipeline:
             )
 
             # create a dictionary for debugging
-            self.save_debug_data(pred_val, self.splits['val'].values[fold])
+            self.save_debug_data(pred_val, self.splits['val'].values[fold][:10])
 
 
 
