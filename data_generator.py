@@ -103,9 +103,7 @@ class Dataset_train(Dataset):
             for i in range(12):
                 X_resampled[:,i] = self.resampling.downsample(X[:,0],order=2)
 
-        X = X_resampled.copy()
-        del X_resampled
-        gc.collect()
+        X = X_resampled
 
 
         # """
