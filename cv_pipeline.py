@@ -467,8 +467,6 @@ class CVPipeline:
             self.model.model_save(
                 self.hparams['model_path']
                 + self.hparams['model_name']+f"_{self.hparams['start_fold']}"
-                + '_'
-                + str(fold)
                 + '_fold_'
                 + str(fold_score)
                 + '.pt'
@@ -476,7 +474,7 @@ class CVPipeline:
 
 
             # create a dictionary for debugging
-            self.save_debug_data(pred_val, self.splits['val'].values[fold][:10])
+            self.save_debug_data(pred_val, self.splits['val'].values[fold])
 
 
 
