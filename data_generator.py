@@ -79,7 +79,7 @@ class Dataset_train(Dataset):
         siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
 
         # load annotation
-        y = json.load(open(data_folder + self.patients[id] + '.json'))
+        y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
         label = y['labels_training_merged']
         if label[4] > 0 or label[18] > 0:
             label[4] = 1
