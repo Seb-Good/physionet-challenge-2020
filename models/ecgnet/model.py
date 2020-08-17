@@ -92,7 +92,7 @@ class Model:
 
         self.seed_everything(42)
 
-        self.postprocessing = PostProcessing()
+        self.postprocessing = PostProcessing(fold=self.hparams['start_fold'])
         self.scaler = torch.cuda.amp.GradScaler()
 
     def seed_everything(self, seed):
