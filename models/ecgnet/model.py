@@ -254,7 +254,7 @@ class Model:
             for i, (X_batch, y_batch) in enumerate(tqdm(test_loader)):
                 X_batch = X_batch.float().to(self.device)
 
-                pred = self.model(X_batch)
+                pred,pred_decoder = self.model(X_batch)
 
                 X_batch = X_batch.float().cpu().detach()
 
