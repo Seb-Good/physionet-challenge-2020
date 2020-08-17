@@ -29,6 +29,30 @@ class Stem_layer(nn.Module):
         x = self.drop(x)
         return x
 
+class Stem_layer_upsample(nn.Module):
+    def __init__(self, in_ch, out_ch, kernel_size, drop_rate, scale_factor):
+        super().__init__()
+        dilation = 1
+        self.conv = nn.Conv1d(
+            in_ch,
+            out_ch,
+            kernel_size,
+            padding=int((kernel_size + (kernel_size - 1) * (dilation - 1)) / 2)+1,
+            dilation=dilation,
+            stride=1,
+            bias=False,
+        )
+        self.bn = nn.BatchNorm1d(out_ch)
+        self.relu = nn.ReLU()
+        self.upsample = nn.Upsample(scale_factor=scale_factor, mode='linear', align_corners=True)
+        self.drop = nn.Dropout(drop_rate)
+
+    def forward(self, x):
+        x = self.upsample(x)
+        x = self.conv(x)
+        x = self.drop(x)
+        return x
+
 
 class Wave_block(nn.Module):
     def __init__(self, out_ch, kernel_size, dilation):
@@ -77,7 +101,7 @@ class Wave_block(nn.Module):
 
 
 class ECGNet(nn.Module):
-    def __init__(self, n_channels, hparams, input_block=Stem_layer, basic_block=Wave_block):
+    def __init__(self, n_channels, hparams, input_block=Stem_layer, basic_block=Wave_block,decoder_out_block = Stem_layer_upsample):
         super().__init__()
 
         self.basic_block = basic_block
@@ -124,9 +148,16 @@ class ECGNet(nn.Module):
             bias=False,
         )
 
+        #main head
         self.fc = nn.Linear(self.hparams['n_filt_out_conv_2'], 27)  #
         self.out = torch.nn.Sigmoid()
 
+        #autoencoder head
+        self.output_decoder_1 = decoder_out_block(self.hparams['n_filt_res'],self.hparams['n_filt_stem'],self.hparams['kern_size'],self.hparams['dropout'],
+            2)
+        self.output_decoder_2 = decoder_out_block(self.hparams['n_filt_stem'], n_channels,
+                                                  1, self.hparams['dropout'],
+                                                  2)
     def _make_layers(self, out_ch, kernel_size, n, basic_block):
         # dilation_rates = [2 ** i for i in range(n)]
         layers = []
@@ -154,6 +185,14 @@ class ECGNet(nn.Module):
         x, skip_7 = self.layer9(x)
         x, skip_8 = self.layer10(x)
 
+
+
+        #decoder head
+        decoder_out = torch.relu(self.output_decoder_1(x))
+        decoder_out = self.output_decoder_2(decoder_out)
+        decoder_out = decoder_out[:,:,:-2]
+        #main head
+
         x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
         x = torch.relu(self.conv_out_1(x))
@@ -163,4 +202,4 @@ class ECGNet(nn.Module):
 
         x = self.out(self.fc(x))
 
-        return x
+        return x,decoder_out

@@ -67,7 +67,8 @@ class Model:
        0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. ,
        0.5]).to(self.device)
 
-        self.loss = nn.BCELoss(weight=weights)  # CompLoss(self.device) #
+        self.loss = nn.BCELoss(weight=weights)# CompLoss(self.device) #
+        self.decoder_loss = nn.MSELoss()
 
         # define early stopping
         self.early_stopping = EarlyStopping(
@@ -125,8 +126,8 @@ class Model:
 
                 self.optimizer.zero_grad()
                 # get model predictions
-                pred = self.model(X_batch)
-                X_batch = X_batch.cpu().detach()
+                pred,pred_decoder = self.model(X_batch)
+
 
                 # process loss_1
                 pred = pred.view(-1, pred.shape[-1])
@@ -134,6 +135,15 @@ class Model:
                 train_loss = self.loss(pred, y_batch)
                 y_batch = y_batch.float().cpu().detach()
                 pred = pred.float().cpu().detach()
+
+                # process loss_2
+                pred_decoder = pred_decoder.view(-1, pred_decoder.shape[-1])
+                X_batch = X_batch.view(-1, X_batch.shape[-1])
+                decoder_train_loss = self.decoder_loss(pred_decoder, X_batch)
+                X_batch = X_batch.float().cpu().detach()
+                pred_decoder = pred_decoder.float().cpu().detach()
+
+                self.loss = self.loss + decoder_train_loss
 
                 self.scaler.scale(train_loss).backward()  # train_loss.backward()
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
@@ -166,7 +176,8 @@ class Model:
                     y_batch = y_batch.float().to(self.device)
                     X_batch = X_batch.float().to(self.device)
 
-                    pred = self.model(X_batch)
+                    pred,pred_decoder = self.model(X_batch)
+                    pred_decoder = pred_decoder.float().cpu().detach()
                     X_batch = X_batch.float().cpu().detach()
 
                     pred = pred.reshape(-1, pred.shape[-1])
