@@ -5,10 +5,13 @@ from metrics import Metric
 class PostProcessing():
 
 
-    def __init__(self):
+    def __init__(self,fold):
 
-        self.threshold = float(open("threshold.txt", "r").read())#0.5#0.1
+        self.fold = fold
+
+        self.threshold = float(open(f"threshold_{self.fold}.txt", "r").read())#0.5#0.1
         self.metric = Metric()
+
 
     def run(self,predictions):
 
@@ -45,7 +48,7 @@ class PostProcessing():
         return threshold_opt
 
     def update_threshold(self,threshold):
-        f = open("threshold.txt", "w")
+        f = open(f"threshold_{self.fold}.txt", "w")
         f.write(str(threshold))
         f.close()
         self.threshold = threshold
