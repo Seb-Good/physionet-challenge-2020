@@ -465,7 +465,7 @@ class CVPipeline:
             #y_val = valid.get_labels(self.splits['val'].values[fold][:10])
             print(pred_val_processed)
             fold_score = self.metric.compute(y_val, pred_val_processed)
-
+            print(fold_score)
             # save the model
             self.model.model_save(
                 self.hparams['model_path']
