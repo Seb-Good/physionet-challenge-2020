@@ -316,7 +316,7 @@ class Dataset_train(Dataset):
             elif record[0] == 'E':
                 data_folder = 'F'
 
-            data_folder = f'.data/scipy_resample_1000_hz/{data_folder}/formatted/'
+            data_folder = f'./data/scipy_resample_1000_hz/{data_folder}/formatted/'
 
             if index == 0:
                 y = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']])
