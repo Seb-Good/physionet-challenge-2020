@@ -63,8 +63,7 @@ class Dataset_train(Dataset):
         #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
         X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
-<<<<<<< HEAD
-=======
+
 
         # #load siamese waveform
         # #select random dataset
@@ -82,7 +81,7 @@ class Dataset_train(Dataset):
         # #siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
         # siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
 
->>>>>>> 42ccbc0e687c4b539766f5a16bf9c4f74854b5bf
+
         # load annotation
         y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
         #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
