@@ -63,6 +63,26 @@ class Dataset_train(Dataset):
         #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
         X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
+<<<<<<< HEAD
+=======
+
+        # #load siamese waveform
+        # #select random dataset
+        # dataset_list = ['A','B','D','E','F']
+        # dataset_list.remove(data_folder)
+        # siamese_dataset = int(round(random.uniform(0,len(dataset_list))))
+        # siamese_dataset = dataset_list[siamese_dataset]
+        #
+        # #select random record
+        # #siamese_records = [i[:-5] for i in os.listdir(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/') if i.find('.npy')!=-1 ]
+        # siamese_records = [i[:-4] for i in os.listdir(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/') if
+        #                    i.find('.npy') != -1]
+        # siamese_record = int(round(random.uniform(0, len(siamese_records))))
+        # siamese_record = siamese_records[siamese_record]
+        # #siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
+        # siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
+
+>>>>>>> 42ccbc0e687c4b539766f5a16bf9c4f74854b5bf
         # load annotation
         y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
         #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
