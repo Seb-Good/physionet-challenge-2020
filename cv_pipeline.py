@@ -452,17 +452,15 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            #valid = Dataset_train(self.splits['val'].values[fold][:10], aug=False,downsample=self.downsample)
             y_val,pred_val = self.model.predict(valid)
-            #print(pred_val)
             self.postprocessing = PostProcessing(fold=self.hparams['start_fold'])
-            #print(self.postprocessing.threshold)#must be initialized before usage because the threshold is updated in .fit pipeline
+
             pred_val_processed = self.postprocessing.run(pred_val)
-            #print(pred_val_processed)
+
             # TODO: add activations
             # heatmap = self.model.get_heatmap(valid)
 
-            #y_val = valid.get_labels(self.splits['val'].values[fold][:10])
+
             print(pred_val_processed)
             fold_score = self.metric.compute(y_val, pred_val_processed)
             print(fold_score)
