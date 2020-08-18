@@ -9,7 +9,7 @@ hparams['verbose_train'] = True
 
 # early stopping settings
 hparams['min_delta'] = 0.001  # thresold of improvement
-hparams['patience'] = 30  # wait for n epoches for emprovement
+hparams['patience'] = 10  # wait for n epoches for emprovement
 hparams['n_fold'] = 5  # number of folds for cross-validation
 hparams['verbose'] = True  # print score or not
 hparams['start_fold'] = 1

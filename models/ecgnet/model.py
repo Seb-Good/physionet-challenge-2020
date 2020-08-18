@@ -72,7 +72,7 @@ class Model:
 
         # define early stopping
         self.early_stopping = EarlyStopping(
-            checkpoint_path=self.hparams['checkpoint_path'] + '/checkpoint.pt',
+            checkpoint_path=self.hparams['checkpoint_path'] + '/checkpoint'+self.hparams['start_fold']+'.pt',
             patience=self.hparams['patience'],
             delta=self.hparams['min_delta'],
             is_maximize=False,
