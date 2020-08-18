@@ -28,11 +28,11 @@ def run_12ECG_classifier(data, header_data, model):
     classes: ['270492004', '164889003', ... , '17338001']
     """
     # Run ETL process
-    waveforms, meta_meta = inference_data_loader(waveforms=data, header=header_data,
+    waveforms, meta_data = inference_data_loader(waveforms=data, header=header_data,
                                                  fs_resampled=500, p_and_t_waves=True)
 
     # Get prediction
-    current_label, current_score, classes = model.predict(data=data, header_data=header_data)
+    current_label, current_score, classes = model.predict(waveforms=waveforms, meta_data=meta_data)
 
     return current_label, current_score, classes
 
