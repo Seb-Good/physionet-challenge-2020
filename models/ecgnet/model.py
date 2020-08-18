@@ -201,7 +201,7 @@ class Model:
             metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(avg_val_loss)
-            res = self.early_stopping(score=avg_val_loss, model=self.model)
+            res = self.early_stopping(score=avg_val_loss, model=self.model,threshold=threshold)
 
             # print statistics
             if self.hparams['verbose_train']:
@@ -230,6 +230,7 @@ class Model:
             if res == 2:
                 print("Early Stopping")
                 print(f'global best max val_loss model score {self.early_stopping.best_score}')
+                self.postprocessing.update_threshold(self.early_stopping.threshold)
                 break
             elif res == 1:
                 print(f'save global val_loss model score {avg_val_loss}')
@@ -261,7 +262,9 @@ class Model:
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 
-        return test_preds.numpy()
+        test_preds = test_preds.numpy()
+        print(test_preds)
+        return test_preds
 
     def get_heatmap(self, X_test):
 
