@@ -238,7 +238,7 @@ class Model:
         writer.close()
 
         self.model = self.early_stopping.load_best_weights()
-        #self.postprocessing.update_threshold(self.early_stopping.threshold)
+        self.postprocessing.update_threshold(self.early_stopping.threshold)
 
         return True
 
