@@ -145,14 +145,12 @@ class Dataset_train(Dataset):
         t_waves_array = np.zeros((X.shape[0], 1))
         t_waves_array[t_waves, 0] = 1
         #X = np.concatenate([X, t_waves_array], axis=1)
-        del t_waves, t_waves_array
-        gc.collect()
+
 
         p_waves_array = np.zeros((X.shape[0], 1))
         p_waves_array[p_waves, 0] = 1
         #X = np.concatenate([X, p_waves_array], axis=1)
-        del p_waves, p_waves_array
-        gc.collect()
+
 
         fs_training = 1000
 
