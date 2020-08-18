@@ -452,7 +452,7 @@ class CVPipeline:
             self.model.fit(train=train, valid=valid)
 
             # get model predictions
-            valid = Dataset_train(self.splits['val'].values[fold][:10], aug=False,downsample=self.downsample)
+            #valid = Dataset_train(self.splits['val'].values[fold][:10], aug=False,downsample=self.downsample)
             pred_val = self.model.predict(valid)
             pred_val = np.round(pred_val,4)
             #print(pred_val)
