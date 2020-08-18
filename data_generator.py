@@ -106,7 +106,13 @@ class Dataset_train(Dataset):
 
             X = X_resampled
 
+        #add R, P, T waves
+        r_waves = np.zeros((X.shape[0],1))
+        r_waves[y['rpeaks'][0],0] = 1
+        X = np.concatenate([X,r_waves],axis=1)
 
+        p_waves = y['p_waves']
+        t_waves = y['t_waves']
         # """
 
 
@@ -290,43 +296,6 @@ class Dataset_train(Dataset):
             return True
         return False
 
-    def get_labels(self,patients):
-        """
-        :param ids: a list of ids for loading from the database
-        :return: y: numpy array of labels, shape(n_samples,n_labels)
-        """
-
-        for index, record in enumerate(patients):
-
-            if record[0] == 'A':
-                data_folder = 'A'
-
-            elif record[0] == 'Q':
-                data_folder = 'B'
-
-            elif record[0] == 'I':
-                data_folder = 'C'
-
-            elif record[0] == 'S':
-                data_folder = 'D'
-
-            elif record[0] == 'H':
-                data_folder = 'E'
-
-            elif record[0] == 'E':
-                data_folder = 'F'
-
-            data_folder = f'./data/scipy_resample_1000_hz/{data_folder}/formatted/'
-
-            if index == 0:
-                y = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']])
-                y = np.reshape(y, (1, 27))
-            else:
-                temp = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']]).astype(np.float)
-                temp = np.reshape(temp, (1, 27))
-                y = np.concatenate((y, temp), axis=0)
-
-        return y
 
     def my_collate(self, batch):
         """
