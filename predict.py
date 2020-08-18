@@ -11,6 +11,8 @@ from kardioml.data.resample import Resampling
 from postprocessing import PostProcessing
 from data_generator import Dataset_train
 from config import Model
+
+
 class Predict():
 
     def __init__(self):

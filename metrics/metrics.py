@@ -1,20 +1,7 @@
 import numpy as np, os, os.path, sys
 import pandas as pd
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
-from kardioml import WEIGHTS_PATH
 
-
-class Metric(object):
-
-    def __init__(self):
-
-        #load weights for confusion matrix
-        self.weights = pd.read_csv(WEIGHTS_PATH, header=0)
-        self.weights = self.weights.values[:, 1:]
-
-    #================ Utils ================
-=======
 from tqdm import tqdm
 
 
@@ -26,7 +13,7 @@ class Metric:
         self.weights = self.weights.values[:, 1:]
 
     # ================ Utils ================
->>>>>>> DS
+
     # Compute modified confusion matrix for multi-class, multi-label tasks.
     def compute_modified_confusion_matrix(self, labels, outputs):
         # Compute a binary multi-class, multi-label confusion matrix, where the rows
