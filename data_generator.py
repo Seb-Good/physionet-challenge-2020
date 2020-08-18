@@ -106,6 +106,7 @@ class Dataset_train(Dataset):
 
         return X,label
 
+    @staticmethod
     def preprocessing(self,X,y,process_labels=True):
 
 
