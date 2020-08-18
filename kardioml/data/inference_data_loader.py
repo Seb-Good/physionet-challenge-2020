@@ -52,7 +52,7 @@ def inference_data_loader(waveforms, header, fs_resampled, p_and_t_waves=False):
     t_wave_times = _get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=fs_resampled)
 
     # Get meta data
-    meta_meta = {'filename': None,
+    meta_data = {'filename': None,
                  'dataset': None,
                  'datetime': header['datetime'],
                  'channel_order': header['channel_order'],
@@ -85,7 +85,7 @@ def inference_data_loader(waveforms, header, fs_resampled, p_and_t_waves=False):
                  'labels_unscored_full': labels.labels_unscored_full,
                  'p_and_t_waves': p_and_t_waves}
 
-    return waveforms, meta_meta
+    return waveforms, meta_data
 
 
 def _compute_heart_rate(waveforms, fs):
