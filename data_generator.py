@@ -144,33 +144,27 @@ class Dataset_train(Dataset):
         del r_waves
         gc.collect()
 
-        t_waves, p_waves = y['t_waves'],y['p_waves']
 
-        if t_waves is None:
+
+        if y['t_waves'] is None:
             X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
         else:
-            t_waves = t_waves[0]
+            t_waves = y['t_waves'][0]
             t_waves_array = np.zeros((X.shape[0], 1))
             t_waves_array[t_waves, 0] = 1
             X = np.concatenate([X, t_waves_array], axis=1)
 
 
-        if p_waves is None:
+        if y['p_waves'] is None:
             X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
         else:
-            p_waves = p_waves[0]
+            p_waves = y['p_waves'][0]
             p_waves_array = np.zeros((X.shape[0], 1))
             p_waves_array[p_waves, 0] = 1
             X = np.concatenate([X, p_waves_array], axis=1)
 
 
 
-
-        # p_waves_array = np.zeros((X.shape[0], 1))
-        # p_waves_array[p_waves, 0] = 1
-        # X = np.concatenate([X, p_waves_array], axis=1)
-        # del p_waves_array
-        # gc.collect()
 
         fs_training = 1000
 
