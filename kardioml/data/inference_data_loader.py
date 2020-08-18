@@ -22,9 +22,6 @@ def inference_data_loader(waveforms, header, fs_resampled, p_and_t_waves=False):
     # Parse header data
     header = parse_header(header_data=header)
 
-    # Get labels
-    labels = Labels(labels_SNOMEDCT=header['labels_SNOMEDCT'])
-
     # Transpose waveforms array
     waveforms = waveforms.T
 
@@ -63,12 +60,12 @@ def inference_data_loader(waveforms, header, fs_resampled, p_and_t_waves=False):
                  'fs_resampled': fs_resampled,
                  'length': header['length'],
                  'num_leads': header['num_leads'],
-                 'labels_SNOMEDCT': labels.labels_SNOMEDCT,
-                 'labels_short': labels.labels_short,
-                 'labels_full': labels.labels_full,
-                 'labels_int': labels.labels_int,
-                 'labels_training': labels.labels_training,
-                 'labels_training_merged': labels.labels_training_merged,
+                 'labels_SNOMEDCT': None,
+                 'labels_short': None,
+                 'labels_full': None,
+                 'labels_int': None,
+                 'labels_training': None,
+                 'labels_training_merged': None,
                  'shape': waveforms.shape,
                  'hr': hr,
                  'rpeaks': rpeaks,
@@ -80,9 +77,9 @@ def inference_data_loader(waveforms, header, fs_resampled, p_and_t_waves=False):
                  't_waves': t_waves,
                  't_wave_array': t_wave_array.tolist(),
                  't_wave_times': t_wave_times,
-                 'labels_unscored_SNOMEDCT': labels.labels_unscored_SNOMEDCT,
-                 'labels_unscored_short': labels.labels_unscored_short,
-                 'labels_unscored_full': labels.labels_unscored_full,
+                 'labels_unscored_SNOMEDCT': None,
+                 'labels_unscored_short': None,
+                 'labels_unscored_full': None,
                  'p_and_t_waves': p_and_t_waves}
 
     return waveforms, meta_data
