@@ -32,7 +32,7 @@ class PTWaveDetection(nn.Module):
         x = self.FIR_filt(x, self.weights_LPF, self.padding_LPF)
 
         # standard scaling
-        x = (x - torch.mean(x)) / torch.std(x)
+        x = (x - torch.mean(x)) / torch.std(x) + 0.0001
 
         return x
 
