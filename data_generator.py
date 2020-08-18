@@ -60,121 +60,54 @@ class Dataset_train(Dataset):
         #data_folder = f'./data/{data_folder}/formatted/' #for tests
 
         # load waveforms
-        X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
-        #X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+
+        # load annotation
+        y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
 
         #load siamese waveform
         #select random dataset
         dataset_list = ['A','B','D','E','F']
-        dataset_list.remove(data_folder)
-        siamese_dataset = int(round(random.uniform(0,len(dataset_list))))
+        siamese_dataset = int(round(random.uniform(0,len(dataset_list)-1)))
         siamese_dataset = dataset_list[siamese_dataset]
 
         #select random record
-        #siamese_records = [i[:-5] for i in os.listdir(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/') if i.find('.npy')!=-1 ]
-        siamese_records = [i[:-4] for i in os.listdir(f'./data/{siamese_dataset}/formatted/') if
-                           i.find('.npy') != -1]
-        siamese_record = int(round(random.uniform(0, len(siamese_records))))
+        siamese_records = [i[:-5] for i in os.listdir(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/') if i.find('.npy')!=-1 ]
+        siamese_record = int(round(random.uniform(0, len(siamese_records)-1)))
         siamese_record = siamese_records[siamese_record]
-        #siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
-        siamese_X = np.load(f'./data/{siamese_dataset}/formatted/' + siamese_record + '.npy')
-        siamese_y = json.load(open(f'./data/{siamese_dataset}/formatted/' + siamese_record + '.json'))
+        siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
+        #siamese_X = np.load(f'./data/{siamese_dataset}/formatted/' + siamese_record + '.npy')
+        siamese_y = json.load(open(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.json'))
 
-        siamese_X = self.apply_amplitude_scaling(X=siamese_X, y=siamese_y)
 
-        # load annotation
-        #y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
-
+        
         X,label = self.preprocessing(X,y)
+        siamese_X, siamese_y = self.preprocessing(siamese_X, siamese_y,process_labels=False)
 
-        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        # label = y['labels_training_merged']
-        # if label[4] > 0 or label[18] > 0:
-        #     label[4] = 1
-        #     label[18] = 1
-        # if label[23] > 0 or label[12] > 0:
-        #     label[23] = 1
-        #     label[12] = 1
-        # if label[26] > 0 or label[13] > 0:
-        #     label[26] = 1
-        #     label[13] = 1
+        if siamese_dataset == data_folder:
+            siamese_y = 1
+        else:
+            siamese_y = 0
 
-        # Scale waveform amplitudes
-        # X = (X - np.mean(X)) / np.std(X)
-        # """
-        # Maybe try this (see method below).
-
-        X = self.apply_amplitude_scaling(X=X, y=y)
-
-
-
-        #add R, P, T waves
-        # r_waves = np.zeros((X.shape[0],1))
-        # r_waves[y['rpeaks'][0],0] = 1
-        # X = np.concatenate([X,r_waves],axis=1)
-        # del r_waves
-        # gc.collect()
-        #
-        # t_waves, p_waves =  self.ptdetector.run(X=X[:,0],rpeaks=y['rpeaks'][0])
-        # t_waves, p_waves = t_waves[:,0].astype(np.int32).tolist(), p_waves[:,0].astype(np.int32).tolist()
-        #
-        # t_waves_array = np.zeros((X.shape[0],1))
-        # t_waves_array[t_waves, 0] = 1
-        # X = np.concatenate([X, t_waves_array], axis=1)
-        # del t_waves,t_waves_array
-        # gc.collect()
-        #
-        # p_waves_array = np.zeros((X.shape[0], 1))
-        # p_waves_array[p_waves, 0] = 1
-        # X = np.concatenate([X, p_waves_array], axis=1)
-        # del p_waves, p_waves_array
-        # gc.collect()
-
-        # r_waves[y['rpeaks'][0], 0] = 1
-        # X = np.concatenate([X, r_waves], axis=1)
-
-        # """
-
-
-        # # TODO: FS experiemnt
-        # # We need a way to inform this method of the sample rate for the dataset.
-        # if self.downsample:
-        #     fs_training = 500
-        # else:
-        #     fs_training = 1000
-        #
-        # if self.aug is True:
-        #     # pass
-        #     X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
-        #
-        # # padding
-        # # TODO: FS experiemnt
-        # if self.downsample:
-        #     sig_length = 19000
-        # else:
-        #     sig_length = 19000
-        #
-        # if X.shape[0] < sig_length:
-        #     padding = np.zeros((sig_length - X.shape[0], X.shape[1]))
-        #     X = np.concatenate([X, padding], axis=0)
-        # if X.shape[0] > sig_length:
-        #     X = X[:sig_length,:]
 
         return X,label
 
-    def preprocessing(self,X,y):
+    def preprocessing(self,X,y,process_labels=True):
+
 
         label = y['labels_training_merged']
-        if label[4] > 0 or label[18] > 0:
-            label[4] = 1
-            label[18] = 1
-        if label[23] > 0 or label[12] > 0:
-            label[23] = 1
-            label[12] = 1
-        if label[26] > 0 or label[13] > 0:
-            label[26] = 1
-            label[13] = 1
+        if process_labels:
+            if label[4] > 0 or label[18] > 0:
+                label[4] = 1
+                label[18] = 1
+            if label[23] > 0 or label[12] > 0:
+                label[23] = 1
+                label[12] = 1
+            if label[26] > 0 or label[13] > 0:
+                label[26] = 1
+                label[13] = 1
 
         X = self.apply_amplitude_scaling(X=X, y=y)
 
@@ -187,7 +120,15 @@ class Dataset_train(Dataset):
         gc.collect()
 
         t_waves, p_waves = self.ptdetector.run(X=X[:, 0], rpeaks=y['rpeaks'][0])
-        t_waves, p_waves = t_waves[:, 0].astype(np.int32).tolist(), p_waves[:, 0].astype(np.int32).tolist()
+        if t_waves.shape[0]>0:
+            t_waves = t_waves[:, 0].astype(np.int32).tolist()
+        else:
+            t_waves = []
+
+        if p_waves.shape[0]>0:
+            p_waves = p_waves[:, 0].astype(np.int32).tolist()
+        else:
+            p_waves = []
 
         t_waves_array = np.zeros((X.shape[0], 1))
         t_waves_array[t_waves, 0] = 1
