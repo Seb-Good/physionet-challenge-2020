@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 
 #custom modules
 from kardioml.data.resample import Resampling
-
+from kardioml.data.p_t_wave_detection import PTWaveDetection
 np.random.seed(42)
 
 
@@ -24,6 +24,7 @@ class Dataset_train(Dataset):
         self.downsample=downsample
 
         self.resampling = Resampling()
+        self.ptdetector = PTWaveDetection()
 
     def __len__(self):
         return len(self.patients)
@@ -110,9 +111,27 @@ class Dataset_train(Dataset):
         r_waves = np.zeros((X.shape[0],1))
         r_waves[y['rpeaks'][0],0] = 1
         X = np.concatenate([X,r_waves],axis=1)
+        del r_waves
+        gc.collect()
 
-        p_waves = y['p_waves']
-        t_waves = y['t_waves']
+        t_waves, p_waves =  self.ptdetector.run(X=X[:,0],rpeaks=y['rpeaks'][0])
+        t_waves, p_waves = t_waves[:,0].astype(np.int32).tolist(), p_waves[:,0].astype(np.int32).tolist()
+
+        t_waves_array = np.zeros((X.shape[0],1))
+        t_waves_array[t_waves, 0] = 1
+        X = np.concatenate([X, t_waves_array], axis=1)
+        del t_waves,t_waves_array
+        gc.collect()
+
+        p_waves_array = np.zeros((X.shape[0], 1))
+        p_waves_array[p_waves, 0] = 1
+        X = np.concatenate([X, p_waves_array], axis=1)
+        del p_waves, p_waves_array
+        gc.collect()
+
+        # r_waves[y['rpeaks'][0], 0] = 1
+        # X = np.concatenate([X, r_waves], axis=1)
+
         # """
 
 
