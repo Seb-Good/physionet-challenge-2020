@@ -263,9 +263,7 @@ class Model:
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
 
-        test_preds = test_preds.numpy()
-        print(test_preds)
-        return test_preds
+        return test_preds.numpy()
 
     def get_heatmap(self, X_test):
 
