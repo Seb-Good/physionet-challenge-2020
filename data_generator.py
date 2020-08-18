@@ -144,25 +144,25 @@ class Dataset_train(Dataset):
         del r_waves
         gc.collect()
 
-        # t_waves, p_waves = y['t_waves'],y['p_waves']
-        #
-        # if t_waves is None:
-        #     t_waves = []
-        # else:
-        #     t_waves = t_waves[0]
-        # if p_waves is None:
-        #     p_waves = []
-        # else:
-        #     p_waves = p_waves[0]
-        #
-        # t_waves_array = np.zeros((X.shape[0], 1))
-        # t_waves_array[t_waves, 0] = 1
-        # #X = np.concatenate([X, t_waves_array], axis=1)
-        #
-        #
-        # p_waves_array = np.zeros((X.shape[0], 1))
-        # p_waves_array[p_waves, 0] = 1
-        # #X = np.concatenate([X, p_waves_array], axis=1)
+        t_waves, p_waves = y['t_waves'],y['p_waves']
+
+        if t_waves is None:
+            t_waves = []
+        else:
+            t_waves = t_waves[0]
+        if p_waves is None:
+            p_waves = []
+        else:
+            p_waves = p_waves[0]
+
+        t_waves_array = np.zeros((X.shape[0], 1))
+        t_waves_array[t_waves, 0] = 1
+        X = np.concatenate([X, t_waves_array], axis=1)
+
+
+        p_waves_array = np.zeros((X.shape[0], 1))
+        p_waves_array[p_waves, 0] = 1
+        X = np.concatenate([X, p_waves_array], axis=1)
 
 
         fs_training = 1000
