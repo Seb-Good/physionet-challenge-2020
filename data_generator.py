@@ -95,7 +95,7 @@ class Dataset_train(Dataset):
         # #siamese_y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + siamese_record + '.json'))
 
 
-        X,label = self.preprocessing(X,y)
+        #X,label = self.preprocessing(X,y)
         #siamese_X, siamese_y = self.preprocessing(siamese_X, siamese_y,process_labels=False)
 
         # if siamese_dataset == data_folder:
@@ -104,23 +104,16 @@ class Dataset_train(Dataset):
         #     siamese_y = 0
 
 
-        return X,label
-
-    @staticmethod
-    def preprocessing(self,X,y,process_labels=True):
-
-
         label = y['labels_training_merged']
-        if process_labels:
-            if label[4] > 0 or label[18] > 0:
-                label[4] = 1
-                label[18] = 1
-            if label[23] > 0 or label[12] > 0:
-                label[23] = 1
-                label[12] = 1
-            if label[26] > 0 or label[13] > 0:
-                label[26] = 1
-                label[13] = 1
+        if label[4] > 0 or label[18] > 0:
+            label[4] = 1
+            label[18] = 1
+        if label[23] > 0 or label[12] > 0:
+            label[23] = 1
+            label[12] = 1
+        if label[26] > 0 or label[13] > 0:
+            label[26] = 1
+            label[13] = 1
 
         X = self.apply_amplitude_scaling(X=X, y=y)
 
@@ -132,25 +125,25 @@ class Dataset_train(Dataset):
         del r_waves
         gc.collect()
 
-        t_waves, p_waves = y['t_waves'],y['p_waves']
-
-        if t_waves is None:
-            t_waves = []
-        else:
-            t_waves = t_waves[0]
-        if p_waves is None:
-            p_waves = []
-        else:
-            p_waves = p_waves[0]
-
-        t_waves_array = np.zeros((X.shape[0], 1))
-        t_waves_array[t_waves, 0] = 1
-        #X = np.concatenate([X, t_waves_array], axis=1)
-
-
-        p_waves_array = np.zeros((X.shape[0], 1))
-        p_waves_array[p_waves, 0] = 1
-        #X = np.concatenate([X, p_waves_array], axis=1)
+        # t_waves, p_waves = y['t_waves'],y['p_waves']
+        #
+        # if t_waves is None:
+        #     t_waves = []
+        # else:
+        #     t_waves = t_waves[0]
+        # if p_waves is None:
+        #     p_waves = []
+        # else:
+        #     p_waves = p_waves[0]
+        #
+        # t_waves_array = np.zeros((X.shape[0], 1))
+        # t_waves_array[t_waves, 0] = 1
+        # #X = np.concatenate([X, t_waves_array], axis=1)
+        #
+        #
+        # p_waves_array = np.zeros((X.shape[0], 1))
+        # p_waves_array[p_waves, 0] = 1
+        # #X = np.concatenate([X, p_waves_array], axis=1)
 
 
         fs_training = 1000
@@ -169,7 +162,16 @@ class Dataset_train(Dataset):
         if X.shape[0] > sig_length:
             X = X[:sig_length,:]
 
+
         return X,label
+
+
+    def preprocessing(self,X,y,process_labels=True):
+
+
+
+
+        return X,y
 
     @staticmethod
     def apply_amplitude_scaling(X, y):
