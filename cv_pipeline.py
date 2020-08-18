@@ -457,13 +457,14 @@ class CVPipeline:
             pred_val = np.round(pred_val,4)
             #print(pred_val)
             self.postprocessing = PostProcessing(fold=self.hparams['start_fold'])
-            print(self.postprocessing.threshold)#must be initialized before usage because the threshold is updated in .fit pipeline
+            #print(self.postprocessing.threshold)#must be initialized before usage because the threshold is updated in .fit pipeline
             pred_val_processed = self.postprocessing.run(pred_val)
-            print(pred_val_processed)
+            #print(pred_val_processed)
             # TODO: add activations
             # heatmap = self.model.get_heatmap(valid)
 
             y_val = valid.get_labels()
+            print(y_val)
             fold_score = self.metric.compute(y_val, pred_val_processed)
 
             # save the model

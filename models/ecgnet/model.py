@@ -201,7 +201,7 @@ class Model:
             val_true = val_true.numpy()
             # val_true, val_preds = self.metric.find_opt_thresold(val_true, val_preds)
             val_preds = self.postprocessing.run(val_preds)
-            print(val_preds)
+            print(val_true)
             metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(avg_val_loss)
