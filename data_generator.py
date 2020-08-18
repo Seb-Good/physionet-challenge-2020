@@ -60,12 +60,12 @@ class Dataset_train(Dataset):
         #data_folder = f'./data/{data_folder}/formatted/' #for tests
 
         # load waveforms
-        X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
-        #X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
         # load annotation
-        #y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
 
 
 
@@ -180,7 +180,7 @@ class Dataset_train(Dataset):
             for channel_rpeaks in y['rpeaks']:
                 if channel_rpeaks:
                     return X / np.median(X[y['rpeaks'][0], 0])
-        return (X - X.mean()) / (X.std()+0.0001)
+        return (X - X.mean()) / X.std()
 
     def apply_augmentation(self, waveform, meta_data, fs_training):
 
