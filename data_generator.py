@@ -290,13 +290,13 @@ class Dataset_train(Dataset):
             return True
         return False
 
-    def get_labels(self):
+    def get_labels(self,patients):
         """
         :param ids: a list of ids for loading from the database
         :return: y: numpy array of labels, shape(n_samples,n_labels)
         """
 
-        for index, record in enumerate(self.patients):
+        for index, record in enumerate(patients):
 
             if record[0] == 'A':
                 data_folder = 'A'
