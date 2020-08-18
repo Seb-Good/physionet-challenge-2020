@@ -62,6 +62,7 @@ class Dataset_train(Dataset):
         #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
         X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
+
         # #load siamese waveform
         # #select random dataset
         # dataset_list = ['A','B','D','E','F']
