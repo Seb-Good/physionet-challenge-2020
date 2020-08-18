@@ -82,7 +82,7 @@ class Dataset_train(Dataset):
         siamese_y = json.load(open(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.json'))
 
 
-        
+
         X,label = self.preprocessing(X,y)
         siamese_X, siamese_y = self.preprocessing(siamese_X, siamese_y,process_labels=False)
 
