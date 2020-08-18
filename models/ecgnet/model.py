@@ -201,7 +201,6 @@ class Model:
             val_true = val_true.numpy()
             # val_true, val_preds = self.metric.find_opt_thresold(val_true, val_preds)
             val_preds = self.postprocessing.run(val_preds)
-            print(val_true)
             metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(avg_val_loss)
@@ -255,6 +254,7 @@ class Model:
         )  # ,collate_fn=train.my_collate
 
         test_preds = torch.Tensor([])
+        test_val = torch.Tensor([])
         print('Start generation of predictions')
         with torch.no_grad():
             for i, (X_batch, y_batch) in enumerate(tqdm(test_loader)):
@@ -265,9 +265,9 @@ class Model:
                 X_batch = X_batch.float().cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
+                test_val = torch.cat([test_val, y_batch.cpu().detach()], 0)
 
-
-        return test_preds.numpy()
+        return test_val.numpy(),test_preds.numpy()
 
     def get_heatmap(self, X_test):
 
