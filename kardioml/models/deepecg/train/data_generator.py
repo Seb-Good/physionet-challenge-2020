@@ -1,5 +1,5 @@
 """
-data_generator.py
+data_generator_pytorch.py
 -----------------
 This module provides a class for generating data batches for training and evaluation.
 By: Sebastian D. Goodfellow, Ph.D., 2018
@@ -15,10 +15,15 @@ from scipy import signal
 from biosppy.signals import ecg
 
 # Local imports
-from kardioml import LABELS_COUNT, FS, NUM_LEADS
+from kardioml import LABELS_COUNT
 
 
 class DataGenerator(object):
+<<<<<<< HEAD
+
+    def __init__(self, lookup_path, mode, shape, batch_size, fs,
+                 prefetch_buffer=1, seed=0, num_parallel_calls=1):
+=======
     def __init__(
         self,
         data_path,
@@ -31,20 +36,21 @@ class DataGenerator(object):
         seed=0,
         num_parallel_calls=1,
     ):
+>>>>>>> DS
 
         # Set parameters
-        self.data_path = data_path
         self.lookup_path = lookup_path
         self.mode = mode
         self.shape = shape
         self.batch_size = batch_size
-        self.fs = fs if fs <= FS else FS
+        self.fs = fs
         self.prefetch_buffer = prefetch_buffer
         self.seed = seed
         self.num_parallel_calls = num_parallel_calls
 
         # Set attributes
         self.file_names = self._get_lookup_dict()
+        self.dataset = self._get_dataset()
         self.meta_data = self._get_meta_data()
         self.labels = self._get_labels()
         self.hr = self._get_hr()
@@ -57,6 +63,32 @@ class DataGenerator(object):
         self.current_seed = 0
 
         # Get lambda functions
+<<<<<<< HEAD
+        self.import_waveforms_fn_train = \
+            lambda waveform_file_path, meta_file_path, label, filename, dataset, hr, age, sex: self._import_waveform(
+                waveform_file_path=waveform_file_path,
+                meta_file_path=meta_file_path,
+                label=label,
+                filename=filename,
+                dataset=dataset,
+                hr=hr,
+                age=age,
+                sex=sex,
+                augment=True
+            )
+        self.import_waveforms_fn_val = \
+            lambda waveform_file_path, meta_file_path, label, filename, dataset, hr, age, sex: self._import_waveform(
+                waveform_file_path=waveform_file_path,
+                meta_file_path=meta_file_path,
+                label=label,
+                filename=filename,
+                dataset=dataset,
+                hr=hr,
+                age=age,
+                sex=sex,
+                augment=False
+            )
+=======
         self.import_waveforms_fn_train = lambda waveform_file_path, meta_file_path, label, hr, age, sex: self._import_waveform(
             waveform_file_path=waveform_file_path,
             meta_file_path=meta_file_path,
@@ -75,6 +107,7 @@ class DataGenerator(object):
             sex=sex,
             augment=False,
         )
+>>>>>>> DS
         # Get dataset
         self.dataset = self._get_dataset()
 
@@ -110,7 +143,7 @@ class DataGenerator(object):
         # Get label from each file
         labels = list()
         for filename in self.file_names:
-            labels.append(self.meta_data[filename]['label_train'])
+            labels.append(self.meta_data[filename]['labels_training_merged'])
 
         # file_paths and labels should have same length
         assert len(self.file_names) == len(labels)
@@ -128,6 +161,18 @@ class DataGenerator(object):
         assert len(self.file_names) == len(hr)
 
         return hr
+
+    def _get_dataset(self):
+        """Get list of datasets."""
+        # Get label from each file
+        dataset = list()
+        for filename in self.file_names:
+            dataset.append(self.meta_data[filename]['dataset'])
+
+        # file_paths and labels should have same length
+        assert len(self.file_names) == len(dataset)
+
+        return dataset
 
     def _get_age(self):
         """Get list of waveform age."""
@@ -149,9 +194,9 @@ class DataGenerator(object):
         sexes = list()
         for filename in self.file_names:
 
-            if self.meta_data[filename]['sex'] == 'Male':
+            if self.meta_data[filename]['sex'] == 'male':
                 sexes.append(1)
-            elif self.meta_data[filename]['sex'] == 'Female':
+            elif self.meta_data[filename]['sex'] == 'female':
                 sexes.append(0)
             else:
                 sexes.append(-1)
@@ -167,13 +212,13 @@ class DataGenerator(object):
         meta_data = json.load(open(file_path))
         return int(meta_data['hr']) if meta_data['hr'] != 'nan' else -1
 
-    def _import_waveform(self, waveform_file_path, meta_file_path, label, hr, age, sex, augment):
+    def _import_waveform(self, waveform_file_path, meta_file_path, label, filename, dataset, hr, age, sex, augment):
         """Import waveform file from file path string."""
         # Load numpy file
         waveform = tf.py_func(self._load_npy_file, [waveform_file_path], tf.float32)
 
         # Resample waveform
-        waveform = tf.py_func(self._resample, [waveform], tf.float32)
+        # waveform = tf.py_func(self._resample, [waveform], tf.float32)
 
         # Augment waveform
         if augment:
@@ -198,7 +243,7 @@ class DataGenerator(object):
             rpeaks = tf.py_func(self._get_rpeak_channel, [waveform, meta_file_path], tf.float32)
 
         # Combine waveform and rpeak
-        waveform = tf.concat([waveform, rpeaks], axis=1)
+        # waveform = tf.concat([waveform, rpeaks], axis=1)
 
         # Pad waveform
         waveform = tf.py_func(self._pad_waveform, [waveform], tf.float32)
@@ -207,7 +252,7 @@ class DataGenerator(object):
         waveform = tf.reshape(tensor=waveform, shape=self.shape)
         age = tf.reshape(tensor=age, shape=[1])
 
-        return waveform, label, age, sex
+        return waveform, label, filename, dataset, age, sex
 
     def _get_rpeak_channel(self, waveform, meta_file_path):
         """Get binary array of rpeak locations."""
@@ -283,7 +328,7 @@ class DataGenerator(object):
             duration = waveform.shape[0] / self.fs
 
             # Get new heart rate
-            hr_new = int(hr * np.random.uniform(0.75, 1.25))
+            hr_new = int(hr * np.random.uniform(0.9, 1.1))
             if hr_new > 300:
                 hr_new = 300
             elif hr_new < 40:
@@ -432,6 +477,16 @@ class DataGenerator(object):
         if self.mode == 'train':
             return (
                 tf.data.Dataset.from_tensor_slices(
+<<<<<<< HEAD
+                    tensors=(tf.constant(value=self.waveform_file_paths),
+                             tf.constant(value=self.meta_file_paths),
+                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1, LABELS_COUNT]),
+                             tf.constant(value=self.file_names),
+                             tf.constant(value=self.dataset),
+                             tf.constant(value=self.hr),
+                             tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
+                             tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))
+=======
                     tensors=(
                         tf.constant(value=self.waveform_file_paths),
                         tf.constant(value=self.meta_file_paths),
@@ -440,6 +495,7 @@ class DataGenerator(object):
                         tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
                         tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]),
                     )
+>>>>>>> DS
                 )
                 .shuffle(buffer_size=self.num_samples, reshuffle_each_iteration=True)
                 .map(map_func=self.import_waveforms_fn_train, num_parallel_calls=self.num_parallel_calls)
@@ -450,6 +506,16 @@ class DataGenerator(object):
         else:
             return (
                 tf.data.Dataset.from_tensor_slices(
+<<<<<<< HEAD
+                    tensors=(tf.constant(value=self.waveform_file_paths),
+                             tf.constant(value=self.meta_file_paths),
+                             tf.reshape(tensor=tf.constant(value=self.labels), shape=[-1, LABELS_COUNT]),
+                             tf.constant(value=self.file_names),
+                             tf.constant(value=self.dataset),
+                             tf.constant(value=self.hr),
+                             tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
+                             tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]))
+=======
                     tensors=(
                         tf.constant(value=self.waveform_file_paths),
                         tf.constant(value=self.meta_file_paths),
@@ -458,6 +524,7 @@ class DataGenerator(object):
                         tf.reshape(tf.constant(value=self.age), shape=[-1, 1]),
                         tf.reshape(tf.constant(value=self.sex), shape=[-1, 1]),
                     )
+>>>>>>> DS
                 )
                 .map(map_func=self.import_waveforms_fn_val, num_parallel_calls=self.num_parallel_calls)
                 .repeat()

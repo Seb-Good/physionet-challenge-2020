@@ -6,9 +6,12 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
 # 3rd party imports
+import os
 import io
 import time
+import json
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from scipy import signal
 from datetime import datetime
@@ -17,8 +20,10 @@ from scipy.special import expit
 from scipy.stats.mstats import gmean
 
 # Local imports
-from kardioml import LABELS_COUNT, LABELS_LOOKUP, FS
-from kardioml.scoring.scoring_metrics import compute_beta_score
+from metrics.metrics import Metric
+from kardioml import DATA_PATH, WEIGHTS_PATH
+from kardioml.scoring.scoring_metrics import (load_weights, compute_challenge_metric, compute_auc,
+                                              compute_beta_measures, compute_f_measure, compute_accuracy)
 
 
 class State(object):
@@ -33,16 +38,21 @@ class State(object):
         self.num_gpus = num_gpus
 
         # Set attributes
+        self.labels_scored_lookup = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
+        self.scoring_weights = load_weights(weight_file=WEIGHTS_PATH,
+                                            classes=self.labels_scored_lookup['SNOMED CT Code'].values)
         self.train_loss = None
         self.val_loss = None
         self.train_f_beta = None
         self.val_f_beta = None
         self.train_g_beta = None
         self.val_g_beta = None
-        self.train_geometric_mean = None
-        self.val_geometric_mean = None
+        self.train_challenge_metric = None
+        self.val_challenge_metric = None
         self.logits = None
         self.labels = None
+        self.file_names = None
+        self.dataset = None
         self.waveforms = None
         self.cams = None
         self.val_cam_plots = None
@@ -63,6 +73,12 @@ class State(object):
 
     def _compute_metrics(self):
         # Training metrics
+<<<<<<< HEAD
+        self.train_loss, self.train_f_beta, self.train_g_beta, self.train_challenge_metric = self._compute_train_metrics()
+
+        # Validation metrics
+        self.val_loss, self.val_f_beta, self.val_g_beta, self.val_challenge_metric = self._compute_val_metrics()
+=======
         (
             self.train_loss,
             self.train_f_beta,
@@ -77,6 +93,7 @@ class State(object):
             self.val_g_beta,
             self.val_geometric_mean,
         ) = self._compute_val_metrics()
+>>>>>>> DS
 
     def _get_num_train_batches(self):
         """Number of batches for training Dataset."""
@@ -101,7 +118,7 @@ class State(object):
             metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
             metrics = self.sess.run(metrics_op)
 
-            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['geometric_mean']
+            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['challenge_metric']
 
         else:
             # Get train handle
@@ -133,7 +150,7 @@ class State(object):
             metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
             metrics = self.sess.run(metrics_op)
 
-            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['geometric_mean']
+            return metrics['loss'], metrics['f_beta'], metrics['g_beta'], metrics['challenge_metric']
 
     def _compute_val_metrics(self):
         """Get validation metrics."""
@@ -152,6 +169,8 @@ class State(object):
         # Empty lists for logits and labels
         logits_all = list()
         labels_all = list()
+        dataset_all = list()
+        file_names_all = list()
         waveforms_all = list()
         cams_all = list()
 
@@ -159,6 +178,13 @@ class State(object):
         for batch in range(self.val_steps_per_epoch):
 
             # Run metric update operation
+<<<<<<< HEAD
+            logits, labels, file_names, dataset, waveforms, cams, _ = self.sess.run(
+                fetches=[self.graph.logits, self.graph.labels, self.graph.file_names, self.dataset,
+                         self.graph.waveforms, self.graph.cams, self.graph.update_metrics_op],
+                feed_dict={self.graph.batch_size: self.batch_size, self.graph.is_training: False,
+                           self.graph.mode_handle: handle_val})
+=======
             logits, labels, waveforms, cams, _ = self.sess.run(
                 fetches=[
                     self.graph.logits,
@@ -173,19 +199,35 @@ class State(object):
                     self.graph.mode_handle: handle_val,
                 },
             )
+>>>>>>> DS
 
             # Get logits and labels
             logits_all.append(logits)
             labels_all.append(labels)
+            file_names_all.append(file_names)
+            dataset_all.append(dataset)
             waveforms_all.append(waveforms)
             cams_all.append(cams)
 
         # Group logits and labels
         self.logits = np.concatenate(logits_all, axis=0)
         self.labels = np.concatenate(labels_all, axis=0)
+        self.file_names = np.concatenate(file_names_all, axis=0)
+        self.dataset = np.concatenate(dataset_all, axis=0)
         self.waveforms = np.concatenate(waveforms_all, axis=0)
         self.cams = np.concatenate(cams_all, axis=0)
 
+<<<<<<< HEAD
+        # Compute Beta-measures
+        macro_f_beta_measure, macro_g_beta_measure = compute_beta_measures(
+            labels=self.labels,
+            outputs=np.round(expit(self.logits)).astype(int),
+            beta=2
+        )
+
+        # Compute challenge metric
+        challenge_metric = Metric().compute(labels=self.labels, outputs=np.round(expit(self.logits)).astype(int))
+=======
         # Apply Normal Rhythm correction
         sigmoid = expit(self.logits)
         for index in range(sigmoid.shape[0]):
@@ -200,12 +242,13 @@ class State(object):
             num_classes=LABELS_COUNT,
             check_errors=True,
         )
+>>>>>>> DS
 
         # Get metrics
         metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
         metrics = self.sess.run(metrics_op)
 
-        return metrics['loss'], f_beta, g_beta, gmean([f_beta, g_beta])
+        return metrics['loss'], macro_f_beta_measure, macro_g_beta_measure, challenge_metric
 
     def plot_val_cams(self):
         """Plot validation class activation maps."""
@@ -213,7 +256,7 @@ class State(object):
         plots = list()
 
         # Loop through waveforms
-        for index in range(256):
+        for index in range(64):
 
             # Get plot
             plot_buf = self._plot_image(index=index)
@@ -237,9 +280,6 @@ class State(object):
         ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
         ax2 = plt.subplot2grid((3, 1), (2, 0))
 
-        # Label lookup
-        label_lookup = list(LABELS_LOOKUP.keys())
-
         # Get time array
         time_array = np.arange(self.waveforms.shape[1]) * 1 / self.graph.network.hyper_params['fs']
 
@@ -259,6 +299,13 @@ class State(object):
         non_zero_index = np.where(self.waveforms[index, :, 0] != 0)[0]
 
         # Title
+<<<<<<< HEAD
+        title_string = 'Label: {}\nPrediction: {}\n{}'
+        ax1.set_title(title_string.format(label,
+                                          np.round(expit(self.logits[index, :])).astype(int),
+                                          np.round(expit(self.logits[index, :]), 2)),
+                      fontsize=12, y=1.03)
+=======
         title_string = '{}\nLabel: {}\nPrediction: {}\n{}'
         ax1.set_title(
             title_string.format(
@@ -270,6 +317,7 @@ class State(object):
             fontsize=20,
             y=1.03,
         )
+>>>>>>> DS
 
         # Plot ECG waveform
         shift = 0
@@ -310,3 +358,18 @@ class State(object):
         """Compute softmax values for set of scores."""
         e_scores = np.exp(scores - np.max(scores))
         return e_scores / e_scores.sum()
+
+    def create_cv_debug(self):
+        """Generate CV Debug file."""
+        predictions = np.round(expit(self.logits)).astype(int)
+        for file_name, dataset, label, logit, prediction in zip(self.file_names.tolist(), self.dataset.tolist(),
+                                                                self.labels.tolist(), self.logits.tolist(),
+                                                                predictions.tolist()):
+            # Save meta data JSON
+            with open(os.path.join(self.save_path, 'cv_debug', dataset, '{}.json'.format(file_name)), 'w') as file:
+                json.dump({'file_name': file_name,
+                           'dataset': dataset,
+                           'label': label,
+                           'sigmoid': logit,
+                           'predicted_label': prediction},
+                          file, sort_keys=False, indent=4)

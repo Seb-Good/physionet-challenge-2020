@@ -18,6 +18,7 @@ from utils.pytorchtools import EarlyStopping
 from torch.nn.parallel import DataParallel as DP
 from loss_functions import CompLoss
 from postprocessing import PostProcessing
+from data_generator import Preprocessing
 
 # model
 from models.ecgnet.structure import ECGNet
@@ -58,6 +59,7 @@ class Model:
         self.metric = Metric()
         self.num_workers = 18
         self.threshold = 0.5
+
         ########################## compile the model ###############################
 
         # define optimizer
@@ -298,6 +300,19 @@ class Model:
     def model_load(self, model_path):
         self.model = torch.load(model_path).to(self.device)
         return True
+
+    def inference(self,X,y):
+
+        preprocessing = Preprocessing(aug=False)
+
+        X = preprocessing.run(X,y,label_process=False)
+        X = X.reshape(1,-1,X.shape[1])
+
+        self.model.eval()
+        predictions,pred_encoder = self.model.forward(torch.Tensor(X))
+        predictions= predictions.detach().numpy()
+
+        return predictions
 
     ################## Utils #####################
 

@@ -6,13 +6,21 @@ By: Sebastian D. Goodfellow, Ph.D., 2018
 """
 
 # 3rd party imports
+import os
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from scipy.stats.mstats import gmean
 
 # Local imports
-from kardioml.scoring.scoring_metrics import compute_beta_score
+from kardioml import DATA_PATH, WEIGHTS_PATH
 from kardioml.models.deepecg.train.data_generator import DataGenerator
+<<<<<<< HEAD
+from kardioml.models.deepecg.networks.layers import (fc_layer, conv_layer, dropout_layer,
+                                                     print_output_shape, max_pool_layer)
+from kardioml.scoring.scoring_metrics import (load_weights, compute_challenge_metric, compute_auc,
+                                              compute_beta_measures, compute_f_measure, compute_accuracy)
+=======
 from kardioml.models.deepecg.networks.layers import (
     fc_layer,
     conv_layer,
@@ -20,6 +28,7 @@ from kardioml.models.deepecg.networks.layers import (
     print_output_shape,
     max_pool_layer,
 )
+>>>>>>> DS
 
 
 class DeepECGV2(object):
@@ -36,6 +45,9 @@ class DeepECGV2(object):
         self.classes = classes
         self.hyper_params = hyper_params
         self.seed = seed
+        self.labels_scored_lookup = pd.read_csv(os.path.join(DATA_PATH, 'labels_scored.csv'))
+        self.scoring_weights = load_weights(weight_file=WEIGHTS_PATH,
+                                            classes=self.labels_scored_lookup['SNOMED CT Code'].values)
 
     def inference(self, input_layer, age, sex, reuse, is_training, name, print_shape=True):
         """Forward propagation of computational graph."""
@@ -448,6 +460,23 @@ class DeepECGV2(object):
             num_parallel_calls=32,
         )
 
+    # def compute_metrics(self, logits, labels):
+    #     """Computes the model accuracy for set of logits and labels."""
+    #     with tf.variable_scope('metrics'):
+    #
+    #         # Get prediction
+    #         predictions = tf.cast(tf.math.round(tf.nn.sigmoid(logits)), tf.int32)
+    #
+    #         # Get label
+    #         labels = tf.cast(labels, tf.int32)
+    #
+    #         # Get metrics
+    #         _, _, f_beta, g_beta = tf.py_func(func=compute_beta_score,
+    #                                           inp=[labels, predictions, 2, self.classes, False],
+    #                                           Tout=[tf.float64, tf.float64, tf.float64, tf.float64])
+    #
+    #         return f_beta, g_beta, tf.py_func(func=gmean, inp=[[f_beta, g_beta]], Tout=[tf.float64])
+
     def compute_metrics(self, logits, labels):
         """Computes the model accuracy for set of logits and labels."""
         with tf.variable_scope('metrics'):
@@ -458,11 +487,35 @@ class DeepECGV2(object):
             # Get label
             labels = tf.cast(labels, tf.int32)
 
+<<<<<<< HEAD
+            # Compute accuracy
+            accuracy = tf.py_func(func=compute_accuracy, inp=[labels, predictions], Tout=tf.float64)
+
+            # Compute F-measures
+            macro_f_measure = tf.py_func(func=compute_f_measure, inp=[labels, predictions], Tout=tf.float64)
+
+            # Compute Beta-measures
+            macro_f_beta_measure, macro_g_beta_measure = tf.py_func(func=compute_beta_measures,
+                                                                    inp=[labels, predictions, 2],
+                                                                    Tout=[tf.float64, tf.float64])
+
+            # Compute AUC
+            macro_auroc, macro_auprc = tf.py_func(func=compute_auc, inp=[labels, predictions],
+                                                  Tout=[tf.float64, tf.float64])
+
+            # Compute challenge metric
+            challenge_metric = tf.py_func(func=compute_challenge_metric,
+                                          inp=[labels, predictions, self.labels_scored_lookup['SNOMED CT Code'].values,
+                                               '426783006'],
+                                          Tout=tf.float64)
+=======
             # Get metrics
             _, _, f_beta, g_beta = tf.py_func(
                 func=compute_beta_score,
                 inp=[labels, predictions, 2, self.classes, False],
                 Tout=[tf.float64, tf.float64, tf.float64, tf.float64],
             )
+>>>>>>> DS
 
-            return f_beta, g_beta, tf.py_func(func=gmean, inp=[[f_beta, g_beta]], Tout=[tf.float64])
+            return (accuracy, macro_f_measure, macro_f_beta_measure, macro_g_beta_measure,
+                    macro_auroc, macro_auprc, challenge_metric)

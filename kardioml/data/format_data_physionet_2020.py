@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import scipy.io as sio
+from scipy import signal
 from biosppy.signals import ecg
 from joblib import Parallel, delayed
 from scipy.signal.windows import blackmanharris
@@ -42,7 +43,7 @@ class FormatDataPhysionet2020(object):
         self.raw_path = os.path.join(DATA_PATH, self.dataset, 'raw')
         self.formatted_path = os.path.join(DATA_PATH, self.dataset, 'formatted')
 
-    def format(self, extract=True, debug=False, p_and_t_waves=False, parallel=False):
+    def format(self, fs_resampled, extract=True, debug=False, p_and_t_waves=False, parallel=False):
         """Format Physionet2020 dataset."""
         print('Formatting Physionet2020 dataset...')
         # Extract data file
@@ -50,12 +51,15 @@ class FormatDataPhysionet2020(object):
             self._extract_data()
 
         # Format data
-        self._format_data(debug=debug, p_and_t_waves=p_and_t_waves, parallel=parallel)
+        self._format_data(fs_resampled=fs_resampled, debug=debug, p_and_t_waves=p_and_t_waves, parallel=parallel)
 
-    def _format_data(self, debug, p_and_t_waves, parallel):
+    def _format_data(self, fs_resampled, debug, p_and_t_waves, parallel):
         """Format raw data to standard structure."""
         # Create directory for formatted data
-        shutil.rmtree(self.formatted_path)
+        try:
+            shutil.rmtree(self.formatted_path)
+        except:
+            pass
         os.makedirs(self.formatted_path, exist_ok=True)
 
         # Get a list of filenames
@@ -65,14 +69,15 @@ class FormatDataPhysionet2020(object):
 
         if debug:
             for filename in filenames[0:10]:
-                self._format_sample(filename=filename, p_and_t_waves=p_and_t_waves)
+                self._format_sample(filename=filename, fs_resampled=fs_resampled, p_and_t_waves=p_and_t_waves)
         elif parallel:
-            _ = Parallel(n_jobs=-1)(delayed(self._format_sample)(filename, p_and_t_waves) for filename in filenames)
+            _ = Parallel(n_jobs=-1)(delayed(self._format_sample)(filename, fs_resampled, p_and_t_waves)
+                                    for filename in filenames)
         else:
             for idx in tqdm(range(len(filenames))):
-                self._format_sample(filename=filenames[idx], p_and_t_waves=p_and_t_waves)
+                self._format_sample(filename=filenames[idx], fs_resampled=fs_resampled, p_and_t_waves=p_and_t_waves)
 
-    def _format_sample(self, filename, p_and_t_waves):
+    def _format_sample(self, filename, fs_resampled, p_and_t_waves):
         """Format individual .mat and .hea sample."""
         # Import header file
         header = self._load_header_file(filename=filename)
@@ -84,12 +89,17 @@ class FormatDataPhysionet2020(object):
         waveforms = self._load_mat_file(filename=filename)
 
         # Resample waveforms
-        waveforms = self._resample(waveforms=waveforms, fs=header['fs'])
+        # waveforms = self._resample(waveforms=waveforms, fs=header['fs'])  # Dmitrii resample (PyTorch)
+        samples = int(waveforms.shape[0] * fs_resampled / header['fs'])
+        waveforms = signal.resample(x=waveforms, num=samples, axis=0)
+
+        # Compute heart rate
+        hr = self._compute_heart_rate(waveforms=waveforms, fs=fs_resampled)
 
         # Get rpeaks
-        rpeaks = self._get_rpeaks(waveforms=waveforms, fs=1000)
+        rpeaks = self._get_rpeaks(waveforms=waveforms, fs=fs_resampled)
         rpeak_array = self._get_peak_array(waveforms=waveforms, peaks=rpeaks)
-        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=1000)
+        rpeak_times = self._get_peak_times(waveforms=waveforms, peak_array=rpeak_array, fs=fs_resampled)
 
         # Get P-waves and T-waves
         if p_and_t_waves:
@@ -98,9 +108,9 @@ class FormatDataPhysionet2020(object):
             p_waves = None
             t_waves = None
         p_wave_array = self._get_peak_array(waveforms=waveforms, peaks=p_waves)
-        p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=1000)
+        p_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=p_wave_array, fs=fs_resampled)
         t_wave_array = self._get_peak_array(waveforms=waveforms, peaks=t_waves)
-        t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=1000)
+        t_wave_times = self._get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=fs_resampled)
 
         # Save waveform data npy file
         np.save(os.path.join(self.formatted_path, '{}.npy'.format(filename)), waveforms)
@@ -108,13 +118,14 @@ class FormatDataPhysionet2020(object):
         # Save meta data JSON
         with open(os.path.join(self.formatted_path, '{}.json'.format(filename)), 'w') as file:
             json.dump({'filename': filename,
+                       'dataset': self.dataset,
                        'datetime': header['datetime'],
                        'channel_order': header['channel_order'],
                        'age': header['age'],
                        'sex': header['sex'],
                        'amp_conversion': header['amp_conversion'],
                        'fs': header['fs'],
-                       'fs_resampled': 1000,
+                       'fs_resampled': fs_resampled,
                        'length': header['length'],
                        'num_leads': header['num_leads'],
                        'labels_SNOMEDCT': labels.labels_SNOMEDCT,
@@ -124,7 +135,7 @@ class FormatDataPhysionet2020(object):
                        'labels_training': labels.labels_training,
                        'labels_training_merged': labels.labels_training_merged,
                        'shape': waveforms.shape,
-                       'hr': self._compute_heart_rate(waveforms=waveforms, fs=header['fs']),
+                       'hr': hr,
                        'rpeaks': rpeaks,
                        'rpeak_array': rpeak_array.tolist(),
                        'rpeak_times': rpeak_times,
@@ -189,7 +200,6 @@ class FormatDataPhysionet2020(object):
         # Create empty array with length of waveform
         peak_array = np.zeros(waveforms.shape[0], dtype=np.float32)
         window = blackmanharris(21)
-        # if len([True for peak_ids in peaks if peak_ids is not None]) >= 1:
         if peaks:
             for peak_ids in peaks:
                 if peak_ids:
@@ -292,18 +302,18 @@ class FormatDataPhysionet2020(object):
 
     @staticmethod
     def _resample(waveforms, fs):
-        if fs == 257:
+        if int(fs) == 257:
             order = 4
             waveforms_resampled = list()
             for channel in range(waveforms.shape[1]):
                 waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
-            return np.stack(waveforms, axis=0)
-        elif fs == 500:
+            return np.stack(waveforms_resampled, axis=1)
+        elif int(fs) == 500:
             order = 2
             waveforms_resampled = list()
             for channel in range(waveforms.shape[1]):
                 waveforms_resampled.append(Resampling().upsample(X=waveforms[:, channel], order=order))
-            return np.stack(waveforms, axis=0)
+            return np.stack(waveforms_resampled, axis=1)
         return waveforms
 
 

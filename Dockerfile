@@ -10,5 +10,6 @@ WORKDIR /physionet
 ## Install your dependencies here using apt-get etc.
 
 ## Do not edit if you have a requirements.txt
+RUN pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip install -r requirements.txt
 

@@ -9,23 +9,83 @@ By: Sebastian D. Goodfellow, Ph.D., 2020
 import os
 import pickle
 
-# Local imports
-from kardioml import WORKING_PATH
+
+# local imports
+from kardioml.data.inference_data_loader import inference_data_loader
+from predict import Predict
+from config import Model,hparams
+from postprocessing import PostProcessing
+
+def run_12ECG_classifier(data, header_data, model):
+    """Get predictions.
+    Input
+    -----
+    data: .mat file
+    header_data: .hea file
+    model: pytorch model file/custom model class.
+
+    Output
+    ------
+    current_label: [0, 1, 0, 0, ... , 0, 0]
+    current_score: [0.1, 0.92, 0.2, 0.23, ... , 0.01, 0.002]
+    classes: ['270492004', '164889003', ... , '17338001']
+    """
+
+    postprocessing = PostProcessing(0)
+
+    # Run ETL process
+    waveforms, meta_data = inference_data_loader(waveforms=data, header=header_data,
+                                                 fs_resampled=1000, p_and_t_waves=True)
+
+    # Get soft predictions
+    current_score = model.inference(X=waveforms, y=meta_data)
+
+    # get hard predictions
+    current_label = postprocessing.run(current_score)
+
+    classes = ['270492004',
+            '164889003',
+            '164890007',
+            '426627000',
+            '713427006',
+            '713426002',
+            '445118002',
+            '39732003',
+            '164909002',
+            '251146004',
+            '698252002',
+            '10370003',
+            '284470004',
+            '427172004',
+            '164947007',
+            '111975006',
+            '164917005',
+            '47665007',
+            '59118001',
+            '427393009',
+            '426177001',
+            '426783006',
+            '427084000',
+            '63593006',
+            '164934002',
+            '59931005',
+            '17338001',
+               ]
+
+    return current_label[0,:].tolist(), current_score[0,:].tolist(), classes
 
 
-def run_12ECG_classifier(data, header_data, classes, model):
-    """Get predictions."""
-    current_label, current_score = model.challenge_prediction(data=data, header_data=header_data)
+def load_12ECG_model(model_input):
+    """Load Physionet2017 Model
+    model_input: This is an argument from running driver.py on command line. I think we just ignore it and hard-code
+    out model path.
+    """
 
-    return current_label, current_score
+
+    # load the model
+    model = Model(input_size=19000, n_channels=12, hparams=hparams, gpu=[])
+    model.model_load("./inference_models/ecgnet_0_fold_0.6078759902401878.pt")
 
 
-def load_12ECG_model():
-    """Load Physionet2017 Model"""
-    # Unpickle data model
-    with open(
-        os.path.join(WORKING_PATH, 'models', 'physionet2017', 'physionet2017.model'), "rb"
-    ) as input_file:
-        phyionet2017_model = pickle.load(input_file)
 
-    return phyionet2017_model
+    return model

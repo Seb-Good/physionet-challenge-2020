@@ -21,16 +21,19 @@ class Model(object):
 
     """A class for managing a model through training."""
 
+<<<<<<< HEAD
+    def __init__(self, model_name, network_name, network_parameters, save_path, lookup_path, max_to_keep):
+=======
     def __init__(
         self, model_name, network_name, network_parameters, save_path, data_path, lookup_path, max_to_keep
     ):
+>>>>>>> DS
 
         # Set input parameters
         self.model_name = model_name
         self.network_name = network_name
         self.network_parameters = network_parameters
         self.save_path = os.path.join(save_path, self.model_name)
-        self.data_path = data_path
         self.lookup_path = lookup_path
         self.max_to_keep = max_to_keep
 
@@ -57,6 +60,10 @@ class Model(object):
         self._pickle_network()
 
         # Build computational graph
+<<<<<<< HEAD
+        self.graph = Graph(network=self.network, save_path=self.save_path, lookup_path=self.lookup_path,
+                           max_to_keep=self.max_to_keep)
+=======
         self.graph = Graph(
             network=self.network,
             save_path=self.save_path,
@@ -64,6 +71,7 @@ class Model(object):
             lookup_path=self.lookup_path,
             max_to_keep=self.max_to_keep,
         )
+>>>>>>> DS
 
         # Start session
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
@@ -71,6 +79,8 @@ class Model(object):
         # Initialize global variables
         self.sess.run(self.graph.init_global)
 
+<<<<<<< HEAD
+=======
     @classmethod
     def build_training_graph(cls, save_path):
         """Build training graph."""
@@ -90,6 +100,7 @@ class Model(object):
             max_to_keep=model_parameters['max_to_keep'],
         )
 
+>>>>>>> DS
     def restore(self, global_step):
         """Restore model from checkpoint."""
         # Initialize graph
@@ -119,6 +130,10 @@ class Model(object):
     def _save_model_parameters(self):
         """Save model parameters to JSON."""
         # Get model parameters
+<<<<<<< HEAD
+        model_parameters = dict(model_name=self.model_name, network_name=self.network_name,
+                                save_path=self.save_path, max_to_keep=self.max_to_keep)
+=======
         model_parameters = dict(
             model_name=self.model_name,
             network_name=self.network_name,
@@ -126,6 +141,7 @@ class Model(object):
             data_path=self.data_path,
             max_to_keep=self.max_to_keep,
         )
+>>>>>>> DS
 
         # Save model parameters to JSON
         if not os.path.exists(os.path.join(self.save_path, 'parameters', 'model_parameters.json')):
@@ -151,7 +167,7 @@ class Model(object):
     def _create_folder_structure(self):
 
         # Set list of folders
-        folders = ['train', 'val', 'checkpoints', 'network', 'graph', 'logs', 'parameters']
+        folders = ['train', 'val', 'checkpoints', 'network', 'graph', 'logs', 'parameters', 'cv_debug']
 
         # Main project directory
         if not os.path.exists(self.save_path):

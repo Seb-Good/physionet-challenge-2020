@@ -26,6 +26,8 @@ class Dataset_train(Dataset):
         self.resampling = Resampling()
         self.ptdetector = PTWaveDetection()
 
+        self.preprocessing = Preprocessing(aug=aug)
+
     def __len__(self):
         return len(self.patients)
 
@@ -123,44 +125,162 @@ class Dataset_train(Dataset):
         #     siamese_y = 0
 
 
-        label = y['labels_training_merged']
-        if label[4] > 0 or label[18] > 0:
-            label[4] = 1
-            label[18] = 1
-        if label[23] > 0 or label[12] > 0:
-            label[23] = 1
-            label[12] = 1
-        if label[26] > 0 or label[13] > 0:
-            label[26] = 1
-            label[13] = 1
+        # label = y['labels_training_merged']
+        # if label[4] > 0 or label[18] > 0:
+        #     label[4] = 1
+        #     label[18] = 1
+        # if label[23] > 0 or label[12] > 0:
+        #     label[23] = 1
+        #     label[12] = 1
+        # if label[26] > 0 or label[13] > 0:
+        #     label[26] = 1
+        #     label[13] = 1
+        #
+        # X = self.apply_amplitude_scaling(X=X, y=y)
+        #
+        #
+        # # add R, P, T waves
+        # r_waves = np.zeros((X.shape[0], 1))
+        # r_waves[y['rpeaks'][0], 0] = 1
+        # X = np.concatenate([X, r_waves], axis=1)
+        #
+        #
+        #
+        #
+        # if y['t_waves'] is None:
+        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        # else:
+        #     t_waves = y['t_waves'][0]
+        #     t_waves_array = np.zeros((X.shape[0], 1))
+        #     t_waves_array[t_waves, 0] = 1
+        #     X = np.concatenate([X, t_waves_array], axis=1)
+        #
+        #
+        # if y['p_waves'] is None:
+        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        # else:
+        #     p_waves = y['p_waves'][0]
+        #     p_waves_array = np.zeros((X.shape[0], 1))
+        #     p_waves_array[p_waves, 0] = 1
+        #     X = np.concatenate([X, p_waves_array], axis=1)
+        #
+        #
+        #
+        #
+        # fs_training = 1000
+        #
+        # if self.aug is True:
+        #     # pass
+        #     X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
+        #
+        # # padding
+        #
+        # sig_length = 19000
+        #
+        # if X.shape[0] < sig_length:
+        #     padding = np.zeros((sig_length - X.shape[0], X.shape[1]))
+        #     X = np.concatenate([X, padding], axis=0)
+        # if X.shape[0] > sig_length:
+        #     X = X[:sig_length,:]
+
+        X,label = self.preprocessing.run(X=X,y=y)
+
+        return X,label
+
+
+
+
+
+
+
+    def my_collate(self, batch):
+        """
+        This function was created to handle a variable-length of the
+        :param batch: tuple(data,target)
+        :return: list[data_tensor(batch_size,n_samples_channels), target_tensor(batch_size,n_classes)]
+        """
+        data = [item[0] for item in batch]
+        target = [item[1] for item in batch]
+
+        # define the max size of the batch
+        m_size = 0
+        for element in data:
+            if m_size < element.shape[0]:
+                m_size = element.shape[0]
+
+        # zero pooling
+        for index, element in enumerate(data):
+            if m_size > element.shape[0]:
+                padding = np.zeros((m_size - element.shape[0], element.shape[1]))
+                padding = torch.from_numpy(padding)
+                data[index] = torch.cat([element, padding], dim=0)
+                padding = padding.detach()
+
+        data = torch.stack(data)
+        target = torch.stack(target)
+
+        return [data, target]
+
+
+class Dataset_test(Dataset_train):
+    def __init__(self, patients):
+        super().__init__(patients=patients,aug=False,downsample=False)
+
+    def __getitem__(self, idx):
+
+        X, y = self.load_data(idx, train=False)
+
+        X = torch.tensor(X, dtype=torch.float)
+
+        return X
+
+class Preprocessing():
+
+    def __init__(self,aug):
+
+        self.aug = aug
+
+    def run(self,X,y,label_process=True):
+
+        if label_process:
+            label = y['labels_training_merged']
+            if label[4] > 0 or label[18] > 0:
+                label[4] = 1
+                label[18] = 1
+            if label[23] > 0 or label[12] > 0:
+                label[23] = 1
+                label[12] = 1
+            if label[26] > 0 or label[13] > 0:
+                label[26] = 1
+                label[13] = 1
 
         X = self.apply_amplitude_scaling(X=X, y=y)
 
 
-        # add R, P, T waves
-        r_waves = np.zeros((X.shape[0], 1))
-        r_waves[y['rpeaks'][0], 0] = 1
-        X = np.concatenate([X, r_waves], axis=1)
-
-
-
-
-        if y['t_waves'] is None:
-            X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
-        else:
-            t_waves = y['t_waves'][0]
-            t_waves_array = np.zeros((X.shape[0], 1))
-            t_waves_array[t_waves, 0] = 1
-            X = np.concatenate([X, t_waves_array], axis=1)
-
-
-        if y['p_waves'] is None:
-            X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
-        else:
-            p_waves = y['p_waves'][0]
-            p_waves_array = np.zeros((X.shape[0], 1))
-            p_waves_array[p_waves, 0] = 1
-            X = np.concatenate([X, p_waves_array], axis=1)
+        # # add R, P, T waves
+        # r_waves = np.zeros((X.shape[0], 1))
+        # r_waves[y['rpeaks'][0], 0] = 1
+        # X = np.concatenate([X, r_waves], axis=1)
+        #
+        #
+        #
+        #
+        # if y['t_waves'] is None:
+        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        # else:
+        #     t_waves = y['t_waves'][0]
+        #     t_waves_array = np.zeros((X.shape[0], 1))
+        #     t_waves_array[t_waves, 0] = 1
+        #     X = np.concatenate([X, t_waves_array], axis=1)
+        #
+        #
+        # if y['p_waves'] is None:
+        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        # else:
+        #     p_waves = y['p_waves'][0]
+        #     p_waves_array = np.zeros((X.shape[0], 1))
+        #     p_waves_array[p_waves, 0] = 1
+        #     X = np.concatenate([X, p_waves_array], axis=1)
 
 
 
@@ -172,7 +292,6 @@ class Dataset_train(Dataset):
             X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
 
         # padding
-
         sig_length = 19000
 
         if X.shape[0] < sig_length:
@@ -181,16 +300,10 @@ class Dataset_train(Dataset):
         if X.shape[0] > sig_length:
             X = X[:sig_length,:]
 
-
-        return X,label
-
-
-    def preprocessing(self,X,y,process_labels=True):
-
-
-
-
-        return X,y
+        if label_process:
+            return X,label
+        else:
+            return X
 
     @staticmethod
     def apply_amplitude_scaling(X, y):
@@ -344,45 +457,3 @@ class Dataset_train(Dataset):
         if random.random() < probability:
             return True
         return False
-
-
-    def my_collate(self, batch):
-        """
-        This function was created to handle a variable-length of the
-        :param batch: tuple(data,target)
-        :return: list[data_tensor(batch_size,n_samples_channels), target_tensor(batch_size,n_classes)]
-        """
-        data = [item[0] for item in batch]
-        target = [item[1] for item in batch]
-
-        # define the max size of the batch
-        m_size = 0
-        for element in data:
-            if m_size < element.shape[0]:
-                m_size = element.shape[0]
-
-        # zero pooling
-        for index, element in enumerate(data):
-            if m_size > element.shape[0]:
-                padding = np.zeros((m_size - element.shape[0], element.shape[1]))
-                padding = torch.from_numpy(padding)
-                data[index] = torch.cat([element, padding], dim=0)
-                padding = padding.detach()
-
-        data = torch.stack(data)
-        target = torch.stack(target)
-
-        return [data, target]
-
-
-class Dataset_test(Dataset_train):
-    def __init__(self, patients):
-        super().__init__(patients=patients)
-
-    def __getitem__(self, idx):
-
-        X, y = self.load_data(idx, train=False)
-
-        X = torch.tensor(X, dtype=torch.float)
-
-        return X
