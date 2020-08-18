@@ -141,8 +141,7 @@ class Dataset_train(Dataset):
         r_waves = np.zeros((X.shape[0], 1))
         r_waves[y['rpeaks'][0], 0] = 1
         X = np.concatenate([X, r_waves], axis=1)
-        del r_waves
-        gc.collect()
+
 
 
 
