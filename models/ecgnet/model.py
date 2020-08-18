@@ -165,6 +165,7 @@ class Model:
             train_true = train_true.numpy()
 
             threshold = self.postprocessing.find_opt_thresold(train_true,train_preds)
+            print(threshold)
             self.postprocessing.update_threshold(threshold)
             train_preds = self.postprocessing.run(train_preds)
             metric_train = self.metric.compute(labels=train_true, outputs=train_preds)
