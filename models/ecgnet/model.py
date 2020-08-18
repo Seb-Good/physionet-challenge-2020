@@ -56,7 +56,7 @@ class Model:
         summary(self.model, (input_size, n_channels))
 
         self.metric = Metric()
-        self.num_workers = 6
+        self.num_workers = 12
         self.threshold = 0.5
         ########################## compile the model ###############################
 
