@@ -10,26 +10,26 @@ import numpy as np
 from kardioml.data.resample import Resampling
 from postprocessing import PostProcessing
 from data_generator import Dataset_train
-
+from config import Model
 class Predict():
 
     def __init__(self):
-        print(1)
 
-        #load preprocessng pipeline
-        self.resampling = Resampling()
+
         #load the model
+        self.model = Model()
+        self.model.model_load("./inference_models/ecgnet_0_fold_0.6078759902401878.pt")
 
         #load preprocessng pipeline
 
         #load thresholds
         self.postptocessing = PostProcessing(0)
 
-        threshold = 0
-        for fold in range(6):
-            threshold += float(open(f"threshold_{fold}.txt", "r").read())/6
-
-        self.postptocessing.threshold = threshold
+        # threshold = 0
+        # for fold in range(6):
+        #     threshold += float(open(f"threshold_{fold}.txt", "r").read())/6
+        #
+        # self.postptocessing.threshold = threshold
 
 
     def predict(self,signal,meta):
