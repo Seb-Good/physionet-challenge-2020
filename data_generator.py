@@ -122,8 +122,12 @@ class Dataset_train(Dataset):
 
         if t_waves is None:
             t_waves = []
+        else:
+            t_waves = t_waves[0]
         if p_waves is None:
             p_waves = []
+        else:
+            p_waves = p_waves[0]
 
         t_waves_array = np.zeros((X.shape[0], 1))
         t_waves_array[t_waves, 0] = 1
