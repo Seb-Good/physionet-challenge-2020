@@ -463,7 +463,7 @@ class CVPipeline:
             # heatmap = self.model.get_heatmap(valid)
 
             #y_val = valid.get_labels(self.splits['val'].values[fold][:10])
-            print(y_val)
+            print(pred_val)
             fold_score = self.metric.compute(y_val, pred_val_processed)
 
             # save the model
