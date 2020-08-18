@@ -82,7 +82,7 @@ class Model:
             optimizer=self.optimizer,
             mode='min',
             factor=0.2,
-            patience=2,
+            patience=1,
             verbose=True,
             threshold=self.hparams['min_delta'],
             threshold_mode='abs',
