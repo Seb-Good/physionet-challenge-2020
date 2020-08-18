@@ -322,7 +322,7 @@ class Dataset_train(Dataset):
                 y = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']])
                 y = np.reshape(y, (1, 27))
             else:
-                temp = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']])
+                temp = np.array([json.load(open(data_folder + record + '.json'))['labels_training_merged']]).astype(np.float)
                 temp = np.reshape(temp, (1, 27))
                 y = np.concatenate((y, temp), axis=0)
 
