@@ -230,12 +230,13 @@ class Model:
             if res == 2:
                 print("Early Stopping")
                 print(f'global best max val_loss model score {self.early_stopping.best_score}')
-                self.model = self.early_stopping.load_best_weights()
                 break
             elif res == 1:
                 print(f'save global val_loss model score {avg_val_loss}')
 
         writer.close()
+
+        self.model = self.early_stopping.load_best_weights()
 
         return True
 
