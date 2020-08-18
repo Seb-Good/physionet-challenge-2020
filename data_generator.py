@@ -75,6 +75,7 @@ class Dataset_train(Dataset):
 
         #select random record
         siamese_records = [i[:-4] for i in os.listdir(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/') if i.find('.npy')!=-1 ]
+        siamese_records = [i for i in siamese_records if i in self.patients]
         siamese_record = int(round(random.uniform(0, len(siamese_records)-1)))
         siamese_record = siamese_records[siamese_record]
         siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
@@ -166,7 +167,7 @@ class Dataset_train(Dataset):
             for channel_rpeaks in y['rpeaks']:
                 if channel_rpeaks:
                     return X / np.median(X[y['rpeaks'][0], 0])
-        return (X - X.mean()) / X.std()
+        return (X - X.mean()) / (X.std()+0.0001)
 
     def apply_augmentation(self, waveform, meta_data, fs_training):
 
