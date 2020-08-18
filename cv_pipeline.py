@@ -454,6 +454,7 @@ class CVPipeline:
             # get model predictions
             valid = Dataset_train(self.splits['val'].values[fold][:10], aug=False,downsample=self.downsample)
             pred_val = self.model.predict(valid)
+            print(pred_val)
             self.postprocessing = PostProcessing(fold=self.hparams['start_fold']) #must be initialized before usage because the threshold is updated in .fit pipeline
             pred_val_processed = self.postprocessing.run(pred_val)
 

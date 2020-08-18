@@ -191,6 +191,8 @@ class Model:
                     y_batch = y_batch.float().cpu().detach()
                     pred = pred.float().cpu().detach()
 
+                    print(pred)
+
                     val_true = torch.cat([val_true, y_batch], 0)
                     val_preds = torch.cat([val_preds, pred], 0)
 
