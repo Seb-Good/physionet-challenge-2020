@@ -191,7 +191,7 @@ class Model:
                     y_batch = y_batch.float().cpu().detach()
                     pred = pred.float().cpu().detach()
 
-                    print(pred)
+
 
                     val_true = torch.cat([val_true, y_batch], 0)
                     val_preds = torch.cat([val_preds, pred], 0)
@@ -201,6 +201,7 @@ class Model:
             val_true = val_true.numpy()
             # val_true, val_preds = self.metric.find_opt_thresold(val_true, val_preds)
             val_preds = self.postprocessing.run(val_preds)
+            print(val_preds)
             metric_val = self.metric.compute(val_true, val_preds)
 
             self.scheduler.step(avg_val_loss)
