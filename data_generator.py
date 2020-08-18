@@ -118,16 +118,16 @@ class Dataset_train(Dataset):
         del r_waves
         gc.collect()
 
-        t_waves, p_waves = self.ptdetector.run(X=X[:, 0], rpeaks=y['rpeaks'][0])
-        if t_waves.shape[0]>0:
-            t_waves = t_waves[:, 0].astype(np.int32).tolist()
-        else:
-            t_waves = []
-
-        if p_waves.shape[0]>0:
-            p_waves = p_waves[:, 0].astype(np.int32).tolist()
-        else:
-            p_waves = []
+        t_waves, p_waves = y['t_waves'],y['p_waves']
+        # if t_waves.shape[0]>0:
+        #     t_waves = t_waves[:, 0].astype(np.int32).tolist()
+        # else:
+        #     t_waves = []
+        #
+        # if p_waves.shape[0]>0:
+        #     p_waves = p_waves[:, 0].astype(np.int32).tolist()
+        # else:
+        #     p_waves = []
 
         t_waves_array = np.zeros((X.shape[0], 1))
         t_waves_array[t_waves, 0] = 1
