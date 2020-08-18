@@ -67,32 +67,17 @@ class Dataset_train(Dataset):
 
 
 
-        # #load siamese waveform
-        # #select random dataset
-        # dataset_list = ['A','B','D','E','F']
-        # dataset_list.remove(data_folder)
-        # siamese_dataset = int(round(random.uniform(0,len(dataset_list))))
-        # siamese_dataset = dataset_list[siamese_dataset]
-        #
-        # #select random record
-        # #siamese_records = [i[:-5] for i in os.listdir(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/') if i.find('.npy')!=-1 ]
-        # siamese_records = [i[:-4] for i in os.listdir(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/') if
-        #                    i.find('.npy') != -1]
-        # siamese_record = int(round(random.uniform(0, len(siamese_records))))
-        # siamese_record = siamese_records[siamese_record]
-        # #siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
-        # siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
 
 
         # load annotation
         y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
         #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
 
-
-
-        # #select random record
         # siamese_record = int(round(random.uniform(0, len(self.patients) - 1)))
         # siamese_record = self.patients[siamese_record]
+
+        # #select random record
+
         #
         # if siamese_record[0] == 'A':
         #     data_folder = 'A'
@@ -125,63 +110,8 @@ class Dataset_train(Dataset):
         #     siamese_y = 0
 
 
-        # label = y['labels_training_merged']
-        # if label[4] > 0 or label[18] > 0:
-        #     label[4] = 1
-        #     label[18] = 1
-        # if label[23] > 0 or label[12] > 0:
-        #     label[23] = 1
-        #     label[12] = 1
-        # if label[26] > 0 or label[13] > 0:
-        #     label[26] = 1
-        #     label[13] = 1
-        #
-        # X = self.apply_amplitude_scaling(X=X, y=y)
-        #
-        #
-        # # add R, P, T waves
-        # r_waves = np.zeros((X.shape[0], 1))
-        # r_waves[y['rpeaks'][0], 0] = 1
-        # X = np.concatenate([X, r_waves], axis=1)
-        #
-        #
-        #
-        #
-        # if y['t_waves'] is None:
-        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
-        # else:
-        #     t_waves = y['t_waves'][0]
-        #     t_waves_array = np.zeros((X.shape[0], 1))
-        #     t_waves_array[t_waves, 0] = 1
-        #     X = np.concatenate([X, t_waves_array], axis=1)
-        #
-        #
-        # if y['p_waves'] is None:
-        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
-        # else:
-        #     p_waves = y['p_waves'][0]
-        #     p_waves_array = np.zeros((X.shape[0], 1))
-        #     p_waves_array[p_waves, 0] = 1
-        #     X = np.concatenate([X, p_waves_array], axis=1)
-        #
-        #
-        #
-        #
-        # fs_training = 1000
-        #
-        # if self.aug is True:
-        #     # pass
-        #     X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
-        #
-        # # padding
-        #
-        # sig_length = 19000
-        #
-        # if X.shape[0] < sig_length:
-        #     padding = np.zeros((sig_length - X.shape[0], X.shape[1]))
-        #     X = np.concatenate([X, padding], axis=0)
-        # if X.shape[0] > sig_length:
-        #     X = X[:sig_length,:]
+
+
 
         X,label = self.preprocessing.run(X=X,y=y)
 
@@ -257,30 +187,30 @@ class Preprocessing():
         X = self.apply_amplitude_scaling(X=X, y=y)
 
 
-        # # add R, P, T waves
-        # r_waves = np.zeros((X.shape[0], 1))
-        # r_waves[y['rpeaks'][0], 0] = 1
-        # X = np.concatenate([X, r_waves], axis=1)
-        #
-        #
-        #
-        #
-        # if y['t_waves'] is None:
-        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
-        # else:
-        #     t_waves = y['t_waves'][0]
-        #     t_waves_array = np.zeros((X.shape[0], 1))
-        #     t_waves_array[t_waves, 0] = 1
-        #     X = np.concatenate([X, t_waves_array], axis=1)
-        #
-        #
-        # if y['p_waves'] is None:
-        #     X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
-        # else:
-        #     p_waves = y['p_waves'][0]
-        #     p_waves_array = np.zeros((X.shape[0], 1))
-        #     p_waves_array[p_waves, 0] = 1
-        #     X = np.concatenate([X, p_waves_array], axis=1)
+        # add R, P, T waves
+        r_waves = np.zeros((X.shape[0], 1))
+        r_waves[y['rpeaks'][0], 0] = 1
+        X = np.concatenate([X, r_waves], axis=1)
+
+
+
+
+        if y['t_waves'] is None:
+            X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        else:
+            t_waves = y['t_waves'][0]
+            t_waves_array = np.zeros((X.shape[0], 1))
+            t_waves_array[t_waves, 0] = 1
+            X = np.concatenate([X, t_waves_array], axis=1)
+
+
+        if y['p_waves'] is None:
+            X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        else:
+            p_waves = y['p_waves'][0]
+            p_waves_array = np.zeros((X.shape[0], 1))
+            p_waves_array[p_waves, 0] = 1
+            X = np.concatenate([X, p_waves_array], axis=1)
 
 
 
