@@ -25,6 +25,7 @@ def save_challenge_predictions(output_directory, filename, scores, labels, class
     new_file = filename.replace('.mat', '.csv')
     output_file = os.path.join(output_directory, new_file)
 
+
     # Include the filename as the recording number
     recording_string = '#{}'.format(recording)
     class_string = ','.join(classes)
@@ -37,8 +38,10 @@ def save_challenge_predictions(output_directory, filename, scores, labels, class
 
 if __name__ == '__main__':
     # Parse arguments.
+
     if len(sys.argv) != 4:
         raise Exception('Include the model, input and output directories as arguments, e.g., python driver.py model input output.')
+
 
     model_input = sys.argv[1]
     input_directory = sys.argv[2]
@@ -47,7 +50,11 @@ if __name__ == '__main__':
     # Find files.
     input_files = []
     for f in os.listdir(input_directory):
-        if os.path.isfile(os.path.join(input_directory, f)) and not f.lower().startswith('.') and f.lower().endswith('mat'):
+        if (
+            os.path.isfile(os.path.join(input_directory, f))
+            and not f.lower().startswith('.')
+            and f.lower().endswith('mat')
+        ):
             input_files.append(f)
 
     if not os.path.isdir(output_directory):
@@ -62,11 +69,12 @@ if __name__ == '__main__':
     num_files = len(input_files)
 
     for i, f in enumerate(input_files):
-        print('    {}/{}...'.format(i+1, num_files))
+        print('    {}/{}...'.format(i + 1, num_files))
         tmp_input_file = os.path.join(input_directory, f)
         data, header_data = load_challenge_data(tmp_input_file)
         current_label, current_score, classes = run_12ECG_classifier(data, header_data, model)
         # Save results.
+
         save_challenge_predictions(output_directory, f, current_score, current_label, classes)
 
     print('Done.')

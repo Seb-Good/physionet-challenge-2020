@@ -17,10 +17,12 @@ class RR(Observable):
     Class that represents the RR observable, this is, the distance between
     two consecutive ventricular depolarizations.
     """
+
     def __init__(self):
         super(RR, self).__init__()
-        #The single reference will correspond to the start time
+        # The single reference will correspond to the start time
         self.time = self.start
+
 
 class Cardiac_Rhythm(Observable):
     """Class that represents a general and unspecified cardiac rhythm"""
@@ -29,11 +31,12 @@ class Cardiac_Rhythm(Observable):
 
     def __init__(self):
         super(Cardiac_Rhythm, self).__init__()
-        #The single reference will correspond to the start time
+        # The single reference will correspond to the start time
         self.time = self.start
-        #All rhythms have some representative measurements of their constituent
-        #cycles.
+        # All rhythms have some representative measurements of their constituent
+        # cycles.
         self.meas = CycleMeasurements((0, 0), (0, 0), (0, 0))
+
 
 CycleMeasurements = namedtuple('CycleMeasurements', ['rr', 'rt', 'pq'])
 
@@ -41,59 +44,79 @@ CycleMeasurements = namedtuple('CycleMeasurements', ['rr', 'rt', 'pq'])
 @singleton_observable
 class RhythmStart(Cardiac_Rhythm):
     """Class that represents the start of the first detected rhythm."""
+
     def __init__(self):
         super(RhythmStart, self).__init__()
-        #The rhythm start, in addition to be a rhythm, is an eventual and
-        #unique observation.
+        # The rhythm start, in addition to be a rhythm, is an eventual and
+        # unique observation.
         self.time = self.end = self.start
 
 
 class RegularCardiacRhythm(Cardiac_Rhythm):
     """Class that represents a regular rhythm."""
 
-    __slots__ = ('morph', )
+    __slots__ = ('morph',)
 
     def __init__(self):
         super(RegularCardiacRhythm, self).__init__()
-        #A regular cardiac rhythm has a single beat morphology. To evaluate
-        #the morphology we use a shape similarity strategy.
+        # A regular cardiac rhythm has a single beat morphology. To evaluate
+        # the morphology we use a shape similarity strategy.
         self.morph = {}
+
 
 class Sinus_Rhythm(RegularCardiacRhythm):
     """Class that represents sinus rhythm"""
+
     pass
+
 
 class Tachycardia(RegularCardiacRhythm):
     """Class that represents tachycardia rhythm"""
+
     pass
+
 
 class Bradycardia(RegularCardiacRhythm):
     """Class that represents bradycardia rhythm"""
+
     pass
+
 
 class Extrasystole(Cardiac_Rhythm):
     """This class represents an extrasystole"""
+
     pass
+
 
 class Bigeminy(Cardiac_Rhythm):
     """This class represents a bigeminy rhythm"""
+
     pass
+
 
 class Trigeminy(Cardiac_Rhythm):
     """This class represents a trigeminy rhythm"""
+
     pass
+
 
 class Asystole(Cardiac_Rhythm):
     """Class that represents an asystole (absence of cardiac activity)"""
+
     pass
+
 
 class Ventricular_Flutter(Cardiac_Rhythm):
     """Class that represents a ventricular flutter rhythm"""
+
     pass
+
 
 class Couplet(Cardiac_Rhythm):
     """Class that represents a ventricular couplet rhythm"""
+
     pass
+
 
 class RhythmBlock(Cardiac_Rhythm):
     """Class that represents a rhythm block"""
@@ -102,10 +125,11 @@ class RhythmBlock(Cardiac_Rhythm):
 
     def __init__(self):
         super(RhythmBlock, self).__init__()
-        #Rhythm block must keep the same beat morphology throughout its
-        #duration. This mophology consists of a QRSShape struct for each lead
-        #in the record.
+        # Rhythm block must keep the same beat morphology throughout its
+        # duration. This mophology consists of a QRSShape struct for each lead
+        # in the record.
         self.morph = {}
+
 
 class Atrial_Fibrillation(Cardiac_Rhythm):
     """Class that represents atrial fibrillation"""
@@ -114,7 +138,7 @@ class Atrial_Fibrillation(Cardiac_Rhythm):
 
     def __init__(self):
         super(Atrial_Fibrillation, self).__init__()
-        #Atrial fibrillation must keep the same beat morphology throughout its
-        #duration. This mophology consists of a QRSShape struct for each lead
-        #in the record.
+        # Atrial fibrillation must keep the same beat morphology throughout its
+        # duration. This mophology consists of a QRSShape struct for each lead
+        # in the record.
         self.morph = {}

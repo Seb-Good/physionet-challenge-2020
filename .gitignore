@@ -177,3 +177,5 @@ ENV/
 /data/F/
 /data/training/
 /output/
+**/data
+**/.vscode

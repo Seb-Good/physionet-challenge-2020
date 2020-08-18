@@ -22,7 +22,6 @@ from kardioml.scoring.scoring_metrics import compute_beta_score
 
 
 class State(object):
-
     def __init__(self, sess, graph, save_path, learning_rate, batch_size, num_gpus):
 
         # Set input parameters
@@ -71,7 +70,9 @@ class State(object):
 
     def _get_num_train_batches(self):
         """Number of batches for training Dataset."""
-        return self.graph.generator_train.num_batches.eval(feed_dict={self.graph.batch_size: self.batch_size})
+        return self.graph.generator_train.num_batches.eval(
+            feed_dict={self.graph.batch_size: self.batch_size}
+        )
 
     def _get_num_val_batches(self):
         """Number of batches for validation Dataset."""
@@ -97,8 +98,10 @@ class State(object):
             handle_train = self.sess.run(self.graph.generator_train.iterator.string_handle())
 
             # Initialize train iterator
-            self.sess.run(fetches=[self.graph.generator_train.iterator.initializer],
-                          feed_dict={self.graph.batch_size: self.batch_size})
+            self.sess.run(
+                fetches=[self.graph.generator_train.iterator.initializer],
+                feed_dict={self.graph.batch_size: self.batch_size},
+            )
 
             # Initialize metrics
             self.sess.run(fetches=[self.graph.init_metrics_op])
@@ -107,9 +110,14 @@ class State(object):
             for batch in range(self.train_steps_per_epoch):
 
                 # Run metric update operation
-                self.sess.run(fetches=[self.graph.update_metrics_op],
-                              feed_dict={self.graph.batch_size: self.batch_size, self.graph.is_training: True,
-                                         self.graph.mode_handle: handle_train})
+                self.sess.run(
+                    fetches=[self.graph.update_metrics_op],
+                    feed_dict={
+                        self.graph.batch_size: self.batch_size,
+                        self.graph.is_training: True,
+                        self.graph.mode_handle: handle_train,
+                    },
+                )
 
             # Get metrics
             metrics_op = {key: val[0] for key, val in self.graph.metrics.items()}
@@ -123,8 +131,10 @@ class State(object):
         handle_val = self.sess.run(self.graph.generator_val.iterator.string_handle())
 
         # Initialize val iterator
-        self.sess.run(fetches=[self.graph.generator_val.iterator.initializer],
-                      feed_dict={self.graph.batch_size: self.batch_size})
+        self.sess.run(
+            fetches=[self.graph.generator_val.iterator.initializer],
+            feed_dict={self.graph.batch_size: self.batch_size},
+        )
 
         # Initialize metrics
         self.sess.run(fetches=[self.graph.init_metrics_op])
@@ -139,12 +149,20 @@ class State(object):
         for batch in range(self.val_steps_per_epoch):
 
             # Run metric update operation
-            logits, labels, waveforms, cams, _ = self.sess.run(fetches=[self.graph.logits, self.graph.labels,
-                                                                        self.graph.waveforms, self.graph.cams,
-                                                                        self.graph.update_metrics_op],
-                                                               feed_dict={self.graph.batch_size: self.batch_size,
-                                                                          self.graph.is_training: False,
-                                                                          self.graph.mode_handle: handle_val})
+            logits, labels, waveforms, cams, _ = self.sess.run(
+                fetches=[
+                    self.graph.logits,
+                    self.graph.labels,
+                    self.graph.waveforms,
+                    self.graph.cams,
+                    self.graph.update_metrics_op,
+                ],
+                feed_dict={
+                    self.graph.batch_size: self.batch_size,
+                    self.graph.is_training: False,
+                    self.graph.mode_handle: handle_val,
+                },
+            )
 
             # Get logits and labels
             logits_all.append(logits)
@@ -189,7 +207,7 @@ class State(object):
     def _plot_image(self, index):
 
         # Setup figure
-        fig = plt.figure(figsize=(20., 8.), dpi=80)
+        fig = plt.figure(figsize=(20.0, 8.0), dpi=80)
         fig.subplots_adjust(wspace=0, hspace=0)
         ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
         ax2 = plt.subplot2grid((3, 1), (2, 0))
@@ -217,16 +235,23 @@ class State(object):
 
         # Title
         title_string = '{}\nLabel: {}\nPrediction: {}\n{}'
-        ax1.set_title(title_string.format(label_lookup,
-                                          label,
-                                          np.round(self.logits[index, :]).astype(int),
-                                          np.round(self.logits[index, :], 2)),
-                      fontsize=20, y=1.03)
+        ax1.set_title(
+            title_string.format(
+                label_lookup,
+                label,
+                np.round(self.logits[index, :]).astype(int),
+                np.round(self.logits[index, :], 2),
+            ),
+            fontsize=20,
+            y=1.03,
+        )
 
         # Plot ECG waveform
         shift = 0
         for channel_id in range(self.waveforms.shape[2]):
-            ax1.plot(time_array[non_zero_index], self.waveforms[index, non_zero_index, channel_id] + shift, '-k')
+            ax1.plot(
+                time_array[non_zero_index], self.waveforms[index, non_zero_index, channel_id] + shift, '-k'
+            )
             shift += 3
         ax1.set_xlim([time_array[non_zero_index].min(), time_array[non_zero_index].max()])
         ax1.axes.get_xaxis().set_visible(False)
@@ -235,8 +260,9 @@ class State(object):
         # ax1.yaxis.set_tick_params(labelsize=16)
 
         # Plot Class Activation Map
-        cams = signal.resample_poly(self.cams[index, :, :], self.graph.network.length,
-                                    self.cams.shape[1], axis=0).astype(np.float32)
+        cams = signal.resample_poly(
+            self.cams[index, :, :], self.graph.network.length, self.cams.shape[1], axis=0
+        ).astype(np.float32)
         ax2.plot(time_array[non_zero_index], cams[non_zero_index, prediction], '-k')
         ax2.set_xlim([time_array[non_zero_index].min(), time_array[non_zero_index].max()])
         ax2.axes.get_xaxis().set_visible(False)

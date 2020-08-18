@@ -66,9 +66,16 @@ def exponential_step_decay(decay_epochs, decay_rate, initial_lr, epoch):
 
 
 class AnnealingWarmRestartScheduler(object):
-
-    def __init__(self, lr_min, lr_max, steps_per_epoch, lr_max_decay, epochs_per_cycle, 
-                 cycle_length_factor, warmup_factor):
+    def __init__(
+        self,
+        lr_min,
+        lr_max,
+        steps_per_epoch,
+        lr_max_decay,
+        epochs_per_cycle,
+        cycle_length_factor,
+        warmup_factor,
+    ):
 
         # Set parameters
         self.lr_min = lr_min
@@ -171,8 +178,10 @@ class AnnealingWarmRestartScheduler(object):
         self.annealing_steps = self.annealing_epochs * self.steps_per_epoch
 
         # Learning rate mode schedule
-        self.lr_mode = ['annealing' if epoch not in range(int(self.warmup_factor * self.cycle_epochs))
-                        else 'warmup' for epoch in range(self.cycle_epochs)]
+        self.lr_mode = [
+            'annealing' if epoch not in range(int(self.warmup_factor * self.cycle_epochs)) else 'warmup'
+            for epoch in range(self.cycle_epochs)
+        ]
 
         # Learning rate
         if self.lr_mode[0] == 'warmup':

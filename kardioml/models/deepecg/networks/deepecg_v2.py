@@ -15,10 +15,20 @@ from scipy.stats.mstats import gmean
 # Local imports
 from kardioml import DATA_PATH, WEIGHTS_PATH
 from kardioml.models.deepecg.train.data_generator import DataGenerator
+<<<<<<< HEAD
 from kardioml.models.deepecg.networks.layers import (fc_layer, conv_layer, dropout_layer,
                                                      print_output_shape, max_pool_layer)
 from kardioml.scoring.scoring_metrics import (load_weights, compute_challenge_metric, compute_auc,
                                               compute_beta_measures, compute_f_measure, compute_accuracy)
+=======
+from kardioml.models.deepecg.networks.layers import (
+    fc_layer,
+    conv_layer,
+    dropout_layer,
+    print_output_shape,
+    max_pool_layer,
+)
+>>>>>>> DS
 
 
 class DeepECGV2(object):
@@ -64,18 +74,32 @@ class DeepECGV2(object):
             with tf.variable_scope(layer_name):
 
                 # Convolution
-                net = conv_layer(input_layer=input_layer, kernel_size=self.hyper_params['kernel_size'],
-                                 strides=1, dilation_rate=1, filters=self.hyper_params['conv_filts'],
-                                 padding='SAME', activation=None, use_bias=False, name=layer_name + '_conv',
-                                 seed=self.seed)
+                net = conv_layer(
+                    input_layer=input_layer,
+                    kernel_size=self.hyper_params['kernel_size'],
+                    strides=1,
+                    dilation_rate=1,
+                    filters=self.hyper_params['conv_filts'],
+                    padding='SAME',
+                    activation=None,
+                    use_bias=False,
+                    name=layer_name + '_conv',
+                    seed=self.seed,
+                )
 
                 # Max pool
-                net = max_pool_layer(input_layer=net, pool_size=3, strides=2, padding='SAME',
-                                     name=layer_name + '_maxpool')
+                net = max_pool_layer(
+                    input_layer=net, pool_size=3, strides=2, padding='SAME', name=layer_name + '_maxpool'
+                )
 
                 # Dropout
-                net = dropout_layer(input_layer=net, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                    training=is_training, name=layer_name + '_dropout')
+                net = dropout_layer(
+                    input_layer=net,
+                    drop_rate=self.hyper_params['drop_rate'],
+                    seed=self.seed,
+                    training=is_training,
+                    name=layer_name + '_dropout',
+                )
 
             # Print shape
             print_output_shape(layer_name=layer_name, net=net, print_shape=print_shape)
@@ -88,17 +112,32 @@ class DeepECGV2(object):
             # Set layer scope
             with tf.variable_scope(layer_name):
                 # Convolution
-                net = conv_layer(input_layer=net, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                 dilation_rate=1, filters=self.hyper_params['conv_filts'], padding='SAME',
-                                 activation=None, use_bias=False, name=layer_name + '_conv', seed=self.seed)
+                net = conv_layer(
+                    input_layer=net,
+                    kernel_size=self.hyper_params['kernel_size'],
+                    strides=1,
+                    dilation_rate=1,
+                    filters=self.hyper_params['conv_filts'],
+                    padding='SAME',
+                    activation=None,
+                    use_bias=False,
+                    name=layer_name + '_conv',
+                    seed=self.seed,
+                )
 
                 # Max pool
-                net = max_pool_layer(input_layer=net, pool_size=3, strides=2, padding='SAME',
-                                     name=layer_name + '_maxpool')
+                net = max_pool_layer(
+                    input_layer=net, pool_size=3, strides=2, padding='SAME', name=layer_name + '_maxpool'
+                )
 
                 # Dropout
-                net = dropout_layer(input_layer=net, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                    training=is_training, name=layer_name + '_dropout')
+                net = dropout_layer(
+                    input_layer=net,
+                    drop_rate=self.hyper_params['drop_rate'],
+                    seed=self.seed,
+                    training=is_training,
+                    name=layer_name + '_dropout',
+                )
 
             # Print shape
             print_output_shape(layer_name=layer_name, net=net, print_shape=print_shape)
@@ -112,7 +151,7 @@ class DeepECGV2(object):
 
                 # Set dilation rate
                 if self.hyper_params['dilation']:
-                    dilation_rate = int(2**res_id)
+                    dilation_rate = int(2 ** res_id)
                 else:
                     dilation_rate = 1
 
@@ -120,17 +159,26 @@ class DeepECGV2(object):
                 res = True if res_id != self.hyper_params['num_res_layers'] else False
 
                 # Compute block
-                outputs = self._residual_block(input_layer=outputs['res'], kernel_size=self.hyper_params['kernel_size'],
-                                               layer_name=layer_name, conv_filts=self.hyper_params['conv_filts'],
-                                               res_filts=self.hyper_params['res_filts'],
-                                               skip_filts=self.hyper_params['skip_filts'], is_training=is_training,
-                                               dilation_rate=dilation_rate, res=res, skip=True)
+                outputs = self._residual_block(
+                    input_layer=outputs['res'],
+                    kernel_size=self.hyper_params['kernel_size'],
+                    layer_name=layer_name,
+                    conv_filts=self.hyper_params['conv_filts'],
+                    res_filts=self.hyper_params['res_filts'],
+                    skip_filts=self.hyper_params['skip_filts'],
+                    is_training=is_training,
+                    dilation_rate=dilation_rate,
+                    res=res,
+                    skip=True,
+                )
 
                 # Collect skip and res
                 skips.append(outputs['skip'])
 
                 # Print shape
-                print_output_shape(layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape)
+                print_output_shape(
+                    layer_name=layer_name + '_skip', net=outputs['skip'], print_shape=print_shape
+                )
 
             # Add all skips to res output
             with tf.variable_scope('skips'):
@@ -144,29 +192,62 @@ class DeepECGV2(object):
                 output = tf.nn.relu(output, name=scope.name)
 
             # Dropout
-            output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                   training=is_training, name='dropout1')
+            output = dropout_layer(
+                input_layer=output,
+                drop_rate=self.hyper_params['drop_rate'],
+                seed=self.seed,
+                training=is_training,
+                name='dropout1',
+            )
 
             # Convolution
-            output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=256, padding='SAME', activation=tf.nn.relu, use_bias=False,
-                                name='conv1', seed=self.seed)
+            output = conv_layer(
+                input_layer=output,
+                kernel_size=self.hyper_params['kernel_size'],
+                strides=1,
+                dilation_rate=1,
+                filters=256,
+                padding='SAME',
+                activation=tf.nn.relu,
+                use_bias=False,
+                name='conv1',
+                seed=self.seed,
+            )
 
             # Dropout
-            output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                   training=is_training, name='dropout1')
+            output = dropout_layer(
+                input_layer=output,
+                drop_rate=self.hyper_params['drop_rate'],
+                seed=self.seed,
+                training=is_training,
+                name='dropout1',
+            )
 
             # Print shape
             print_output_shape(layer_name='output_conv1', net=output, print_shape=print_shape)
 
             # Convolution
-            output = conv_layer(input_layer=output, kernel_size=self.hyper_params['kernel_size'], strides=1,
-                                dilation_rate=1, filters=512, padding='SAME', activation=tf.nn.relu, use_bias=False,
-                                name='conv2', seed=self.seed)
+            output = conv_layer(
+                input_layer=output,
+                kernel_size=self.hyper_params['kernel_size'],
+                strides=1,
+                dilation_rate=1,
+                filters=512,
+                padding='SAME',
+                activation=tf.nn.relu,
+                use_bias=False,
+                name='conv2',
+                seed=self.seed,
+            )
 
             # Dropout
-            output = dropout_layer(input_layer=output, drop_rate=self.hyper_params['drop_rate'], seed=self.seed,
-                                   training=is_training, name='dropout1')
+            output = dropout_layer(
+                input_layer=output,
+                drop_rate=self.hyper_params['drop_rate'],
+                seed=self.seed,
+                training=is_training,
+                name='dropout1',
+            )
 
             # Print shape
             print_output_shape(layer_name='output_conv2', net=output, print_shape=print_shape)
@@ -206,8 +287,14 @@ class DeepECGV2(object):
             layer_name = 'logits'
 
             # Softmax activation
-            logits = fc_layer(input_layer=gap, neurons=self.classes, activation=None, use_bias=False,
-                              name=layer_name, seed=self.seed)
+            logits = fc_layer(
+                input_layer=gap,
+                neurons=self.classes,
+                activation=None,
+                use_bias=False,
+                name=layer_name,
+                seed=self.seed,
+            )
 
             # Print shape
             print_output_shape(layer_name=layer_name, net=logits, print_shape=print_shape)
@@ -217,8 +304,19 @@ class DeepECGV2(object):
 
         return logits, cams
 
-    def _residual_block(self, input_layer, kernel_size, layer_name, conv_filts, res_filts,
-                        skip_filts, dilation_rate, is_training, res=True, skip=True):
+    def _residual_block(
+        self,
+        input_layer,
+        kernel_size,
+        layer_name,
+        conv_filts,
+        res_filts,
+        skip_filts,
+        dilation_rate,
+        is_training,
+        res=True,
+        skip=True,
+    ):
         """Wavenet residual block."""
         # Set layer scope
         with tf.variable_scope(layer_name):
@@ -227,16 +325,32 @@ class DeepECGV2(object):
             outputs = dict()
 
             # Convolution tanh
-            conv_filt = conv_layer(input_layer=input_layer, kernel_size=kernel_size, strides=1,
-                                   dilation_rate=dilation_rate, filters=conv_filts, padding='SAME',
-                                   activation=tf.nn.tanh, use_bias=False, name=layer_name + '_conv_filt',
-                                   seed=self.seed)
+            conv_filt = conv_layer(
+                input_layer=input_layer,
+                kernel_size=kernel_size,
+                strides=1,
+                dilation_rate=dilation_rate,
+                filters=conv_filts,
+                padding='SAME',
+                activation=tf.nn.tanh,
+                use_bias=False,
+                name=layer_name + '_conv_filt',
+                seed=self.seed,
+            )
 
             # Convolution sigmoid
-            conv_gate = conv_layer(input_layer=input_layer, kernel_size=kernel_size, strides=1,
-                                   dilation_rate=dilation_rate, filters=conv_filts, padding='SAME',
-                                   activation=tf.nn.sigmoid, use_bias=False, name=layer_name + '_conv_gate',
-                                   seed=self.seed)
+            conv_gate = conv_layer(
+                input_layer=input_layer,
+                kernel_size=kernel_size,
+                strides=1,
+                dilation_rate=dilation_rate,
+                filters=conv_filts,
+                padding='SAME',
+                activation=tf.nn.sigmoid,
+                use_bias=False,
+                name=layer_name + '_conv_gate',
+                seed=self.seed,
+            )
 
             # Combine activations
             with tf.variable_scope('gate') as scope:
@@ -245,10 +359,18 @@ class DeepECGV2(object):
             # Residual
             if res:
                 # Convolution
-                outputs['res'] = conv_layer(input_layer=activation, kernel_size=1, strides=1,
-                                            dilation_rate=dilation_rate,  filters=res_filts, padding='SAME',
-                                            activation=None, use_bias=False, name=layer_name + '_conv_res',
-                                            seed=self.seed)
+                outputs['res'] = conv_layer(
+                    input_layer=activation,
+                    kernel_size=1,
+                    strides=1,
+                    dilation_rate=dilation_rate,
+                    filters=res_filts,
+                    padding='SAME',
+                    activation=None,
+                    use_bias=False,
+                    name=layer_name + '_conv_res',
+                    seed=self.seed,
+                )
 
                 # Add identity
                 outputs['res'] = tf.add(outputs['res'], input_layer, name=layer_name + '_add_identity')
@@ -256,10 +378,18 @@ class DeepECGV2(object):
             # Skip
             if skip:
                 # Convolution
-                outputs['skip'] = conv_layer(input_layer=activation, kernel_size=1, strides=1,
-                                             dilation_rate=dilation_rate, filters=skip_filts, padding='SAME',
-                                             activation=None, use_bias=False, name=layer_name + '_conv_skip',
-                                             seed=self.seed)
+                outputs['skip'] = conv_layer(
+                    input_layer=activation,
+                    kernel_size=1,
+                    strides=1,
+                    dilation_rate=dilation_rate,
+                    filters=skip_filts,
+                    padding='SAME',
+                    activation=None,
+                    use_bias=False,
+                    name=layer_name + '_conv_skip',
+                    seed=self.seed,
+                )
 
         return outputs
 
@@ -308,7 +438,9 @@ class DeepECGV2(object):
     def create_placeholders(self):
         """Creates place holders: waveform and label."""
         with tf.variable_scope('waveform') as scope:
-            waveform = tf.placeholder(dtype=tf.float32, shape=[None, self.length, self.channels], name=scope.name)
+            waveform = tf.placeholder(
+                dtype=tf.float32, shape=[None, self.length, self.channels], name=scope.name
+            )
 
         with tf.variable_scope('label') as scope:
             label = tf.placeholder(dtype=tf.int32, shape=[None, self.classes], name=scope.name)
@@ -317,9 +449,16 @@ class DeepECGV2(object):
 
     def create_generator(self, data_path, lookup_path, mode, batch_size):
         """Create data generator graph operation."""
-        return DataGenerator(data_path=data_path, lookup_path=lookup_path, mode=mode,
-                             shape=[self.length, self.channels], batch_size=batch_size,
-                             prefetch_buffer=200, seed=0, num_parallel_calls=32)
+        return DataGenerator(
+            data_path=data_path,
+            lookup_path=lookup_path,
+            mode=mode,
+            shape=[self.length, self.channels],
+            batch_size=batch_size,
+            prefetch_buffer=200,
+            seed=0,
+            num_parallel_calls=32,
+        )
 
     # def compute_metrics(self, logits, labels):
     #     """Computes the model accuracy for set of logits and labels."""
@@ -348,6 +487,7 @@ class DeepECGV2(object):
             # Get label
             labels = tf.cast(labels, tf.int32)
 
+<<<<<<< HEAD
             # Compute accuracy
             accuracy = tf.py_func(func=compute_accuracy, inp=[labels, predictions], Tout=tf.float64)
 
@@ -368,6 +508,14 @@ class DeepECGV2(object):
                                           inp=[labels, predictions, self.labels_scored_lookup['SNOMED CT Code'].values,
                                                '426783006'],
                                           Tout=tf.float64)
+=======
+            # Get metrics
+            _, _, f_beta, g_beta = tf.py_func(
+                func=compute_beta_score,
+                inp=[labels, predictions, 2, self.classes, False],
+                Tout=[tf.float64, tf.float64, tf.float64, tf.float64],
+            )
+>>>>>>> DS
 
             return (accuracy, macro_f_measure, macro_f_beta_measure, macro_g_beta_measure,
                     macro_auroc, macro_auprc, challenge_metric)

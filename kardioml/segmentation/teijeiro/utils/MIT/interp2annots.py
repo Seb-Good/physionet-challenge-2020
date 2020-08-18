@@ -25,8 +25,9 @@ import sortedcontainers
 import numpy as np
 import warnings
 
-#Specific string used to set the format of the annotations file
+# Specific string used to set the format of the annotations file
 FMT_STRING = 'kardioml.segmentation.teijeiro.format_17.01'
+
 
 def ann2interp(record, anns, fmt=False):
     """
@@ -37,8 +38,7 @@ def ann2interp(record, anns, fmt=False):
     assumed. This parameter is also inferred from the first annotation in the
     list.
     """
-    fmt = (fmt or len(anns) > 0 and anns[0].code is C.NOTE
-                                                 and anns[0].aux == FMT_STRING)
+    fmt = fmt or len(anns) > 0 and anns[0].code is C.NOTE and anns[0].aux == FMT_STRING
     interp = Interpretation()
     observations = []
     for i in range(len(anns)):
@@ -46,36 +46,35 @@ def ann2interp(record, anns, fmt=False):
         if ann.code in (C.PWAVE, C.TWAVE):
             obs = o.PWave() if ann.code == C.PWAVE else o.TWave()
             if fmt:
-                beg = next(a for a in reversed(anns[:i]) if a.time < ann.time
-                           and a.code == C.WFON and a.subtype == ann.code).time
-                end = next(a for a in anns[i:] if a.time > ann.time
-                          and a.code == C.WFOFF and a.subtype == ann.code).time
+                beg = next(
+                    a
+                    for a in reversed(anns[:i])
+                    if a.time < ann.time and a.code == C.WFON and a.subtype == ann.code
+                ).time
+                end = next(
+                    a for a in anns[i:] if a.time > ann.time and a.code == C.WFOFF and a.subtype == ann.code
+                ).time
             else:
-                beg = next(a for a in reversed(anns[:i]) if a.time < ann.time
-                                                     and a.code == C.WFON).time
-                end = next(a for a in anns[i] if a.time > ann.time
-                                                    and a.code == C.WFOFF).time
+                beg = next(a for a in reversed(anns[:i]) if a.time < ann.time and a.code == C.WFON).time
+                end = next(a for a in anns[i] if a.time > ann.time and a.code == C.WFOFF).time
             obs.start.value = Iv(beg, beg)
             obs.end.value = Iv(end, end)
             if fmt:
                 amp = json.loads(ann.aux)
                 for l in amp.keys():
                     if l not in record.leads:
-                        compatible = next((l2 for l2 in VALID_LEAD_NAMES
-                                          if VALID_LEAD_NAMES[l2] == l), None)
+                        compatible = next((l2 for l2 in VALID_LEAD_NAMES if VALID_LEAD_NAMES[l2] == l), None)
                         if compatible is None:
                             raise ValueError('Unrecognized lead {0}'.format(l))
                         obs.amplitude[compatible] = amp.pop(l)
             else:
-                leads = (record.leads if ann.code is C.TWAVE
-                         else set(K.PWAVE_LEADS) & set(record.leads))
+                leads = record.leads if ann.code is C.TWAVE else set(K.PWAVE_LEADS) & set(record.leads)
                 leads = record.leads
                 for lead in leads:
                     sidx = record.leads.index(lead)
-                    s = record.signal[sidx][beg:end+1]
+                    s = record.signal[sidx][beg : end + 1]
                     mx, mn = np.amax(s), np.amin(s)
-                    pol = (1.0 if max(mx-s[0], mx-s[-1]) >= -min(mn-s[0],mn-s[1])
-                           else -1.0)
+                    pol = 1.0 if max(mx - s[0], mx - s[-1]) >= -min(mn - s[0], mn - s[1]) else -1.0
                     obs.amplitude[lead] = pol * np.ptp(s)
             observations.append(obs)
         elif MIT.is_qrs_annotation(ann):
@@ -83,26 +82,26 @@ def ann2interp(record, anns, fmt=False):
             obs.time.value = Iv(ann.time, ann.time)
             obs.tag = ann.code
             delin = json.loads(ann.aux)
-            #QRS start and end is first tried to set according to delineation
-            #info. If not present, it is done according to delineation
-            #annotations.
+            # QRS start and end is first tried to set according to delineation
+            # info. If not present, it is done according to delineation
+            # annotations.
             if delin:
                 for l in delin.keys():
                     if l not in record.leads:
-                        compatible = next((l2 for l2 in VALID_LEAD_NAMES
-                                          if VALID_LEAD_NAMES[l2] == l), None)
+                        compatible = next((l2 for l2 in VALID_LEAD_NAMES if VALID_LEAD_NAMES[l2] == l), None)
                         if compatible is None:
                             raise ValueError('Unrecognized lead {0}'.format(l))
                         delin[compatible] = delin.pop(l)
                 beg = ann.time + min(d[0] for d in delin.itervalues())
                 end = ann.time + max(d[-1] for d in delin.itervalues())
             else:
-                def extra_cond(a): a.subtype == C.SYSTOLE if fmt else True
-                beg = next(a for a in reversed(anns[:i]) if a.code==C.WFON
-                           and extra_cond(a)).time
-                end = next(a for a in anns[i:] if a.code == C.WFOFF
-                           and extra_cond(a)).time
-            #Endpoints set
+
+                def extra_cond(a):
+                    a.subtype == C.SYSTOLE if fmt else True
+
+                beg = next(a for a in reversed(anns[:i]) if a.code == C.WFON and extra_cond(a)).time
+                end = next(a for a in anns[i:] if a.code == C.WFOFF and extra_cond(a)).time
+            # Endpoints set
             obs.start.value = Iv(beg, beg)
             obs.end.value = Iv(end, end)
             for lead in delin:
@@ -111,25 +110,26 @@ def ann2interp(record, anns, fmt=False):
                 beg = ann.time + delin[lead][0]
                 end = ann.time + delin[lead][-1]
                 obs.shape[lead] = o.QRSShape()
-                sig = record.signal[sidx][beg:end+1]
-                obs.shape[lead].sig = sig-sig[0]
+                sig = record.signal[sidx][beg : end + 1]
+                obs.shape[lead].sig = sig - sig[0]
                 obs.shape[lead].amplitude = np.ptp(sig)
-                obs.shape[lead].energy = np.sum(np.diff(sig)**2)
+                obs.shape[lead].energy = np.sum(np.diff(sig) ** 2)
                 obs.shape[lead].maxslope = np.max(np.abs(np.diff(sig)))
                 waves = []
                 for i in range(0, len(delin[lead]), 3):
                     wav = Wave()
-                    wav.pts = tuple(delin[lead][i:i+3])
+                    wav.pts = tuple(delin[lead][i : i + 3])
                     wav.move(-delin[lead][0])
                     if wav.r >= len(sig):
-                        warnings.warn('Found delineation information after '
-                         'the end of the signal in annotation {0}'.format(ann))
+                        warnings.warn(
+                            'Found delineation information after '
+                            'the end of the signal in annotation {0}'.format(ann)
+                        )
                         break
-                    wav.amp = (np.sign(sig[wav.m]-sig[wav.l]) *
-                               np.ptp(sig[wav.l:wav.r+1]))
-                    wav.e = np.sum(np.diff(sig[wav.l:wav.r+1])**2)
+                    wav.amp = np.sign(sig[wav.m] - sig[wav.l]) * np.ptp(sig[wav.l : wav.r + 1])
+                    wav.e = np.sum(np.diff(sig[wav.l : wav.r + 1]) ** 2)
                     wav.move(delin[lead][0])
-                    wav.move(ann.time-obs.earlystart)
+                    wav.move(ann.time - obs.earlystart)
                     waves.append(wav)
                 if not waves:
                     obs.shape.pop(lead)
@@ -138,12 +138,10 @@ def ann2interp(record, anns, fmt=False):
                     obs.shape[lead].tag = _tag_qrs(waves)
             observations.append(obs)
         elif ann.code is C.RHYTHM and ann.aux in C.RHYTHM_AUX.values():
-            rhclazz = next(rh for rh in C.RHYTHM_AUX
-                           if C.RHYTHM_AUX[rh] == ann.aux)
+            rhclazz = next(rh for rh in C.RHYTHM_AUX if C.RHYTHM_AUX[rh] == ann.aux)
             obs = rhclazz()
             obs.start.value = Iv(ann.time, ann.time)
-            end = next((a.time for a in anns[i+1:] if a.code is C.RHYTHM),
-                       anns[-1].time)
+            end = next((a.time for a in anns[i + 1 :] if a.code is C.RHYTHM), anns[-1].time)
             obs.end.value = Iv(end, end)
             observations.append(obs)
         elif ann.code is C.ARFCT:
@@ -152,6 +150,7 @@ def ann2interp(record, anns, fmt=False):
             observations.append(obs)
     interp.observations = sortedcontainers.SortedList(observations)
     return interp
+
 
 def interp2ann(interp, btime=0, offset=0):
     """
@@ -180,13 +179,12 @@ def interp2ann(interp, btime=0, offset=0):
     fmtcode.time = int(offset)
     fmtcode.aux = FMT_STRING
     annots.add(fmtcode)
-    beats = list(interp.get_observations(o.QRS,
-                                         filt=lambda q: q.time.start >= btime))
-    #We get the beat observations in the best explanation branch.
+    beats = list(interp.get_observations(o.QRS, filt=lambda q: q.time.start >= btime))
+    # We get the beat observations in the best explanation branch.
     for beat in beats:
-        #We tag all beats as normal, and we include the delineation. The
-        #delineation on each lead is included as a json string in the peak
-        #annotation.
+        # We tag all beats as normal, and we include the delineation. The
+        # delineation on each lead is included as a json string in the peak
+        # annotation.
         beg = MITAnnotation.MITAnnotation()
         beg.code = C.WFON
         beg.subtype = C.SYSTOLE
@@ -197,7 +195,7 @@ def interp2ann(interp, btime=0, offset=0):
         delin = {}
         for lead in beat.shape:
             shape = beat.shape[lead]
-            displ = beg.time-peak.time
+            displ = beg.time - peak.time
             shape.move(displ)
             waveseq = sum((w.pts for w in shape.waves), tuple())
             delin[lead] = tuple(int(w) for w in waveseq)
@@ -210,7 +208,7 @@ def interp2ann(interp, btime=0, offset=0):
         annots.add(beg)
         annots.add(peak)
         annots.add(end)
-    #P and T wave annotations
+    # P and T wave annotations
     pstart = beats[0].earlystart - ms2sp(400) if beats else 0
     tend = beats[-1].lateend + ms2sp(400) if beats else 0
     for wtype in (o.PWave, o.TWave):
@@ -226,19 +224,18 @@ def interp2ann(interp, btime=0, offset=0):
             end.time = int(offset + wave.lateend)
             peak = MITAnnotation.MITAnnotation()
             peak.code = code
-            peak.time = int((end.time+beg.time)/2.)
+            peak.time = int((end.time + beg.time) / 2.0)
             peak.aux = json.dumps(wave.amplitude)
             annots.add(beg)
             annots.add(peak)
             annots.add(end)
-    #Flutter annotations
+    # Flutter annotations
     for flut in interp.get_observations(o.Ventricular_Flutter, btime):
         vfon = MITAnnotation.MITAnnotation()
         vfon.code = C.VFON
         vfon.time = int(offset + flut.earlystart)
         annots.add(vfon)
-        for vfw in interp.get_observations(o.Deflection, flut.earlystart,
-                                           flut.lateend):
+        for vfw in interp.get_observations(o.Deflection, flut.earlystart, flut.lateend):
             wav = MITAnnotation.MITAnnotation()
             wav.code = C.FLWAV
             wav.time = int(offset + vfw.time.start)
@@ -247,7 +244,7 @@ def interp2ann(interp, btime=0, offset=0):
         vfoff.code = C.VFOFF
         vfoff.time = int(offset + flut.lateend)
         annots.add(vfoff)
-    #All rhythm annotations
+    # All rhythm annotations
     for rhythm in interp.get_observations(o.Cardiac_Rhythm, btime):
         if not isinstance(rhythm, o.RhythmStart):
             rhyon = MITAnnotation.MITAnnotation()
@@ -255,7 +252,7 @@ def interp2ann(interp, btime=0, offset=0):
             rhyon.aux = C.RHYTHM_AUX[type(rhythm)]
             rhyon.time = int(offset + rhythm.earlystart)
             annots.add(rhyon)
-    #The end of the last rhythm is also added as an annotation
+    # The end of the last rhythm is also added as an annotation
     try:
         rhyoff = MITAnnotation.MITAnnotation()
         rhyoff.code = C.RHYTHM
@@ -263,15 +260,14 @@ def interp2ann(interp, btime=0, offset=0):
         rhyoff.time = int(offset + rhythm.earlyend)
         annots.add(rhyoff)
     except NameError:
-        #If there are no rhythms ('rhythm' variable is undefined), we go on
+        # If there are no rhythms ('rhythm' variable is undefined), we go on
         pass
-    #Unintelligible R-Deflections
-    for rdef in interp.get_observations(o.RDeflection, btime,
-                                        filt=lambda a:
-                                        a in interp.unintelligible or
-                                        a in interp.focus):
+    # Unintelligible R-Deflections
+    for rdef in interp.get_observations(
+        o.RDeflection, btime, filt=lambda a: a in interp.unintelligible or a in interp.focus
+    ):
         unint = MITAnnotation.MITAnnotation()
-        #We store unintelligible annotations as artifacts
+        # We store unintelligible annotations as artifacts
         unint.code = C.ARFCT
         unint.time = int(offset + rdef.earlystart)
         annots.add(unint)

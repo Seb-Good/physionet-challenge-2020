@@ -33,6 +33,7 @@ from kardioml.segmentation.teijeiro.utils.units_helper import msec2samples as ms
 QUAL_THRES = 15.0
 QUAL_DIFF_THRES = 10.0
 
+
 def characterize_baseline(lead, beg, end):
     """
     Obtains the baseline estimation for a fragment delimited by two time
@@ -57,12 +58,12 @@ def characterize_baseline(lead, beg, end):
         of the fragment where the baseline has been estimated.
     """
     assert beg >= 0 and end >= beg
-    #We need at least 1 second of signal to estimate the baseline and the
-    #quality.
+    # We need at least 1 second of signal to estimate the baseline and the
+    # quality.
     MIN_LENGTH = ms2sp(1000)
-    if end-beg < MIN_LENGTH:
-        center = beg + (end - beg)/2.0
-        beg = max(0, int(center - MIN_LENGTH/2))
-        end = int(center + MIN_LENGTH/2)
+    if end - beg < MIN_LENGTH:
+        center = beg + (end - beg) / 2.0
+        beg = max(0, int(center - MIN_LENGTH / 2))
+        end = int(center + MIN_LENGTH / 2)
     signal = sig_buf.get_signal_fragment(beg, end, lead=lead)[0]
     return (sig_meas.mode(signal), sig_meas.kurtosis(signal))

@@ -1,0 +1,116 @@
+/home/dmitriishubin/anaconda3/envs/tf_gpu/lib/python3.7/site-packages/torch/cuda/amp/grad_scaler.py:111: UserWarning: torch.cuda.amp.GradScaler is enabled, but CUDA is not available.  Disabling.
+  warnings.warn("torch.cuda.amp.GradScaler is enabled, but CUDA is not available.  Disabling.")
+/home/dmitriishubin/anaconda3/envs/tf_gpu/lib/python3.7/site-packages/tensorflow/python/framework/dtypes.py:516: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint8 = np.dtype([("qint8", np.int8, 1)])
+/home/dmitriishubin/anaconda3/envs/tf_gpu/lib/python3.7/site-packages/tensorflow/python/framework/dtypes.py:517: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint8 = np.dtype([("quint8", np.uint8, 1)])
+/home/dmitriishubin/anaconda3/envs/tf_gpu/lib/python3.7/site-packages/tensorflow/python/framework/dtypes.py:518: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint16 = np.dtype([("qint16", np.int16, 1)])
+/home/dmitriishubin/anaconda3/envs/tf_gpu/lib/python3.7/site-packages/tensorflow/python/framework/dtypes.py:519: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint16 = np.dtype([("quint16", np.uint16, 1)])
+/home/dmitriishubin/anaconda3/envs/tf_gpu/lib/python3.7/site-packages/tensorflow/python/framework/dtypes.py:520: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint32 = np.dtype([("qint32", np.int32, 1)])
+/home/dmitriishubin/anaconda3/envs/tf_gpu/lib/python3.7/site-packages/tensorflow/python/framework/dtypes.py:525: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  np_resource = np.dtype([("resource", np.ubyte, 1)])
+  0%|          | 0/1 [00:00<?, ?it/s]
+
+Selected Learning rate: 0.001
+
+
+Only one GPU is available
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+            Conv1d-1            [-1, 32, 19000]            3456
+       BatchNorm1d-2            [-1, 32, 19000]              64
+              ReLU-3            [-1, 32, 19000]               0
+         MaxPool1d-4             [-1, 32, 9499]               0
+           Dropout-5             [-1, 32, 9499]               0
+        Stem_layer-6             [-1, 32, 9499]            3520
+            Conv1d-7             [-1, 64, 9499]           18432
+       BatchNorm1d-8             [-1, 64, 9499]             128
+              ReLU-9             [-1, 64, 9499]               0
+        MaxPool1d-10             [-1, 64, 4749]               0
+          Dropout-11             [-1, 64, 4749]               0
+       Stem_layer-12             [-1, 64, 4749]           18560
+           Conv1d-13             [-1, 64, 4749]           36864
+             Tanh-14             [-1, 64, 4749]               0
+           Conv1d-15             [-1, 64, 4749]           36864
+          Sigmoid-16             [-1, 64, 4749]               0
+           Conv1d-17             [-1, 64, 4749]            4096
+           Conv1d-18             [-1, 64, 4749]            4096
+       Wave_block-19  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+           Conv1d-20             [-1, 64, 4749]           36864
+             Tanh-21             [-1, 64, 4749]               0
+           Conv1d-22             [-1, 64, 4749]           36864
+          Sigmoid-23             [-1, 64, 4749]               0
+           Conv1d-24             [-1, 64, 4749]            4096
+           Conv1d-25             [-1, 64, 4749]            4096
+       Wave_block-26  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+           Conv1d-27             [-1, 64, 4749]           36864
+             Tanh-28             [-1, 64, 4749]               0
+           Conv1d-29             [-1, 64, 4749]           36864
+          Sigmoid-30             [-1, 64, 4749]               0
+           Conv1d-31             [-1, 64, 4749]            4096
+           Conv1d-32             [-1, 64, 4749]            4096
+       Wave_block-33  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+           Conv1d-34             [-1, 64, 4749]           36864
+             Tanh-35             [-1, 64, 4749]               0
+           Conv1d-36             [-1, 64, 4749]           36864
+          Sigmoid-37             [-1, 64, 4749]               0
+           Conv1d-38             [-1, 64, 4749]            4096
+           Conv1d-39             [-1, 64, 4749]            4096
+       Wave_block-40  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+           Conv1d-41             [-1, 64, 4749]           36864
+             Tanh-42             [-1, 64, 4749]               0
+           Conv1d-43             [-1, 64, 4749]           36864
+          Sigmoid-44             [-1, 64, 4749]               0
+           Conv1d-45             [-1, 64, 4749]            4096
+           Conv1d-46             [-1, 64, 4749]            4096
+       Wave_block-47  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+           Conv1d-48             [-1, 64, 4749]           36864
+             Tanh-49             [-1, 64, 4749]               0
+           Conv1d-50             [-1, 64, 4749]           36864
+          Sigmoid-51             [-1, 64, 4749]               0
+           Conv1d-52             [-1, 64, 4749]            4096
+           Conv1d-53             [-1, 64, 4749]            4096
+       Wave_block-54  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+           Conv1d-55             [-1, 64, 4749]           36864
+             Tanh-56             [-1, 64, 4749]               0
+           Conv1d-57             [-1, 64, 4749]           36864
+          Sigmoid-58             [-1, 64, 4749]               0
+           Conv1d-59             [-1, 64, 4749]            4096
+           Conv1d-60             [-1, 64, 4749]            4096
+       Wave_block-61  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+           Conv1d-62             [-1, 64, 4749]           36864
+             Tanh-63             [-1, 64, 4749]               0
+           Conv1d-64             [-1, 64, 4749]           36864
+          Sigmoid-65             [-1, 64, 4749]               0
+           Conv1d-66             [-1, 64, 4749]            4096
+           Conv1d-67             [-1, 64, 4749]            4096
+       Wave_block-68  [[-1, 64, 4749], [-1, 64, 4749]]           81920
+         Upsample-69             [-1, 64, 9498]               0
+           Conv1d-70             [-1, 32, 9500]           18432
+          Dropout-71             [-1, 32, 9500]               0
+Stem_layer_upsample-72             [-1, 32, 9500]           18496
+         Upsample-73            [-1, 32, 19000]               0
+           Conv1d-74            [-1, 12, 19002]             384
+          Dropout-75            [-1, 12, 19002]               0
+Stem_layer_upsample-76            [-1, 12, 19002]             408
+           Conv1d-77            [-1, 128, 4741]           73728
+           Conv1d-78            [-1, 256, 4733]          294912
+           Linear-79                   [-1, 27]            6939
+          Sigmoid-80                   [-1, 27]               0
+================================================================
+Total params: tensor(1768179)
+Trainable params: tensor(1768179)
+Non-trainable params: tensor(0)
+----------------------------------------------------------------
+100%|██████████| 1/1 [00:03<00:00,  3.35s/it]100%|██████████| 1/1 [00:03<00:00,  3.37s/it]
+  0%|          | 0/10 [00:00<?, ?it/s]100%|██████████| 10/10 [00:00<00:00, 244.25it/s]Finding the optimal threshold
+Model evaluation...
+
+  0%|          | 0/1 [00:00<?, ?it/s]| Epoch:  1 | Train_loss:  0.6214169859886169 | Val_loss:  0.6170979738235474 | Metric_train:  0.30902904362620004 | Metric_val:  0.35120973955925405 | Current LR:  0.001
+save global val_loss model score 0.6170979738235474
+Start generation of predictions
+100%|██████████| 1/1 [00:01<00:00,  1.47s/it]100%|██████████| 1/1 [00:01<00:00,  1.51s/it]
