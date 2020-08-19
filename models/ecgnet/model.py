@@ -269,7 +269,7 @@ class Model:
         test_val = torch.Tensor([])
         print('Start generation of predictions')
         with torch.no_grad():
-            for i, (X_batch, y_batch) in enumerate(tqdm(test_loader)):
+            for i, (X_batch, y_batch,s_y_batch) in enumerate(tqdm(test_loader)):
                 X_batch = X_batch.float().to(self.device)
 
                 pred,pred_decoder,pred_s = self.model(X_batch)
