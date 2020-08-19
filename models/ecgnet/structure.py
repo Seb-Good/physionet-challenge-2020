@@ -84,15 +84,15 @@ class Wave_block(nn.Module):
         self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
 
-        self.bn1 = nn.BatchNorm1d(out_ch)
-        self.bn2 = nn.BatchNorm1d(out_ch)
+        # self.bn1 = nn.BatchNorm1d(out_ch)
+        # self.bn2 = nn.BatchNorm1d(out_ch)
 
     def forward(self, x):
 
         res_x = x
 
-        tanh = self.tanh(self.bn1(self.conv1(x)))
-        sig = self.sigmoid(self.bn2(self.conv2(x)))
+        tanh = self.tanh(self.conv1(x))
+        sig = self.sigmoid((self.conv2(x)))
         res = torch.mul(tanh, sig)
 
         res_out = self.conv_res(res) + res_x
@@ -173,6 +173,9 @@ class ECGNet(nn.Module):
         self.output_decoder_2 = decoder_out_block(self.hparams['n_filt_stem'], n_channels,
                                                   1, self.hparams['dropout'],
                                                   2)
+
+        self.attention = nn.Linear(self.hparams['n_filt_out_conv_2'],self.hparams['n_filt_out_conv_2'])
+
     def _make_layers(self, out_ch, kernel_size, n, basic_block):
         # dilation_rates = [2 ** i for i in range(n)]
         layers = []
@@ -215,6 +218,8 @@ class ECGNet(nn.Module):
         x = torch.relu(self.bn2(self.conv_out_2(x)))
 
         x = torch.mean(x, dim=2)
+
+        x = torch.softmax(self.attention(x),dim=1)
 
         x = self.out(self.fc(x))
 
