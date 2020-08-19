@@ -104,6 +104,8 @@ class ECGNet(nn.Module):
     def __init__(self, n_channels, hparams, input_block=Stem_layer, basic_block=Wave_block,decoder_out_block = Stem_layer_upsample):
         super().__init__()
 
+        n_channels = n_channels // 2
+
         self.basic_block = basic_block
 
         self.hparams = hparams['model']
@@ -192,7 +194,11 @@ class ECGNet(nn.Module):
 
         return x,skip
 
-    def forward(self, x,twin_input):
+    def forward(self, x):
+
+        twin_input = x[:,:,:-1*x.shape[2]//2]
+
+        x = x[:, :, -1 * x.shape[2] // 2:]
 
         # x, h_0 = self.input_layer_1(x)
         # x = x.cpu().detach()

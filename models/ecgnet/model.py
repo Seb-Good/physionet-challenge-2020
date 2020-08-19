@@ -123,17 +123,16 @@ class Model:
 
             train_preds, train_true = torch.Tensor([]), torch.Tensor([])
 
-            for (X_batch, y_batch,s_X_batch,s_y_batch) in tqdm(train_loader):
+            for (X_batch, y_batch,s_y_batch) in tqdm(train_loader):
                 y_batch = y_batch.float().to(self.device)
                 X_batch = X_batch.float().to(self.device)
 
                 s_y_batch = s_y_batch.float().to(self.device)
-                s_X_batch = s_X_batch.float().to(self.device)
 
                 self.optimizer.zero_grad()
                 # get model predictions
-                pred,pred_decoder,pred_s = self.model(X_batch,s_X_batch)
-
+                pred,pred_decoder,pred_s = self.model(X_batch)
+                X_batch = X_batch[:,:,:-1*X_batch.shape[2]//2]
 
                 # process loss_1
                 pred = pred.view(-1, pred.shape[-1])
@@ -151,8 +150,8 @@ class Model:
 
                 # process loss_3
                 pred_s = pred_s.view(-1, pred_s.shape[-1])
-                s_y_batch = s_y_batch.view(-1, X_batch.shape[-1])
-                twin_train_loss = self.twin_loss(pred_decoder, X_batch)
+                s_y_batch = s_y_batch.view(-1, s_y_batch.shape[-1])
+                twin_train_loss = self.twin_loss(pred_s, s_y_batch)
                 s_y_batch = s_y_batch.float().cpu().detach()
                 pred_s = pred_s.float().cpu().detach()
 

@@ -33,12 +33,15 @@ class Dataset_train(Dataset):
 
     def __getitem__(self, idx):
 
-        X, y = self.load_data(idx)
+        X, y,X_twin,y_twin = self.load_data(idx)
+
+        X = np.concatenate([X,X_twin],axis=1)
 
         X = torch.tensor(X, dtype=torch.float)
         y = torch.tensor(y, dtype=torch.float)
+        y_twin = torch.tensor(y_twin, dtype=torch.float)
 
-        return X, y
+        return X, y,y_twin
 
     def load_data(self, id, train=True):
 
@@ -59,16 +62,16 @@ class Dataset_train(Dataset):
             print(1)
 
         # load waveforms
-        X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
-        #X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
 
 
 
 
         # load annotation
-        #y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
 
         siamese_record = int(round(random.uniform(0, len(self.patients) - 1)))
         siamese_record = self.patients[siamese_record]
