@@ -143,7 +143,7 @@ class ECGNet(nn.Module):
         # self.bn10 = nn.BatchNorm1d(self.hparams['n_filt_res'])
 
         self.conv_out_1 = self.conv2 = nn.Conv1d(
-            self.hparams['n_filt_res'],
+            self.hparams['n_filt_res']*8,
             self.hparams['n_filt_out_conv_1'],
             self.hparams['kern_size'],
             padding=int((10 + (10 - 1) * (0 - 1)) / 2),
@@ -174,7 +174,6 @@ class ECGNet(nn.Module):
                                                   1, self.hparams['dropout'],
                                                   2)
 
-        self.attention = nn.Linear(self.hparams['n_filt_out_conv_2'],self.hparams['n_filt_out_conv_2'])
 
     def _make_layers(self, out_ch, kernel_size, n, basic_block):
         # dilation_rates = [2 ** i for i in range(n)]
@@ -212,14 +211,13 @@ class ECGNet(nn.Module):
         decoder_out = decoder_out.reshape(-1, decoder_out.shape[2], decoder_out.shape[1])
 
         #main head
-        x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
+        x = torch.cat([skip_1,skip_2,skip_3,skip_4,skip_5,skip_6,skip_7,skip_8],dim=1)
+        #skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
         x = torch.relu(self.bn1(self.conv_out_1(x)))
         x = torch.relu(self.bn2(self.conv_out_2(x)))
 
         x = torch.mean(x, dim=2)
-
-        x = torch.softmax(self.attention(x),dim=1)
 
         x = self.out(self.fc(x))
 
