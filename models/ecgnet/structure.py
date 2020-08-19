@@ -84,12 +84,15 @@ class Wave_block(nn.Module):
         self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
 
+        self.bn1 = nn.BatchNorm1d(out_ch)
+        self.bn2 = nn.BatchNorm1d(out_ch)
+
     def forward(self, x):
 
         res_x = x
 
-        tanh = self.tanh(self.conv1(x))
-        sig = self.sigmoid(self.conv2(x))
+        tanh = self.tanh(self.bn1(self.conv1(x)))
+        sig = self.sigmoid(self.bn2(self.conv2(x)))
         res = torch.mul(tanh, sig)
 
         res_out = self.conv_res(res) + res_x
@@ -129,6 +132,15 @@ class ECGNet(nn.Module):
         self.layer8 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 64)
         self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128)
         self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256)
+
+        # self.bn3 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        # self.bn4 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        # self.bn5 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        # self.bn6 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        # self.bn7 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        # self.bn8 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        # self.bn9 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        # self.bn10 = nn.BatchNorm1d(self.hparams['n_filt_res'])
 
         self.conv_out_1 = self.conv2 = nn.Conv1d(
             self.hparams['n_filt_res'],
