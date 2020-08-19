@@ -58,56 +58,54 @@ class Dataset_train(Dataset):
             a = self.patients[id]
             print(1)
 
-        # TODO: FS experiment
-        #data_folder = f'./data/{data_folder}/formatted/' #for tests
-
         # load waveforms
-        #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
-        X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        #X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
 
 
 
 
         # load annotation
-        y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        #y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
 
-        # siamese_record = int(round(random.uniform(0, len(self.patients) - 1)))
-        # siamese_record = self.patients[siamese_record]
+        siamese_record = int(round(random.uniform(0, len(self.patients) - 1)))
+        siamese_record = self.patients[siamese_record]
 
-        # #select random record
-
-        #
-        # if siamese_record[0] == 'A':
-        #     data_folder = 'A'
-        # elif siamese_record[0] == 'Q':
-        #     data_folder = 'B'
-        # elif siamese_record[0] == 'I':
-        #     data_folder = 'C'
-        # elif siamese_record[0] == 'S':
-        #     data_folder = 'D'
-        # elif siamese_record[0] == 'H':
-        #     data_folder = 'E'
-        # elif siamese_record[0] == 'E':
-        #     data_folder = 'F'
-        # else:
-        #     a = self.patients[id]
-        #     print(1)
-        #
-        # #siamese_X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + siamese_record + '.npy')
-        # siamese_X = np.load(f'./data/{data_folder}/formatted/' + siamese_record + '.npy')
-        # siamese_y = json.load(open(f'./data/{data_folder}/formatted/' + siamese_record + '.json'))
-        # #siamese_y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + siamese_record + '.json'))
+        #select random record
 
 
-        #X,label = self.preprocessing(X,y)
-        #siamese_X, siamese_y = self.preprocessing(siamese_X, siamese_y,process_labels=False)
+        if siamese_record[0] == 'A':
+            siamese_dataset = 'A'
+        elif siamese_record[0] == 'Q':
+            siamese_dataset = 'B'
+        elif siamese_record[0] == 'I':
+            siamese_dataset = 'C'
+        elif siamese_record[0] == 'S':
+            siamese_dataset = 'D'
+        elif siamese_record[0] == 'H':
+            siamese_dataset = 'E'
+        elif siamese_record[0] == 'E':
+            siamese_dataset = 'F'
+        else:
+            a = self.patients[id]
+            print(1)
 
-        # if siamese_dataset == data_folder:
-        #     siamese_y = 1
-        # else:
-        #     siamese_y = 0
+
+        siamese_X = np.load(f'./data/{siamese_dataset}/formatted/' + siamese_record + '.npy')
+        #siamese_X = np.load(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.npy')
+
+        siamese_y = json.load(open(f'./data/{siamese_dataset}/formatted/' + siamese_record + '.json'))
+        #siamese_y = json.load(open(f'./data/scipy_resample_1000_hz/{siamese_dataset}/formatted/' + siamese_record + '.json'))
+
+
+        siamese_X = self.preprocessing.run(siamese_X, siamese_y,label_process=False)
+
+        if siamese_dataset == data_folder:
+            siamese_y = 1
+        else:
+            siamese_y = 0
 
 
 
@@ -115,7 +113,7 @@ class Dataset_train(Dataset):
 
         X,label = self.preprocessing.run(X=X,y=y)
 
-        return X,label
+        return X,label,siamese_X,siamese_y
 
 
 

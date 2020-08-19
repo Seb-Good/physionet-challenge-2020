@@ -71,6 +71,7 @@ class Model:
 
         self.loss = nn.BCELoss(weight=weights)# CompLoss(self.device) #
         self.decoder_loss = nn.MSELoss()
+        self.twin_loss = nn.BCELoss()
 
         # define early stopping
         self.early_stopping = EarlyStopping(
@@ -122,13 +123,16 @@ class Model:
 
             train_preds, train_true = torch.Tensor([]), torch.Tensor([])
 
-            for (X_batch, y_batch) in tqdm(train_loader):
+            for (X_batch, y_batch,s_X_batch,s_y_batch) in tqdm(train_loader):
                 y_batch = y_batch.float().to(self.device)
                 X_batch = X_batch.float().to(self.device)
 
+                s_y_batch = s_y_batch.float().to(self.device)
+                s_X_batch = s_X_batch.float().to(self.device)
+
                 self.optimizer.zero_grad()
                 # get model predictions
-                pred,pred_decoder = self.model(X_batch)
+                pred,pred_decoder,pred_s = self.model(X_batch,s_X_batch)
 
 
                 # process loss_1
@@ -145,11 +149,18 @@ class Model:
                 X_batch = X_batch.float().cpu().detach()
                 pred_decoder = pred_decoder.float().cpu().detach()
 
+                # process loss_3
+                pred_s = pred_s.view(-1, pred_s.shape[-1])
+                s_y_batch = s_y_batch.view(-1, X_batch.shape[-1])
+                twin_train_loss = self.twin_loss(pred_decoder, X_batch)
+                s_y_batch = s_y_batch.float().cpu().detach()
+                pred_s = pred_s.float().cpu().detach()
+
                 # calc loss
                 avg_loss += train_loss.item() / len(train_loader)
 
                 #sum up multi-head losses
-                train_loss = train_loss + decoder_train_loss
+                train_loss = train_loss + decoder_train_loss - twin_train_loss
 
                 self.scaler.scale(train_loss).backward()  # train_loss.backward()
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
@@ -181,8 +192,9 @@ class Model:
                     y_batch = y_batch.float().to(self.device)
                     X_batch = X_batch.float().to(self.device)
 
-                    pred,pred_decoder = self.model(X_batch)
+                    pred,pred_decoder,pred_s = self.model(X_batch)
                     pred_decoder = pred_decoder.float().cpu().detach()
+                    pred_s = pred_s.float().cpu().detach()
                     X_batch = X_batch.float().cpu().detach()
 
                     pred = pred.reshape(-1, pred.shape[-1])
@@ -261,7 +273,7 @@ class Model:
             for i, (X_batch, y_batch) in enumerate(tqdm(test_loader)):
                 X_batch = X_batch.float().to(self.device)
 
-                pred,pred_decoder = self.model(X_batch)
+                pred,pred_decoder,pred_s = self.model(X_batch)
 
                 X_batch = X_batch.float().cpu().detach()
 
@@ -309,7 +321,7 @@ class Model:
         X = X.reshape(1,-1,X.shape[1])
 
         self.model.eval()
-        predictions,pred_encoder = self.model.forward(torch.Tensor(X))
+        predictions,pred_encoder,pred_s = self.model.forward(torch.Tensor(X))
         predictions= predictions.detach().numpy()
 
         return predictions

@@ -161,6 +161,11 @@ class ECGNet(nn.Module):
         self.output_decoder_2 = decoder_out_block(self.hparams['n_filt_stem'], n_channels,
                                                   1, self.hparams['dropout'],
                                                   2)
+
+        #twin head
+        self.fc_twin = nn.Linear(self.hparams['n_filt_out_conv_2'], 1)
+        self.out_twin = torch.nn.Sigmoid()
+
     def _make_layers(self, out_ch, kernel_size, n, basic_block):
         # dilation_rates = [2 ** i for i in range(n)]
         layers = []
@@ -204,6 +209,9 @@ class ECGNet(nn.Module):
 
         x = torch.mean(x, dim=2)
 
+        #twin head
+        twin_out = self.out_twin(self.fc_twin(x))
+
         x = self.out(self.fc(x))
 
-        return x,decoder_out
+        return x,decoder_out,twin_out
