@@ -206,7 +206,7 @@ class Preprocessing():
             #for channel_rpeaks in y['rpeaks']:
             if y['rpeaks'][0]:
                 return X / np.median(X[y['rpeaks'][0], 0])
-        return (X - X.mean()) / (X[:,0].std() )
+        return (X - X.mean()) / (X[:,0].max() )
 
     def apply_augmentation(self, waveform, meta_data, fs_training):
 
