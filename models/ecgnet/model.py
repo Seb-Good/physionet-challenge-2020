@@ -121,7 +121,6 @@ class Model:
             avg_loss = 0.0
 
             train_preds, train_true = torch.Tensor([]), torch.Tensor([])
-
             for (X_batch, y_batch) in tqdm(train_loader):
                 y_batch = y_batch.float().to(self.device)
                 X_batch = X_batch.float().to(self.device)
@@ -135,6 +134,8 @@ class Model:
                 pred = pred.view(-1, pred.shape[-1])
                 y_batch = y_batch.view(-1, y_batch.shape[-1])
                 train_loss = self.loss(pred, y_batch)
+
+
                 y_batch = y_batch.float().cpu().detach()
                 pred = pred.float().cpu().detach()
 

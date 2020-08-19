@@ -72,8 +72,9 @@ class Dataset_train(Dataset):
         # load annotation
         #y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
         y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        if y['labels_training_merged'] is None:
-            y['labels_training_merged'] = [0]*27
+        if type(y['labels_training_merged'])!=list:
+            y['labes_training'] = [0.] * 27
+            y['labels_training_merged'] = [0.]*27
 
 
         X,label = self.preprocessing.run(X=X,y=y)
@@ -202,9 +203,9 @@ class Preprocessing():
     def apply_amplitude_scaling(X, y):
         """Get rpeaks for each channel and scale waveform amplitude by median rpeak amplitude of lead I."""
         if y['rpeaks']:
-            for channel_rpeaks in y['rpeaks']:
-                if channel_rpeaks:
-                    return X / np.median(X[y['rpeaks'][0], 0])
+            #for channel_rpeaks in y['rpeaks']:
+            if y['rpeaks'][0]:
+                return X / np.median(X[y['rpeaks'][0], 0])
         return (X - X.mean()) / X.std()
 
     def apply_augmentation(self, waveform, meta_data, fs_training):
