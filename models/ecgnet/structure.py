@@ -239,6 +239,7 @@ class ECGNet(nn.Module):
         x = torch.relu(self.bn2(self.conv_out_2(x)))
 
         x = torch.mean(x, dim=2)
+        skip_twin = torch.mean(skip_twin, dim=2)
 
         #twin head
         twin_out = self.out_twin(self.fc_twin(skip_twin))
