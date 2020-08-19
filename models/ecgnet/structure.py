@@ -165,7 +165,7 @@ class ECGNet(nn.Module):
                                                   2)
 
         #twin head
-        self.fc_twin = nn.Linear(self.hparams['n_filt_stem'], 1)
+        self.fc_twin = nn.Linear(self.hparams['n_filt_res'], 1)
         self.out_twin = torch.nn.Sigmoid()
 
     def _make_layers(self, out_ch, kernel_size, n, basic_block):

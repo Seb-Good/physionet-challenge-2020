@@ -62,16 +62,16 @@ class Dataset_train(Dataset):
             print(1)
 
         # load waveforms
-        #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
-        X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        #X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
 
 
 
 
         # load annotation
-        y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        #y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
 
         siamese_record = int(round(random.uniform(0, len(self.patients) - 1)))
         siamese_record = self.patients[siamese_record]
