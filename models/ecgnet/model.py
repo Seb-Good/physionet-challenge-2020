@@ -187,7 +187,7 @@ class Model:
             val_preds, val_true = torch.Tensor([]), torch.Tensor([])
             avg_val_loss = 0.0
             with torch.no_grad():
-                for X_batch, y_batch in valid_loader:
+                for X_batch, y_batch,s_y_batch in valid_loader:
                     y_batch = y_batch.float().to(self.device)
                     X_batch = X_batch.float().to(self.device)
 
