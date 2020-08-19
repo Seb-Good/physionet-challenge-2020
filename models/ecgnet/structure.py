@@ -139,6 +139,8 @@ class ECGNet(nn.Module):
             bias=False,
         )
 
+        self.bn1 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_1'])
+
         self.conv_out_2 = self.conv2 = nn.Conv1d(
             self.hparams['n_filt_out_conv_1'],
             self.hparams['n_filt_out_conv_2'],
@@ -147,6 +149,7 @@ class ECGNet(nn.Module):
             dilation=1,
             bias=False,
         )
+        self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
         #main head
         self.fc = nn.Linear(self.hparams['n_filt_out_conv_2'], 27)  #
@@ -196,8 +199,8 @@ class ECGNet(nn.Module):
         #main head
         x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
-        x = torch.relu(self.conv_out_1(x))
-        x = torch.relu(self.conv_out_2(x))
+        x = torch.relu(self.bn1(self.conv_out_1(x)))
+        x = torch.relu(self.bn2(self.conv_out_2(x)))
 
         x = torch.mean(x, dim=2)
 
