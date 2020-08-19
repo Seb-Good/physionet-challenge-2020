@@ -173,12 +173,7 @@ class ECGNet(nn.Module):
             layers.append(basic_block(out_ch, out_ch, kernel_size))
         return nn.Sequential(*layers)
 
-    def forward(self, x):
-
-        # x, h_0 = self.input_layer_1(x)
-        # x = x.cpu().detach()
-
-        # x,(h_0,c_0) = self.input_layer_1(x)
+    def feature_extraction(self,x):
 
         x = x.permute(0, 2, 1)
         x = self.layer1(x)
@@ -193,7 +188,35 @@ class ECGNet(nn.Module):
         x, skip_7 = self.layer9(x)
         x, skip_8 = self.layer10(x)
 
+        skip = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
+        return x,skip
+
+    def forward(self, x,twin_input):
+
+        # x, h_0 = self.input_layer_1(x)
+        # x = x.cpu().detach()
+
+        # x,(h_0,c_0) = self.input_layer_1(x)
+
+        # x = x.permute(0, 2, 1)
+        # x = self.layer1(x)
+        # x = self.layer2(x)
+        #
+        # x, skip_1 = self.layer3(x)
+        # x, skip_2 = self.layer4(x)
+        # x, skip_3 = self.layer5(x)
+        # x, skip_4 = self.layer6(x)
+        # x, skip_5 = self.layer7(x)
+        # x, skip_6 = self.layer8(x)
+        # x, skip_7 = self.layer9(x)
+        # x, skip_8 = self.layer10(x)
+
+        x,skip = self.feature_extraction(x)
+        x_twin, skip_twin = self.feature_extraction(twin_input)
+
+        skip = skip + skip_twin
+        #x = x+x_twin
 
         #decoder head
         decoder_out = torch.relu(self.output_decoder_1(x))
@@ -202,9 +225,9 @@ class ECGNet(nn.Module):
         decoder_out = decoder_out.reshape(-1, decoder_out.shape[2], decoder_out.shape[1])
 
         #main head
-        x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
+        #x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
-        x = torch.relu(self.bn1(self.conv_out_1(x)))
+        x = torch.relu(self.bn1(self.conv_out_1(skip)))
         x = torch.relu(self.bn2(self.conv_out_2(x)))
 
         x = torch.mean(x, dim=2)
