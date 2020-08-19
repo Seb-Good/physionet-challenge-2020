@@ -216,7 +216,7 @@ class Preprocessing():
         waveform = self._random_scale(waveform=waveform, probability=0.5)
 
         # Apply synthetic noise
-        waveform = self._add_synthetic_noise(waveform=waveform, fs_training=fs_training, probability=0.25)
+        #waveform = self._add_synthetic_noise(waveform=waveform, fs_training=fs_training, probability=0.25)
 
         return waveform
 
