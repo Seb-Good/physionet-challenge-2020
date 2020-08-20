@@ -23,7 +23,6 @@ from data_generator import Preprocessing
 # model
 from models.ecgnet.structure import ECGNet
 
-
 class Model:
     """
     This class handles basic methods for handling the model:

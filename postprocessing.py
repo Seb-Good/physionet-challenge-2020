@@ -1,6 +1,12 @@
+from functools import partial
+
 import numpy as np
 from tqdm import tqdm
 from metrics import Metric
+
+from concurrent.futures import ProcessPoolExecutor
+
+
 
 class PostProcessing():
 
@@ -28,15 +34,25 @@ class PostProcessing():
         threshold_grid = np.arange(0.05, 0.99, 0.10).tolist()
         threshold_opt = np.zeros((27))
 
-        scores = []
-        print('Finding the optimal threshold')
-        for threshold in tqdm(threshold_grid):
-            predictions = outputs.copy()
+        unit_threshold= partial(self._unit_threshold,labels=labels,outputs=outputs)
 
-            predictions[np.where(predictions >= threshold)] = 1
-            predictions[np.where(predictions < threshold)] = 0
+        with ProcessPoolExecutor(max_workers=4) as pool:
+            result = pool.map(
+                 unit_threshold,threshold_grid
+        )
+        scores = list(result)
 
-            scores.append(self.metric.compute(labels, predictions))
+
+        # print('Finding the optimal threshold')
+        # for threshold in tqdm(threshold_grid):
+        #
+        #     predictions = outputs.copy()
+        #
+        #     predictions[np.where(predictions >= threshold)] = 1
+        #     predictions[np.where(predictions < threshold)] = 0
+        #
+        #     scores.append(self.metric.compute(labels, predictions))
+
         scores = np.array(scores)
         a = np.where(scores == np.max(scores))
         if len(a)>1:
@@ -46,6 +62,15 @@ class PostProcessing():
             threshold_opt = threshold_grid[a[0][0]]
 
         return threshold_opt
+
+    def _unit_threshold(self,threshold,labels,outputs):
+
+        predictions = outputs.copy()
+
+        predictions[np.where(predictions >= threshold)] = 1
+        predictions[np.where(predictions < threshold)] = 0
+
+        return self.metric.compute(labels, predictions)
 
     def update_threshold(self,threshold):
         f = open(f"threshold_{self.fold}.txt", "w")
