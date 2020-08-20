@@ -16,7 +16,7 @@ from metrics import Metric
 from utils.torchsummary import summary
 from utils.pytorchtools import EarlyStopping
 from torch.nn.parallel import DataParallel as DP
-from loss_functions import CompLoss
+from loss_functions import CompLoss,FocalLoss
 from postprocessing import PostProcessing
 from data_generator import Preprocessing
 
@@ -132,6 +132,7 @@ class Model:
 
                 # process loss_1
                 pred = pred.view(-1, pred.shape[-1])
+                pred = pred ** 2
                 y_batch = y_batch.view(-1, y_batch.shape[-1])
                 train_loss = self.loss(pred, y_batch)
 
@@ -187,6 +188,7 @@ class Model:
                     X_batch = X_batch.float().cpu().detach()
 
                     pred = pred.reshape(-1, pred.shape[-1])
+                    pred = pred ** 2
                     y_batch = y_batch.view(-1, y_batch.shape[-1])
 
                     avg_val_loss += self.loss(pred, y_batch).item() / len(valid_loader)
