@@ -83,7 +83,7 @@ def load_12ECG_model(model_input):
 
 
     # load the model
-    model = Model(input_size=19000, n_channels=12, hparams=hparams, gpu=[])
+    model = Model(input_size=19000, n_channels=12, hparams=hparams, gpu=[],inference=True)
     model.model_load("./inference_models/ecgnet_0_fold_0.6078759902401878.pt")
 
 
