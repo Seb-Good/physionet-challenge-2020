@@ -301,7 +301,13 @@ class Model:
         self.model = torch.load(model_path).to(self.device)
         return True
 
-    def inference(self,X,y):
+    def inference(self,X,y,gpu=False):
+
+        if gpu:
+            self.device = torch.device("cuda:0")
+        else:
+            self.device = torch.device("cpu")
+        self.model.to(self.device)
 
         preprocessing = Preprocessing(aug=False)
 
