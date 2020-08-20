@@ -63,7 +63,7 @@ class Model:
         #print(torch.cuda.is_available())
 
         self.metric = Metric()
-        self.num_workers = 18
+        self.num_workers = 6
         self.threshold = 0.5
 
         ########################## compile the model ###############################
