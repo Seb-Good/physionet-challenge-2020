@@ -31,12 +31,13 @@ class PostProcessing():
 
     def find_opt_thresold(self, labels, outputs):
 
-        threshold_grid = np.arange(0.05, 0.99, 0.10).tolist()
+        threshold_grid = np.arange(0.05, 0.99, 0.05).tolist()
         threshold_opt = np.zeros((27))
 
         unit_threshold= partial(self._unit_threshold,labels=labels,outputs=outputs)
 
-        with ProcessPoolExecutor(max_workers=4) as pool:
+
+        with ProcessPoolExecutor(max_workers=20) as pool:
             result = pool.map(
                  unit_threshold,threshold_grid
         )
