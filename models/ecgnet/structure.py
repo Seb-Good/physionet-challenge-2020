@@ -134,26 +134,16 @@ class ECGNet(nn.Module):
         self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256)
 
 
-        self.conv_out_1 = self.conv2 = nn.Conv1d(
-            self.hparams['n_filt_res'],
-            self.hparams['n_filt_out_conv_1'],
-            self.hparams['kern_size'],
-            padding=int((10 + (10 - 1) * (0 - 1)) / 2),
-            dilation=1,
-            bias=False,
+        self.conv_out_1 = input_block(
+            self.hparams['n_filt_res'], self.hparams['n_filt_out_conv_1'], self.hparams['kern_size'], self.hparams['dropout'], 3
         )
 
-        self.bn1 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_1'])
+        #self.bn1 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_1'])
 
-        self.conv_out_2 = self.conv2 = nn.Conv1d(
-            self.hparams['n_filt_out_conv_1'],
-            self.hparams['n_filt_out_conv_2'],
-            self.hparams['kern_size'],
-            padding=int((10 + (10 - 1) * (0 - 1)) / 2),
-            dilation=1,
-            bias=False,
+        self.conv_out_2 = input_block(
+            self.hparams['n_filt_out_conv_1'], self.hparams['n_filt_out_conv_2'], self.hparams['kern_size'], self.hparams['dropout'], 3
         )
-        self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
+        #self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
         #main head
         self.fc = nn.Linear(self.hparams['n_filt_out_conv_2'], 27)  #4733,27)#
@@ -214,8 +204,8 @@ class ECGNet(nn.Module):
         #main head
         x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
-        x = torch.relu(self.bn1(self.conv_out_1(x)))
-        x = torch.relu(self.bn2(self.conv_out_2(x)))
+        x = self.conv_out_1(x)
+        x = self.conv_out_2(x)
 
         x = torch.mean(x, dim=2)
 
