@@ -133,14 +133,14 @@ class ECGNet(nn.Module):
         self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128)
         self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256)
 
-        # self.bn3 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        # self.bn4 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        # self.bn5 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        # self.bn6 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        # self.bn7 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        # self.bn8 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        # self.bn9 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        # self.bn10 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn3 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn4 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn5 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn6 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn7 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn8 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn9 = nn.BatchNorm1d(self.hparams['n_filt_res'])
+        self.bn10 = nn.BatchNorm1d(self.hparams['n_filt_res'])
 
         self.conv_out_1 = self.conv2 = nn.Conv1d(
             self.hparams['n_filt_res'],
@@ -192,13 +192,21 @@ class ECGNet(nn.Module):
         x = self.layer2(x)
 
         x, skip_1 = self.layer3(x)
+        #x = self.bn3(x)
         x, skip_2 = self.layer4(x)
+        #x = self.bn4(x)
         x, skip_3 = self.layer5(x)
+        #x = self.bn5(x)
         x, skip_4 = self.layer6(x)
+        #x = self.bn6(x)
         x, skip_5 = self.layer7(x)
+        #x = self.bn7(x)
         x, skip_6 = self.layer8(x)
+        #x = self.bn8(x)
         x, skip_7 = self.layer9(x)
+        #x = self.bn9(x)
         x, skip_8 = self.layer10(x)
+        #x = self.bn10(x)
 
 
 
