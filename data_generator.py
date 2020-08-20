@@ -213,7 +213,7 @@ class Preprocessing():
         for i in range(12):
             X[:, 0] -= np.median(X[:, 0])
 
-        return X / (X[:,0].max() + 1)
+        return X / (X[:,0].std() + 0.001)
 
     def apply_augmentation(self, waveform, meta_data, fs_training):
 
