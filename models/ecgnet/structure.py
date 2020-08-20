@@ -133,14 +133,6 @@ class ECGNet(nn.Module):
         self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128)
         self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256)
 
-        self.bn3 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        self.bn4 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        self.bn5 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        self.bn6 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        self.bn7 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        self.bn8 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        self.bn9 = nn.BatchNorm1d(self.hparams['n_filt_res'])
-        self.bn10 = nn.BatchNorm1d(self.hparams['n_filt_res'])
 
         self.conv_out_1 = self.conv2 = nn.Conv1d(
             self.hparams['n_filt_res'],
@@ -220,7 +212,6 @@ class ECGNet(nn.Module):
         decoder_out = decoder_out.reshape(-1, decoder_out.shape[2], decoder_out.shape[1])
 
         #main head
-        #x = torch.cat([skip_1,skip_2,skip_3,skip_4,skip_5,skip_6,skip_7,skip_8],dim=1)
         x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
         x = torch.relu(self.bn1(self.conv_out_1(x)))
