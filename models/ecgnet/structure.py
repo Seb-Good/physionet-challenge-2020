@@ -164,7 +164,7 @@ class ECGNet(nn.Module):
         self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
         #main head
-        self.fc = nn.Linear(self.hparams['n_filt_out_conv_2'], 27)  #
+        self.fc = nn.Linear(4733,27)#self.hparams['n_filt_out_conv_2'], 27)  #
         self.out = torch.nn.Sigmoid()
 
         #autoencoder head

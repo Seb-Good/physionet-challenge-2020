@@ -380,8 +380,8 @@ class CVPipeline:
         #     'S0428',
         # ]
 
-        self.additinal_data = json.load(open('./additional_data.json'))
-        self.additinal_data = self.additinal_data['data']
+        # self.additinal_data = json.load(open('./additional_data.json'))
+        # self.additinal_data = self.additinal_data['data']
 
         self.splits = self.load_split_table()
         self.metric = Metric()
@@ -425,7 +425,7 @@ class CVPipeline:
                     continue
                 dataset_val.append(i)
 
-            data['train'] = dataset_train+self.additinal_data
+            data['train'] = dataset_train#+self.additinal_data
             data['val'] = dataset_val
 
             splits.append(data)
