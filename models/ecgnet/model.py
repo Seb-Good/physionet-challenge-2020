@@ -135,7 +135,6 @@ class Model:
                 # get model predictions
                 pred,pred_decoder = self.model(X_batch)
 
-
                 # process loss_1
                 pred = pred.view(-1, pred.shape[-1])
                 pred = pred ** 2
