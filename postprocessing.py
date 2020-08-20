@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 from tqdm import tqdm
 from metrics import Metric
-
+import time
 from concurrent.futures import ProcessPoolExecutor
 
 
@@ -36,13 +36,13 @@ class PostProcessing():
 
         unit_threshold= partial(self._unit_threshold,labels=labels,outputs=outputs)
 
-
+        start = time.time()
         with ProcessPoolExecutor(max_workers=20) as pool:
             result = pool.map(
                  unit_threshold,threshold_grid
         )
         scores = list(result)
-
+        print(f'Processing time: {(time.time() - start)/60}')
 
         # print('Finding the optimal threshold')
         # for threshold in tqdm(threshold_grid):
