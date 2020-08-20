@@ -33,25 +33,30 @@ class Model:
     4. Load
     """
 
-    def __init__(self, input_size, n_channels, hparams, gpu):
+    def __init__(self, input_size, n_channels, hparams, gpu,inference=False):
 
         self.hparams = hparams
 
-        if torch.cuda.device_count() > 1:
-            if len(gpu) > 0:
-                print("Number of GPUs will be used: ", len(gpu))
-                self.device = torch.device(f"cuda:{gpu[0]}" if torch.cuda.is_available() else "cpu")
-                self.model = ECGNet(n_channels=n_channels, hparams=self.hparams).to(self.device)
-                self.model = DP(self.model, device_ids=gpu,output_device=gpu[0])
+        if inference:
+            self.device = torch.device("cpu")
+            self.model = ECGNet(n_channels=n_channels, hparams=self.hparams).to(self.device)
+        else:
+            if torch.cuda.device_count() > 1:
+                if len(gpu) > 0:
+                    print("Number of GPUs will be used: ", len(gpu))
+                    self.device = torch.device(f"cuda:{gpu[0]}" if torch.cuda.is_available() else "cpu")
+                    self.model = ECGNet(n_channels=n_channels, hparams=self.hparams).to(self.device)
+                    self.model = DP(self.model, device_ids=gpu,output_device=gpu[0])
+                else:
+                    print("Number of GPUs will be used: ", torch.cuda.device_count() - 5)
+                    self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+                    self.model = ECGNet(n_channels=n_channels, hparams=self.hparams).to(self.device)
+                    self.model = DP(self.model, device_ids=list(range(torch.cuda.device_count() - 5)))
             else:
-                print("Number of GPUs will be used: ", torch.cuda.device_count() - 5)
                 self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
                 self.model = ECGNet(n_channels=n_channels, hparams=self.hparams).to(self.device)
-                self.model = DP(self.model, device_ids=list(range(torch.cuda.device_count() - 5)))
-        else:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-            self.model = ECGNet(n_channels=n_channels, hparams=self.hparams).to(self.device)
-            print('Only one GPU is available')
+                print('Only one GPU is available')
+
 
         # define the models
         summary(self.model, (input_size, n_channels))
