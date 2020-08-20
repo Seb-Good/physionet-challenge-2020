@@ -83,9 +83,22 @@ def load_12ECG_model(model_input):
 
 
     # load the model
-    model = Model(input_size=19000, n_channels=12, hparams=hparams, gpu=[],inference=True)
-    model.model_load("./inference_models/ecgnet_0_fold_0.6078759902401878.pt")
-
+    model = Model(input_size=19000, n_channels=12, hparams=hparams, gpu=[],inference=False)
+    #model.model_load("./inference_models/ecgnet_0_fold_0.6078759902401878.pt")
+    model.model_load("./cpu_model.pt")
 
 
     return model
+
+import numpy as np
+
+model = load_12ECG_model('awdaw')
+
+signal = np.zeros((19000,12))+1
+meta = {}
+meta['rpeaks'] = [[100,300,400]]
+
+a = model.inference(X=signal, y=meta)
+
+print(1)
+
