@@ -195,25 +195,25 @@ class ECGNet(nn.Module):
 
         x, skip_1 = self.layer3(x)
         #x = self.bn3(x)
-        x, skip_2 = self.layer4(x)
+        x, skip_2 = self.layer4(x+skip_1)
         #x = self.bn4(x)
-        x, skip_3 = self.layer5(x)
+        x, skip_3 = self.layer5(x+skip_1+skip_2)
         #x = self.bn5(x)
-        x, skip_4 = self.layer6(x)
+        x, skip_4 = self.layer6(x+skip_1+skip_2+skip_3)
         #x = self.bn6(x)
-        x, skip_5 = self.layer7(x)
+        x, skip_5 = self.layer7(x+skip_1+skip_2+skip_3+skip_4)
         #x = self.bn7(x)
-        x, skip_6 = self.layer8(x)
+        x, skip_6 = self.layer8(x+skip_1+skip_2+skip_3+skip_4+skip_5)
         #x = self.bn8(x)
-        x, skip_7 = self.layer9(x)
+        x, skip_7 = self.layer9(x+skip_1+skip_2+skip_3+skip_4+skip_5+skip_6)
         #x = self.bn9(x)
-        x, skip_8 = self.layer10(x)
+        x, skip_8 = self.layer10(x+skip_1+skip_2+skip_3+skip_4+skip_5+skip_6+skip_7)
         #x = self.bn10(x)
 
 
 
         #decoder head
-        decoder_out = torch.relu(self.output_decoder_1(x))
+        decoder_out = torch.relu(self.output_decoder_1(x + skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8))
         decoder_out = self.output_decoder_2(decoder_out)
         decoder_out = decoder_out[:,:,:-2]
         decoder_out = decoder_out.reshape(-1, decoder_out.shape[2], decoder_out.shape[1])
