@@ -309,6 +309,10 @@ class Model:
         self.model.load_state_dict(torch.load(model_path,map_location=self.device))
         return True
 
+    def model_load_old(self, model_path):
+        self.model = torch.load(model_path,map_location=self.device)
+        return True
+
     def inference(self,X,y):
 
 
