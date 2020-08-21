@@ -99,7 +99,7 @@ class Model:
  0.047104247104247106,
  0.05154203633291086,
  0.40802675585284287,
- 0.3144329896907217]])
+ 0.3144329896907217]]).to(self.device)
 
         self.loss = nn.BCELoss(weight=weights)# CompLoss(self.device) #
         self.decoder_loss = nn.MSELoss()
