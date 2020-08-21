@@ -179,6 +179,10 @@ class Preprocessing():
             X = np.concatenate([X, p_waves_array], axis=1)
 
 
+        if type(y['hr']) is not float:
+            X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        else:
+            X = np.concatenate([X, np.zeros((X.shape[0], 1))+y['hr']/100], axis=1)
 
 
         fs_training = 1000
