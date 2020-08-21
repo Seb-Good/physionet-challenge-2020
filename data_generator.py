@@ -62,8 +62,8 @@ class Dataset_train(Dataset):
         #data_folder = f'./data/{data_folder}/formatted/' #for tests
 
         # load waveforms
-        #X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
-        X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        X = np.load(f'./data/{data_folder}/formatted/' + self.patients[id] + '.npy')
+        #X = np.load(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.npy')
 
 
 
@@ -71,8 +71,8 @@ class Dataset_train(Dataset):
 
         # load annotation
 
-        y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
-        #y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        #y = json.load(open(f'./data/scipy_resample_1000_hz/{data_folder}/formatted/' + self.patients[id] + '.json'))
+        y = json.load(open(f'./data/{data_folder}/formatted/' + self.patients[id] + '.json'))
         if type(y['labels_training_merged'])!=list:
             y['labes_training'] = [0.] * 27
             y['labels_training_merged'] = [0.]*27
@@ -178,10 +178,12 @@ class Preprocessing():
             p_waves_array[p_waves, 0] = 1
             X = np.concatenate([X, p_waves_array], axis=1)
 
-        if y['hr'] is None:
+
+
+        if type(y['hr']) is not float:
             X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
         else:
-            X = np.concatenate([X, np.zeros((X.shape[0], 1)) + float(y['hr'])/100], axis=1)
+            X = np.concatenate([X, np.zeros((X.shape[0], 1)) + y['hr']/100], axis=1)
 
 
 
