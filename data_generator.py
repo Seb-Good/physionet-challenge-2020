@@ -178,6 +178,10 @@ class Preprocessing():
             p_waves_array[p_waves, 0] = 1
             X = np.concatenate([X, p_waves_array], axis=1)
 
+        if y['hr'] is None:
+            X = np.concatenate([X, np.zeros((X.shape[0], 1))], axis=1)
+        else:
+            X = np.concatenate([X, np.zeros((X.shape[0], 1)) + y['hr']], axis=1)
 
 
 

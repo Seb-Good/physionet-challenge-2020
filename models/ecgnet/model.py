@@ -75,7 +75,7 @@ class Model:
        0.5]).to(self.device)
 
         self.loss = nn.BCELoss(weight=weights)# CompLoss(self.device) #
-        self.decoder_loss = nn.L1Loss()
+        self.decoder_loss = nn.MSELoss()
 
         # define early stopping
         self.early_stopping = EarlyStopping(
