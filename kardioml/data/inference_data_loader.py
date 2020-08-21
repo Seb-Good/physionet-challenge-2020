@@ -13,14 +13,13 @@ from scipy.signal.windows import blackmanharris
 
 # Local imports
 from kardioml.data.data_loader import parse_header
-from kardioml.data.format_data_physionet_2020 import Labels
 from kardioml.data.p_t_wave_detector import PTWaveDetection
 
 
 def inference_data_loader(waveforms, header, fs_resampled, p_and_t_waves=False):
     """Convert data and header_data to .npy and dict format."""
     # Parse header data
-    header = parse_header(header_data=header)
+    header = parse_header(header_data=header, inference=True)
 
     # Transpose waveforms array
     waveforms = waveforms.T

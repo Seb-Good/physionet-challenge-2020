@@ -63,7 +63,7 @@ def load_challenge_data(filename):
     return data, header_data
 
 
-def parse_header(header_data):
+def parse_header(header_data, inference=False):
     """Parse header text.
     header_data: list of text rows
     ['A0001 12 500 7500 05-Feb-2020 11:39:16\n',
@@ -95,7 +95,10 @@ def parse_header(header_data):
     channel_order = [row.split(' ')[-1].strip() for row in header_data[1:13]]
     age = header_data[13].split(':')[-1].strip()
     sex = get_sex(sex=header_data[14].split(':')[-1].strip())
-    labels_snomedct = [int(label) for label in header_data[15].split(':')[-1].strip().split(',')]
+    if inference:
+        labels_snomedct = None
+    else:
+        labels_snomedct = [int(label) for label in header_data[15].split(':')[-1].strip().split(',')]
 
     return {'filename': filename, 'datetime': datetime, 'channel_order': channel_order, 'age': age, 'sex': sex,
             'labels_SNOMEDCT': labels_snomedct, 'amp_conversion': amp_conversion, 'fs': fs,
