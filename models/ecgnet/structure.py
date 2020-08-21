@@ -149,10 +149,7 @@ class ECGNet(nn.Module):
             self.hparams['dropout'], 2
         )
 
-        self.conv_out_4 = input_block(
-            self.hparams['n_filt_out_conv_3'], self.hparams['n_filt_out_conv_4'], self.hparams['kern_size'],
-            self.hparams['dropout'], 2
-        )
+
         #self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
         #main head
@@ -218,7 +215,6 @@ class ECGNet(nn.Module):
         x = self.conv_out_1(x)
         x = self.conv_out_2(x)
         x = self.conv_out_3(x)
-        x = self.conv_out_4(x)
 
         x = torch.mean(x, dim=2)
 
