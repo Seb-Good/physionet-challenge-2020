@@ -127,14 +127,14 @@ class ECGNet(nn.Module):
         )
 
         # wavenet(residual) layers
-        self.layer3 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 2,hparams['dropout'])
-        self.layer4 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 4,hparams['dropout'])
-        self.layer5 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 8,hparams['dropout'])
-        self.layer6 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 16,hparams['dropout'])
-        self.layer7 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 32,hparams['dropout'])
-        self.layer8 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 64,hparams['dropout'])
-        self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128,hparams['dropout'])
-        self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256,hparams['dropout'])
+        self.layer3 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 2,self.hparams['dropout'])
+        self.layer4 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 4,self.hparams['dropout'])
+        self.layer5 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 8,self.hparams['dropout'])
+        self.layer6 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 16,self.hparams['dropout'])
+        self.layer7 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 32,self.hparams['dropout'])
+        self.layer8 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 64,self.hparams['dropout'])
+        self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128,self.hparams['dropout'])
+        self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256,self.hparams['dropout'])
 
 
         self.conv_out_1 = input_block(
