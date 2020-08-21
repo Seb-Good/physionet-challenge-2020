@@ -124,10 +124,10 @@ class Model:
                 y_batch = y_batch.float().cpu().detach()
                 pred = pred.float().cpu().detach()
 
-                self.scaler.scale(train_loss).backward()  # train_loss.backward()
+                train_loss.backward() #self.scaler.scale(train_loss).backward()  #
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
                 # torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.5)
-                self.scaler.step(self.optimizer)  # self.optimizer.step()
+                self.optimizer.step() # self.scaler.step(self.optimizer)  #
                 self.scaler.update()
 
                 # calc metric
