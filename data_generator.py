@@ -144,7 +144,7 @@ class Preprocessing():
 
     def run(self,X,y,label_process=True):
 
-        X = torch.tensor(X)
+        X = torch.tensor(X).float()
         for i in range(12):
             X[:,i] = X[:,i] - self.FIR_filt(X[:,i], self.weights_LPF, self.padding_LPF)
         X = X.detach().numpy()
