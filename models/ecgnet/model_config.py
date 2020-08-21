@@ -34,6 +34,5 @@ structure_hparams['n_filt_res'] = 64
 structure_hparams['n_filt_out_conv_1'] = 128
 structure_hparams['n_filt_out_conv_2'] = 256
 structure_hparams['n_filt_out_conv_3'] = 512
-structure_hparams['n_filt_out_conv_4'] = 1024
 
 hparams['model'] = structure_hparams

@@ -55,7 +55,7 @@ class Stem_layer_upsample(nn.Module):
 
 
 class Wave_block(nn.Module):
-    def __init__(self, out_ch, kernel_size, dilation):
+    def __init__(self, out_ch, kernel_size, dilation,drop_rate):
         super().__init__()
         self.kernel_size = kernel_size
         self.out_ch = out_ch
@@ -84,7 +84,8 @@ class Wave_block(nn.Module):
         self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
 
-        # self.bn1 = nn.BatchNorm1d(out_ch)
+        self.drop1 = nn.Dropout(drop_rate)
+        self.drop2 = nn.Dropout(drop_rate)
         # self.bn2 = nn.BatchNorm1d(out_ch)
 
     def forward(self, x):
@@ -97,6 +98,8 @@ class Wave_block(nn.Module):
 
         res_out = self.conv_res(res) + res_x
         skip_out = self.conv_skip(res)
+        res_out = self.drop1(res_out)
+        skip_out = self.drop1(skip_out)
         return res_out, skip_out
 
 
@@ -124,14 +127,14 @@ class ECGNet(nn.Module):
         )
 
         # wavenet(residual) layers
-        self.layer3 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 2)
-        self.layer4 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 4)
-        self.layer5 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 8)
-        self.layer6 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 16)
-        self.layer7 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 32)
-        self.layer8 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 64)
-        self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128)
-        self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256)
+        self.layer3 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 2,hparams['dropout'])
+        self.layer4 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 4,hparams['dropout'])
+        self.layer5 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 8,hparams['dropout'])
+        self.layer6 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 16,hparams['dropout'])
+        self.layer7 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 32,hparams['dropout'])
+        self.layer8 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 64,hparams['dropout'])
+        self.layer9 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 128,hparams['dropout'])
+        self.layer10 = self.basic_block(self.hparams['n_filt_res'], self.hparams['kern_size'], 256,hparams['dropout'])
 
 
         self.conv_out_1 = input_block(
