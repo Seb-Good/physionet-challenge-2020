@@ -143,11 +143,6 @@ class ECGNet(nn.Module):
             self.hparams['n_filt_out_conv_1'], self.hparams['n_filt_out_conv_2'], self.hparams['kern_size'], self.hparams['dropout'], 2
         )
 
-        self.conv_out_3 = input_block(
-            self.hparams['n_filt_out_conv_2'], self.hparams['n_filt_out_conv_3'], self.hparams['kern_size'],
-            self.hparams['dropout'], 2
-        )
-
 
         #self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
