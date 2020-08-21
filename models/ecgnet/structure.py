@@ -84,9 +84,7 @@ class Wave_block(nn.Module):
         self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
 
-        self.drop1 = nn.Dropout(drop_rate)
-        self.drop2 = nn.Dropout(drop_rate)
-        # self.bn2 = nn.BatchNorm1d(out_ch)
+
 
     def forward(self, x):
 
@@ -98,8 +96,6 @@ class Wave_block(nn.Module):
 
         res_out = self.conv_res(res) + res_x
         skip_out = self.conv_skip(res)
-        res_out = self.drop1(res_out)
-        skip_out = self.drop1(skip_out)
         return res_out, skip_out
 
 
