@@ -143,6 +143,11 @@ class ECGNet(nn.Module):
         self.conv_out_2 = input_block(
             self.hparams['n_filt_out_conv_1'], self.hparams['n_filt_out_conv_2'], self.hparams['kern_size'], self.hparams['dropout'], 3
         )
+
+        self.conv_out_3 = input_block(
+            self.hparams['n_filt_out_conv_2'], self.hparams['n_filt_out_conv_3'], self.hparams['kern_size'],
+            self.hparams['dropout'], 3
+        )
         #self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
         #main head
@@ -155,6 +160,7 @@ class ECGNet(nn.Module):
         self.output_decoder_2 = decoder_out_block(self.hparams['n_filt_stem'], n_channels,
                                                   1, self.hparams['dropout'],
                                                   2)
+
 
 
     def _make_layers(self, out_ch, kernel_size, n, basic_block):
@@ -177,19 +183,19 @@ class ECGNet(nn.Module):
 
         x, skip_1 = self.layer3(x)
         #x = self.bn3(x)
-        x, skip_2 = self.layer4(x+skip_1)
+        x, skip_2 = self.layer4(x)
         #x = self.bn4(x)
-        x, skip_3 = self.layer5(x+skip_1+skip_2)
+        x, skip_3 = self.layer5(x)
         #x = self.bn5(x)
-        x, skip_4 = self.layer6(x+skip_1+skip_2+skip_3)
+        x, skip_4 = self.layer6(x)
         #x = self.bn6(x)
-        x, skip_5 = self.layer7(x+skip_1+skip_2+skip_3+skip_4)
+        x, skip_5 = self.layer7(x)
         #x = self.bn7(x)
-        x, skip_6 = self.layer8(x+skip_1+skip_2+skip_3+skip_4+skip_5)
+        x, skip_6 = self.layer8(x)
         #x = self.bn8(x)
-        x, skip_7 = self.layer9(x+skip_1+skip_2+skip_3+skip_4+skip_5+skip_6)
+        x, skip_7 = self.layer9(x)
         #x = self.bn9(x)
-        x, skip_8 = self.layer10(x+skip_1+skip_2+skip_3+skip_4+skip_5+skip_6+skip_7)
+        x, skip_8 = self.layer10(x)
         #x = self.bn10(x)
 
 
@@ -206,6 +212,7 @@ class ECGNet(nn.Module):
 
         x = self.conv_out_1(x)
         x = self.conv_out_2(x)
+        x = self.conv_out_3(x)
 
         x = torch.mean(x, dim=2)
 
