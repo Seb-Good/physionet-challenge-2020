@@ -223,7 +223,6 @@ class ECGNet(nn.Module):
 
         x = torch.mean(x, dim=2)
 
-        print(x.shape)
 
         x = x.view(-1,1,x.shape[1])
 

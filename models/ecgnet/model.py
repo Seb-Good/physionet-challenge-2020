@@ -139,7 +139,6 @@ class Model:
                 pred = pred.view(-1, pred.shape[-1])
                 pred = pred ** 2
                 y_batch = y_batch.view(-1, y_batch.shape[-1])
-                print(pred)
                 train_loss = self.loss(pred, y_batch)
 
 
@@ -160,6 +159,7 @@ class Model:
                 train_loss = train_loss + decoder_train_loss
 
                 self.scaler.scale(train_loss).backward()  # train_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
                 torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.5)
                 self.scaler.step(self.optimizer)  # self.optimizer.step()
