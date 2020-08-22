@@ -225,14 +225,21 @@ class ECGNet(nn.Module):
         x = x.permute(0,2,1)
 
 
+
         x,h = self.rnn(x)
 
-        h = h.view(-1,h.shape[1]*h.shape[2])
+
+
+        h = h.permute(1, 0, 2)
+
+        h = h.reshape(-1,h.shape[1]*h.shape[2])
+
+
 
         x = self.attention_activation(self.attention(h))
 
 
-        print(x.shape)
+
 
 
 
