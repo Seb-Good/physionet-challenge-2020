@@ -191,7 +191,6 @@ class Preprocessing():
 
 
 
-
         fs_training = 1000
 
         if self.aug is True:
