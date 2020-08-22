@@ -152,7 +152,7 @@ class ECGNet(nn.Module):
                           bias=False,dropout=self.hparams['dropout'])
 
         self.attention = nn.Linear(self.hparams['rnn_hidden_size']*2, self.hparams['rnn_hidden_size']*2)  #4733,27)#
-
+        self.bn_attention = nn.BatchNorm1d(self.hparams['rnn_hidden_size']*2)
 
         #self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
@@ -234,7 +234,7 @@ class ECGNet(nn.Module):
 
         h = h.reshape(-1,h.shape[1]*h.shape[2])
 
-
+        h = self.bn_attention(h)
 
         x = torch.softmax(self.attention(h),dim=1)
 

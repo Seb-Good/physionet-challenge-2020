@@ -139,6 +139,7 @@ class Model:
                 pred = pred.view(-1, pred.shape[-1])
                 pred = pred ** 2
                 y_batch = y_batch.view(-1, y_batch.shape[-1])
+                print(pred)
                 train_loss = self.loss(pred, y_batch)
 
 
