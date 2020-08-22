@@ -221,8 +221,11 @@ class ECGNet(nn.Module):
         x = self.conv_out_2(x)
         x = self.conv_out_3(x)
 
+        x = torch.mean(x, dim=2)
 
-        x = x.permute(0,2,1)
+        print(x.shape)
+
+        x = x.view(-1,1,x.shape[1])
 
 
 
