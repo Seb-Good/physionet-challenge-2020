@@ -238,7 +238,7 @@ class ECGNet(nn.Module):
 
         h = self.bn_attention(h)
 
-        x = torch.softmax(self.attention(h),dim=1)
+        x = torch.sigmoid(self.attention(h))
 
 
 
