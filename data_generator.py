@@ -190,7 +190,7 @@ class Preprocessing():
             X = np.concatenate([X, p_waves_array], axis=1)
 
 
-    
+
 
         fs_training = 1000
 
