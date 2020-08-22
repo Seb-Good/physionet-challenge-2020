@@ -143,7 +143,7 @@ class ECGNet(nn.Module):
         self.bn10 = nn.BatchNorm1d(self.hparams['n_filt_res'])
 
         self.conv_out_1 = self.conv2 = nn.Conv1d(
-            self.hparams['n_filt_res']*8,
+            self.hparams['n_filt_res'],
             self.hparams['n_filt_out_conv_1'],
             self.hparams['kern_size'],
             padding=int((10 + (10 - 1) * (0 - 1)) / 2),
@@ -164,7 +164,7 @@ class ECGNet(nn.Module):
         self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
         #main head
-        self.fc = nn.Linear(4733,27)#self.hparams['n_filt_out_conv_2'], 27)  #
+        self.fc = nn.Linear(self.hparams['n_filt_out_conv_2'],27)#self.hparams['n_filt_out_conv_2'], 27)  #
         self.out = torch.nn.Sigmoid()
 
         #autoencoder head
@@ -195,19 +195,19 @@ class ECGNet(nn.Module):
 
         x, skip_1 = self.layer3(x)
         #x = self.bn3(x)
-        x, skip_2 = self.layer4(x+skip_1)
+        x, skip_2 = self.layer4(x)
         #x = self.bn4(x)
-        x, skip_3 = self.layer5(x+skip_1+skip_2)
+        x, skip_3 = self.layer5(x)
         #x = self.bn5(x)
-        x, skip_4 = self.layer6(x+skip_1+skip_2+skip_3)
+        x, skip_4 = self.layer6(x)
         #x = self.bn6(x)
-        x, skip_5 = self.layer7(x+skip_1+skip_2+skip_3+skip_4)
+        x, skip_5 = self.layer7(x)
         #x = self.bn7(x)
-        x, skip_6 = self.layer8(x+skip_1+skip_2+skip_3+skip_4+skip_5)
+        x, skip_6 = self.layer8(x)
         #x = self.bn8(x)
-        x, skip_7 = self.layer9(x+skip_1+skip_2+skip_3+skip_4+skip_5+skip_6)
+        x, skip_7 = self.layer9(x)
         #x = self.bn9(x)
-        x, skip_8 = self.layer10(x+skip_1+skip_2+skip_3+skip_4+skip_5+skip_6+skip_7)
+        x, skip_8 = self.layer10(x)
         #x = self.bn10(x)
 
 
@@ -219,8 +219,8 @@ class ECGNet(nn.Module):
         decoder_out = decoder_out.reshape(-1, decoder_out.shape[2], decoder_out.shape[1])
 
         #main head
-        x = torch.cat([skip_1,skip_2,skip_3,skip_4,skip_5,skip_6,skip_7,skip_8],dim=1)
-        #skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
+        # = torch.cat([skip_1,skip_2,skip_3,skip_4,skip_5,skip_6,skip_7,skip_8],dim=1)
+        x = skip_1 + skip_2 + skip_3 + skip_4 + skip_5 + skip_6 + skip_7 + skip_8
 
         x = torch.relu(self.bn1(self.conv_out_1(x)))
         x = torch.relu(self.bn2(self.conv_out_2(x)))
