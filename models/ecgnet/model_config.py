@@ -33,6 +33,5 @@ structure_hparams['n_filt_stem'] = 32
 structure_hparams['n_filt_res'] = 64
 structure_hparams['n_filt_out_conv_1'] = 128
 structure_hparams['n_filt_out_conv_2'] = 256
-structure_hparams['n_filt_out_conv_3'] = 512
-structure_hparams['rnn_hidden_size'] = 512
+
 hparams['model'] = structure_hparams

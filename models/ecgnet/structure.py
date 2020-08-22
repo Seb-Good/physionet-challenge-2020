@@ -143,21 +143,11 @@ class ECGNet(nn.Module):
             self.hparams['n_filt_out_conv_1'], self.hparams['n_filt_out_conv_2'], self.hparams['kern_size'], self.hparams['dropout'], 2
         )
 
-        self.conv_out_3 = input_block(
-            self.hparams['n_filt_out_conv_2'], self.hparams['n_filt_out_conv_3'], self.hparams['kern_size'],
-            self.hparams['dropout'], 2
-        )
 
-        self.rnn = nn.RNN(input_size=self.hparams['n_filt_out_conv_3'],hidden_size=self.hparams['rnn_hidden_size'],batch_first=True,bidirectional=True,nonlinearity='relu',
-                          bias=False,dropout=self.hparams['dropout'])
 
-        self.attention = nn.Linear(self.hparams['rnn_hidden_size']*2, self.hparams['rnn_hidden_size']*2)  #4733,27)#
-        self.bn_attention = nn.BatchNorm1d(self.hparams['rnn_hidden_size']*2)
-
-        #self.bn2 = nn.BatchNorm1d(self.hparams['n_filt_out_conv_2'])
 
         #main head
-        self.fc = nn.Linear(self.hparams['rnn_hidden_size']*2, 27)  #4733,27)#
+        self.fc = nn.Linear(self.hparams['n_filt_out_conv_2'], 27)  #4733,27)#
         self.out = torch.nn.Sigmoid()
 
         #autoencoder head
@@ -219,30 +209,8 @@ class ECGNet(nn.Module):
 
         x = self.conv_out_1(x)
         x = self.conv_out_2(x)
-        x = self.conv_out_3(x)
 
         x = torch.mean(x, dim=2)
-
-
-        x = x.view(-1,1,x.shape[1])
-
-
-
-        x,h = self.rnn(x)
-
-
-
-        h = h.permute(1, 0, 2)
-
-        h = h.reshape(-1,h.shape[1]*h.shape[2])
-
-        h = self.bn_attention(h)
-
-        x = torch.sigmoid(self.attention(h))
-
-
-
-
 
 
         x = self.out(self.fc(x))
