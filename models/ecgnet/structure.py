@@ -84,14 +84,15 @@ class Wave_block(nn.Module):
         self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
 
-
+        self.bn1 = nn.BatchNorm1d(out_ch)
+        self.bn2 = nn.BatchNorm1d(out_ch)
 
     def forward(self, x):
 
         res_x = x
 
-        tanh = self.tanh(self.conv1(x))
-        sig = self.sigmoid((self.conv2(x)))
+        tanh = self.tanh(self.bn1(self.conv1(x)))
+        sig = self.sigmoid(self.bn2(self.conv2(x)))
         res = torch.mul(tanh, sig)
 
         res_out = self.conv_res(res) + res_x
