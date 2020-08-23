@@ -81,14 +81,22 @@ def load_12ECG_model(model_input):
     out model path.
     """
 
+    models_list = [
+        'ecgnet_0_fold_0.631593191670484'
+    ]
 
     # load the model
-    model = Model(input_size=19000, n_channels=12, hparams=hparams, gpu=[],inference=False)
-    model.model_load("./inference_models/ecgnet_0_fold_0.6078759902401878.pt")
+    models = []
+    for i in models_list:
+        model_stack = Model(input_size=19000, n_channels=15, hparams=hparams, gpu=[], inference=True)
+        model_stack.model_load("./inference_models/"+i+".pt")
+        models.append(model_stack)
+
+
   
 
 
-    return model
+    return models
 
 
 
