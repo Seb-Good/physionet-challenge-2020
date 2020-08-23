@@ -32,8 +32,6 @@ def run_12ECG_classifier(data, header_data, models):
     classes: ['270492004', '164889003', ... , '17338001']
     """
 
-
-
     # Run ETL process
     waveforms, meta_data = inference_data_loader(waveforms=data, header=header_data,
                                                  fs_resampled=1000, p_and_t_waves=True)
@@ -109,9 +107,5 @@ def load_12ECG_model(model_input):
         model_stack = Model(input_size=19000, n_channels=15, hparams=hparams, gpu=[], inference=True)
         model_stack.model_load("./inference_models/"+i+".pt")
         models.append(model_stack)
-
-
-  
-
 
     return models
