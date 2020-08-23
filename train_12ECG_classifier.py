@@ -26,23 +26,35 @@ def train_12ECG_classifier(input_directory, output_directory):
     print('Loading data...')
 
     # Create directory for processed training data
-    input_directory_processed = os.path.join(DATA_PATH, 'input_directory_processed')
-    os.makedirs(input_directory_processed, exist_ok=True)
-
-    # Get a list of filenames
-    filenames = [filename.split('.')[0] for filename in os.listdir(input_directory) if 'mat' in filename]
+    try:
+        input_directory_processed = os.path.join(DATA_PATH, 'input_directory_processed')
+    except:
+        pass
+    try:
+        os.makedirs(input_directory_processed, exist_ok=True)
+    except:
+        pass
+    try:
+        # Get a list of filenames
+        filenames = [filename.split('.')[0] for filename in os.listdir(input_directory) if 'mat' in filename]
+    except:
+        pass
 
     # Set sample rate for processed waveforms
     fs_resampled = 1000
 
     # Do you want to extract PT-waves?
     p_and_t_waves = True
+    try:
+        _ = Parallel(n_jobs=-1)(delayed(data_loader)(filename, input_directory, input_directory_processed,
+                                                     fs_resampled, p_and_t_waves) for filename in filenames)
+    except:
+        pass
 
-    _ = Parallel(n_jobs=-1)(delayed(data_loader)(filename, input_directory, input_directory_processed,
-                                                 fs_resampled, p_and_t_waves) for filename in filenames)
-
-
-    os.makedirs(output_directory, exist_ok=True)
+    try:
+        os.makedirs(output_directory, exist_ok=True)
+    except:
+        pass
 
 
     """Process Data"""
