@@ -52,6 +52,12 @@ def train_12ECG_classifier(input_directory, output_directory):
 
 def data_loader(filename, input_directory, input_directory_processed, fs_resampled, p_and_t_waves=False):
     """Convert data and header_data to .npy and dict format."""
+    # Dataset lookup
+    lookup = {'A': 'A', 'Q': 'B', 'I': 'C', 'S': 'D', 'H': 'E', 'E': 'F'}
+
+    # Get datset
+    dataset = lookup[filename[0]]
+
     # Import header file
     header = _load_header_file(filename=filename, input_directory=input_directory)
 
@@ -84,13 +90,15 @@ def data_loader(filename, input_directory, input_directory_processed, fs_resampl
     t_wave_array = _get_peak_array(waveforms=waveforms, peaks=t_waves)
     t_wave_times = _get_peak_times(waveforms=waveforms, peak_array=t_wave_array, fs=fs_resampled)
 
+    os.makedirs(os.path.join(input_directory_processed, dataset, 'formatted'), exist_ok=True)
+
     # Save waveform data npy file
-    np.save(os.path.join(input_directory_processed, '{}.npy'.format(filename)), waveforms)
+    np.save(os.path.join(input_directory_processed, dataset, 'formatted', '{}.npy'.format(filename)), waveforms)
 
     # Save meta data JSON
-    with open(os.path.join(input_directory_processed, '{}.json'.format(filename)), 'w') as file:
+    with open(os.path.join(input_directory_processed, dataset, 'formatted', '{}.json'.format(filename)), 'w') as file:
         json.dump({'filename': filename,
-                   'dataset': None,
+                   'dataset': dataset,
                    'datetime': header['datetime'],
                    'channel_order': header['channel_order'],
                    'age': header['age'],
