@@ -69,7 +69,7 @@ class Dataset_train(Dataset):
         # We need a way to inform this method of the sample rate for the dataset.
         fs_training = 350
         if self.aug is True:
-            X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training)
+            X = self.apply_augmentation(waveform=X, meta_data=y, fs_training=fs_training, max_samples=19000)
 
         #padding
         if X.shape[0] < 38000:
@@ -95,11 +95,11 @@ class Dataset_train(Dataset):
                     return X / np.median(X[y['rpeaks'][0], 0])
         return (X - X.mean()) / X.std()
 
-    def apply_augmentation(self, waveform, meta_data, fs_training):
+    def apply_augmentation(self, waveform, meta_data, fs_training, max_samples):
 
         # Random resample
         waveform = self._random_resample(waveform=waveform, meta_data=meta_data,
-                                         fs_training=fs_training, probability=0.25)
+                                         fs_training=fs_training, probability=0.25, max_samples=max_samples)
 
         # Random amplitude scale
         waveform = self._random_scale(waveform=waveform, probability=0.5)
@@ -109,7 +109,7 @@ class Dataset_train(Dataset):
 
         return waveform
 
-    def _random_resample(self, waveform, meta_data, fs_training, probability):
+    def _random_resample(self, waveform, meta_data, fs_training, probability, max_samples):
         """Randomly resample waveform.
         bradycardia=3, sinus bradycardia=20, sinus tachycardia=22
         """
@@ -121,8 +121,8 @@ class Dataset_train(Dataset):
             # Get waveform duration
             duration = waveform.shape[0] / fs_training
 
-            # Get new heart rate
-            hr_new = int(meta_data['hr'] * np.random.uniform(1., 1.25))
+            # Physiological limits
+            hr_new = int(meta_data['hr'] * np.random.uniform(0.9, 1.1))
             if hr_new > 300:
                 hr_new = 300
             elif hr_new < 40:
@@ -134,7 +134,10 @@ class Dataset_train(Dataset):
             duration_new = duration * meta_data['hr'] / hr_new
 
             # Get number of samples
+
             samples = int(duration_new * fs_training)
+            if samples > max_samples:
+                samples = max_samples
 
             # Resample waveform
             waveform = signal.resample_poly(waveform, samples, waveform.shape[0], axis=0).astype(np.float32)
