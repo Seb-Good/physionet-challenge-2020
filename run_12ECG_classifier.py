@@ -43,7 +43,7 @@ def run_12ECG_classifier(data, header_data, models):
     scores = []
     current_score = np.zeros((27))
     for model in models:
-        soft_pred = model.inference(X=signal, y=meta)
+        soft_pred = model.inference(X=waveforms, y=meta_data)
         current_score += soft_pred.reshape(27) / len(models)
         # get hard predictions
         scores.append(postprocessing.run(soft_pred).reshape(27))
