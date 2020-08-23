@@ -16,13 +16,12 @@ from metrics import Metric
 from utils.torchsummary import summary
 from utils.pytorchtools import EarlyStopping
 from torch.nn.parallel import DataParallel as DP
-from loss_functions import CompLoss
+from loss_functions import CompLoss,FocalLoss
 from postprocessing import PostProcessing
 from data_generator import Preprocessing
 
 # model
 from models.ecgnet.structure import ECGNet
-
 
 class Model:
     """
@@ -75,6 +74,7 @@ class Model:
        0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. , 1. , 1. , 0.5, 1. , 1. ,
        0.5]).to(self.device)
 
+
         self.loss = nn.BCELoss(weight=weights)# CompLoss(self.device) #
         self.decoder_loss = nn.MSELoss()
 
@@ -83,12 +83,12 @@ class Model:
             checkpoint_path=self.hparams['checkpoint_path'] + '/checkpoint'+str(self.hparams['start_fold'])+'.pt',
             patience=self.hparams['patience'],
             delta=self.hparams['min_delta'],
-            is_maximize=False,
+            is_maximize=True,
         )
         # lr cheduler
         self.scheduler = ReduceLROnPlateau(
             optimizer=self.optimizer,
-            mode='min',
+            mode='max',
             factor=0.2,
             patience=1,
             verbose=True,
@@ -127,7 +127,6 @@ class Model:
             avg_loss = 0.0
 
             train_preds, train_true = torch.Tensor([]), torch.Tensor([])
-
             for (X_batch, y_batch) in tqdm(train_loader):
                 y_batch = y_batch.float().to(self.device)
                 X_batch = X_batch.float().to(self.device)
@@ -136,11 +135,13 @@ class Model:
                 # get model predictions
                 pred,pred_decoder = self.model(X_batch)
 
-
                 # process loss_1
                 pred = pred.view(-1, pred.shape[-1])
+                pred = pred ** 2
                 y_batch = y_batch.view(-1, y_batch.shape[-1])
                 train_loss = self.loss(pred, y_batch)
+
+
                 y_batch = y_batch.float().cpu().detach()
                 pred = pred.float().cpu().detach()
 
@@ -158,8 +159,9 @@ class Model:
                 train_loss = train_loss + decoder_train_loss
 
                 self.scaler.scale(train_loss).backward()  # train_loss.backward()
-                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
-                # torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.5)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
+                torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.5)
                 self.scaler.step(self.optimizer)  # self.optimizer.step()
                 self.scaler.update()
 
@@ -192,6 +194,7 @@ class Model:
                     X_batch = X_batch.float().cpu().detach()
 
                     pred = pred.reshape(-1, pred.shape[-1])
+                    pred = pred ** 2
                     y_batch = y_batch.view(-1, y_batch.shape[-1])
 
                     avg_val_loss += self.loss(pred, y_batch).item() / len(valid_loader)
@@ -210,8 +213,8 @@ class Model:
             val_preds = self.postprocessing.run(val_preds)
             metric_val = self.metric.compute(val_true, val_preds)
 
-            self.scheduler.step(avg_val_loss)
-            res = self.early_stopping(score=avg_val_loss, model=self.model,threshold=threshold)
+            self.scheduler.step(metric_val)#avg_val_loss)
+            res = self.early_stopping(score=metric_val, model=self.model,threshold=threshold)
 
             # print statistics
             if self.hparams['verbose_train']:
@@ -242,7 +245,7 @@ class Model:
                 print(f'global best max val_loss model score {self.early_stopping.best_score}')
                 break
             elif res == 1:
-                print(f'save global val_loss model score {avg_val_loss}')
+                print(f'save global val_loss model score {metric_val}')
 
         writer.close()
 
@@ -268,6 +271,7 @@ class Model:
                 X_batch = X_batch.float().to(self.device)
 
                 pred,pred_decoder = self.model(X_batch)
+                pred = pred ** 2
 
                 X_batch = X_batch.float().cpu().detach()
 
@@ -292,7 +296,7 @@ class Model:
 
                 pred = self.model.activatations(X_batch)
                 pred = torch.sigmoid(pred)
-
+                pred = pred ** 2
                 X_batch = X_batch.float().cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
@@ -322,7 +326,8 @@ class Model:
         X = X.reshape(1,-1,X.shape[1])
 
         self.model.eval()
-        predictions,pred_encoder = self.model.forward(torch.Tensor(X))
+        predictions,pred_decoder = self.model.forward(torch.Tensor(X))
+        predictions = predictions **2
         predictions= predictions.detach().numpy()
         print(1)
         return predictions

@@ -4,7 +4,7 @@ hparams = {}
 # training params
 hparams['n_epochs'] = 1
 hparams['lr'] = 0.001
-hparams['batch_size'] = 2
+hparams['batch_size'] = 3
 hparams['verbose_train'] = True
 
 # early stopping settings
