@@ -194,7 +194,6 @@ class Model:
                     X_batch = X_batch.float().cpu().detach()
 
                     pred = pred.reshape(-1, pred.shape[-1])
-                    pred = pred ** 2
                     y_batch = y_batch.view(-1, y_batch.shape[-1])
 
                     avg_val_loss += self.loss(pred, y_batch).item() / len(valid_loader)
