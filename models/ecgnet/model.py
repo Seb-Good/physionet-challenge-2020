@@ -271,6 +271,7 @@ class Model:
                 X_batch = X_batch.float().to(self.device)
 
                 pred,pred_decoder = self.model(X_batch)
+                pred = pred ** 2
 
                 X_batch = X_batch.float().cpu().detach()
 
@@ -295,7 +296,7 @@ class Model:
 
                 pred = self.model.activatations(X_batch)
                 pred = torch.sigmoid(pred)
-
+                pred = pred ** 2
                 X_batch = X_batch.float().cpu().detach()
 
                 test_preds = torch.cat([test_preds, pred.cpu().detach()], 0)
@@ -325,7 +326,8 @@ class Model:
         X = X.reshape(1,-1,X.shape[1])
 
         self.model.eval()
-        predictions,pred_encoder = self.model.forward(torch.Tensor(X))
+        predictions,pred_decoder = self.model.forward(torch.Tensor(X))
+        predictions = predictions **2
         predictions= predictions.detach().numpy()
 
         return predictions
