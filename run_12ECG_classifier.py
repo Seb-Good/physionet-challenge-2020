@@ -98,8 +98,12 @@ def load_12ECG_model(model_input):
         'ecgnet_0_fold_0.631593191670484',
         'ecgnet_1_fold_0.6370736239012214',
         'ecgnet_2_fold_0.6444454717434089',
-        'ecgnet_3_fold_0.6195938932528102'
+        'ecgnet_3_fold_0.6195938932528102',
+        'ecgnet_4_fold_0.6149398148500164',
+        'ecgnet_5_fold_0.6409127451470004'
     ]
+
+    os.makedirs(model_input+'/pretrained/', exist_ok=True)
 
     # load the model
     models = []
@@ -110,3 +114,6 @@ def load_12ECG_model(model_input):
         models.append(model_stack)
 
     return models
+
+
+

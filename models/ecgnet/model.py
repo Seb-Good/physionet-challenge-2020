@@ -304,7 +304,7 @@ class Model:
         return test_preds.numpy()
 
     def model_save(self, model_path):
-        torch.save(self.model.module.state_dict(), model_path)
+        torch.save(self.model.state_dict(), model_path)
         # self.model.module.state_dict(), PATH
         # torch.save(self.model, model_path)
         return True

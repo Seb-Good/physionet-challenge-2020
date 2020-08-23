@@ -44,12 +44,13 @@ def train_12ECG_classifier(input_directory, output_directory):
 
     os.makedirs(output_directory, exist_ok=True)
 
+
     """Process Data"""
     print('Training model...')
     # Train the classifier
     for start_fold in range(6):
 
-        gpu = [0]
+        gpu = []
 
         hparams['lr'] = 0.001
         hparams['batch_size'] = 64
@@ -62,16 +63,18 @@ def train_12ECG_classifier(input_directory, output_directory):
 
         hparams[''] = output_directory
 
-
-        cross_val = CVPipeline(
-            hparams=hparams,
-            split_table_path=SPLIT_TABLE_PATH,
-            split_table_name=SPLIT_TABLE_NAME,
-            debug_folder=DEBUG_FOLDER,
-            model=Model,
-            gpu=gpu,
-            downsample=False
+        try:
+            cross_val = CVPipeline(
+                hparams=hparams,
+                split_table_path=SPLIT_TABLE_PATH,
+                split_table_name=SPLIT_TABLE_NAME,
+                debug_folder=DEBUG_FOLDER,
+                model=Model,
+                gpu=gpu,
+                downsample=False
             )
+        except:
+            pass
 
 
 
