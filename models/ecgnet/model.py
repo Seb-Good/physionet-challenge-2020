@@ -327,7 +327,6 @@ class Model:
         self.model.eval()
         predictions,pred_encoder = self.model.forward(torch.Tensor(X))
         predictions= predictions.detach().numpy()
-        print(1)
         return predictions
 
     ################## Utils #####################
@@ -335,3 +334,4 @@ class Model:
     def __get_lr(self, optimizer):
         for param_group in optimizer.param_groups:
             return param_group['lr']
+
