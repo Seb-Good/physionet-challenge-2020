@@ -324,7 +324,7 @@ class Model:
         self.model.eval()
         predictions,pred_encoder = self.model.forward(torch.Tensor(X))
         predictions= predictions.detach().numpy()
-
+        print(1)
         return predictions
 
     ################## Utils #####################
