@@ -108,6 +108,7 @@ def load_12ECG_model(model_input):
     for i in models_list:
         model_stack = Model(input_size=19000, n_channels=15, hparams=hparams, gpu=[], inference=True)
         model_stack.model_load("./inference_models/"+i+".pt")
+        model_stack.model_save(model_input+'/pretrained/'+i+".pt")
         models.append(model_stack)
 
 
