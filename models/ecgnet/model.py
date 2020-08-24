@@ -323,13 +323,19 @@ class Model:
         preprocessing = Preprocessing(aug=False)
 
         X = preprocessing.run(X,y,label_process=False)
+
+
+
+
         X = X.reshape(1,-1,X.shape[1])
 
         self.model.eval()
         predictions,pred_decoder = self.model.forward(torch.Tensor(X))
         predictions = predictions **2
-        predictions= predictions.detach().numpy()
-        print(1)
+        predictions = predictions.detach().numpy()
+        print(np.round(predictions,3))
+
+
         return predictions
 
     ################## Utils #####################

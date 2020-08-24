@@ -37,6 +37,8 @@ def run_12ECG_classifier(data, header_data, models):
     waveforms, meta_data = inference_data_loader(waveforms=data, header=header_data,
                                                  fs_resampled=1000, p_and_t_waves=True)
 
+
+
     # Get soft predictions
     postprocessing = PostProcessing(0)
     scores = []
@@ -53,6 +55,10 @@ def run_12ECG_classifier(data, header_data, models):
     scores = np.sum(scores, axis=0)
     scores[scores <= 3] = 0
     scores[scores > 3] = 1
+    scores = scores.astype(np.int64)
+
+    if len(np.where(scores > 0)[0]) < 1:
+        scores[:] = 1
 
     classes = ['270492004',
                '164889003',
