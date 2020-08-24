@@ -13,10 +13,10 @@ import matplotlib.pylab as plt
 from ipywidgets import interact, fixed, IntSlider
 
 # Local imports
-from kardioml import DATA_PATH, ECG_LEADS
+from kardioml import WORKING_PATH, DATA_PATH, ECG_LEADS
 
 
-def waveform_plot(filename_id, filenames, path):
+def waveform_plot(filename_id, filenames, path, save_eps):
     """Plot measure vs time."""
     # Get filename
     filename = filenames[filename_id]
@@ -97,10 +97,14 @@ def waveform_plot(filename_id, filenames, path):
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
 
+    if save_eps:
+        os.makedirs(os.path.join(WORKING_PATH, 'figures'), exist_ok=True)
+        plt.savefig(os.path.join(WORKING_PATH, 'figures', '12_lead_plot.eps'), format='eps')
+
     plt.show()
 
 
-def waveform_plot_interact(dataset):
+def waveform_plot_interact(dataset, save_eps=False):
     """Launch interactive plotting widget."""
     # Set data path
     path = os.path.join(DATA_PATH, dataset, 'formatted')
@@ -113,4 +117,5 @@ def waveform_plot_interact(dataset):
         filename_id=IntSlider(value=0, min=0, max=len(filenames) - 1, step=1,),
         filenames=fixed(filenames),
         path=fixed(path),
+        save_eps=fixed(save_eps)
     )
