@@ -16,66 +16,66 @@ import scipy.io as sio
 from kardioml import DATA_PATH
 from kardioml.data.data_loader import parse_header
 from kardioml.data.p_t_wave_detector import PTWaveDetection
-import os
-from config import hparams,Model,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOLDER
-from cv_pipeline import CVPipeline
+# from config import hparams,Model,SPLIT_TABLE_PATH,SPLIT_TABLE_NAME,DEBUG_FOLDER
+# from cv_pipeline import CVPipeline
 
 
 def train_12ECG_classifier(input_directory, output_directory):
 
-    """Process Data"""
-    print('Loading data...')
-    try:
-        # Create directory for processed training data
-        input_directory_processed = os.path.join(DATA_PATH, 'input_directory_processed')
-        os.makedirs(input_directory_processed, exist_ok=True)
-
-        # Get a list of filenames
-        filenames = [filename.split('.')[0] for filename in os.listdir(input_directory) if 'mat' in filename]
-
-        # Set sample rate for processed waveforms
-        fs_resampled = 1000
-
-        # Do you want to extract PT-waves?
-        p_and_t_waves = True
-
-        _ = Parallel(n_jobs=-1)(delayed(data_loader)(filename, input_directory, input_directory_processed,
-                                                     fs_resampled, p_and_t_waves) for filename in filenames)
-
-        os.makedirs(output_directory, exist_ok=True)
-
-        """Process Data"""
-        print('Training model...')
-        # Train the classifier
-        for start_fold in range(6):
-
-            gpu = []
-
-            hparams['lr'] = 0.001
-            hparams['batch_size'] = 64
-            hparams['start_fold'] = int(start_fold)
-            hparams['n_epochs'] = 100
-
-            hparams['model_path'] = './'+output_directory
-            hparams['checkpoint_path'] = hparams['model_path'] + '/checkpoint'
-            hparams['model_name'] = '/ecgnet'
-
-            hparams[''] = output_directory
-
-            try:
-                cross_val = CVPipeline(
-                    hparams=hparams,
-                    split_table_path=SPLIT_TABLE_PATH,
-                    split_table_name=SPLIT_TABLE_NAME,
-                    debug_folder=DEBUG_FOLDER,
-                    model=Model,
-                    gpu=gpu,
-                    downsample=False
-                )
-            except:
-                pass
-    except:
-        pass
+    # """Process Data"""
+    # print('Loading data...')
+    # try:
+    #     # Create directory for processed training data
+    #     input_directory_processed = os.path.join(DATA_PATH, 'input_directory_processed')
+    #     os.makedirs(input_directory_processed, exist_ok=True)
+    #
+    #     # Get a list of filenames
+    #     filenames = [filename.split('.')[0] for filename in os.listdir(input_directory) if 'mat' in filename]
+    #
+    #     # Set sample rate for processed waveforms
+    #     fs_resampled = 1000
+    #
+    #     # Do you want to extract PT-waves?
+    #     p_and_t_waves = True
+    #
+    #     _ = Parallel(n_jobs=-1)(delayed(data_loader)(filename, input_directory, input_directory_processed,
+    #                                                  fs_resampled, p_and_t_waves) for filename in filenames)
+    #
+    #     os.makedirs(output_directory, exist_ok=True)
+    #
+    #     """Process Data"""
+    #     print('Training model...')
+    #     # Train the classifier
+    #     for start_fold in range(6):
+    #
+    #         gpu = []
+    #
+    #         hparams['lr'] = 0.001
+    #         hparams['batch_size'] = 64
+    #         hparams['start_fold'] = int(start_fold)
+    #         hparams['n_epochs'] = 100
+    #
+    #         hparams['model_path'] = './'+output_directory
+    #         hparams['checkpoint_path'] = hparams['model_path'] + '/checkpoint'
+    #         hparams['model_name'] = '/ecgnet'
+    #
+    #         hparams[''] = output_directory
+    #
+    #         try:
+    #             cross_val = CVPipeline(
+    #                 hparams=hparams,
+    #                 split_table_path=SPLIT_TABLE_PATH,
+    #                 split_table_name=SPLIT_TABLE_NAME,
+    #                 debug_folder=DEBUG_FOLDER,
+    #                 model=Model,
+    #                 gpu=gpu,
+    #                 downsample=False
+    #             )
+    #         except:
+    #             pass
+    # except:
+    #     pass
+    pass
 
 
 def data_loader(filename, input_directory, input_directory_processed, fs_resampled, p_and_t_waves=False):
@@ -345,7 +345,3 @@ class Labels(object):
                     labels_training[label[0]] = 1
             return labels_training
         return None
-
-
-
-train_12ECG_classifier('input')
